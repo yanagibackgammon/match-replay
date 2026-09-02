@@ -19,6 +19,8 @@ const whiteScoreInput = document.getElementById("whiteScoreInput");
 const matchFileSelect = document.getElementById("matchFileSelect");
 const applyMetaBtn = document.getElementById("applyMetaBtn");
 const refreshMatchesBtn = document.getElementById("refreshMatchesBtn");
+const loadedFileName = document.getElementById("loadedFileName");
+const gameMarkers = document.getElementById("gameMarkers");
 
 let socket = null;
 const pageChannel = (!isLocalRuntime() && "BroadcastChannel" in window) ? new BroadcastChannel("match-replay-control") : null;
@@ -28,6 +30,7 @@ let lastState = {
   playing:false,
   speed:1000,
   mode:"auto",
+  gameStarts:[],
   meta:{
     tournamentTitleLine1:"JBS第31期名人戦 準々決勝",
     tournamentTitleLine2:"2025-08-30　25ポイントマッチ　勝てばベスト4",
@@ -65,6 +68,19 @@ function ensureOption(value){
   }
 }
 
+
+function renderGameMarkers(){
+  const total=Math.max(1,Number(lastState.totalSteps)||1);
+  const starts=Array.isArray(lastState.gameStarts)?lastState.gameStarts:[];
+  gameMarkers.innerHTML=starts.map((g,i)=>{
+    const idx=Math.max(0,Math.min(total-1,Number(g.index)||0));
+    const pct=total<=1?0:(idx/(total-1))*100;
+    const edgeClass=pct<=0.5?" first":(pct>=99.5?" last":"");
+    const gameNumber=Number(g.gameNumber)||i+1;
+    return `<span class="game-marker${edgeClass}" style="left:${pct}%" title="Game ${gameNumber}">▼</span>`;
+  }).join("");
+}
+
 function renderState(state){
   lastState = {...lastState, ...state, speed:1000};
   lastState.meta = {...(lastState.meta || {}), ...((state && state.meta) || {})};
@@ -74,6 +90,8 @@ function renderState(state){
   timeline.value = Math.min(lastState.index || 0, total - 1);
   stepText.textContent = `${Number(timeline.value) + 1} / ${total}`;
   playState.textContent = lastState.mode === "manual" ? "MANUAL" : (lastState.playing ? "PLAYING" : "PAUSE");
+  loadedFileName.textContent = lastState.meta.matchFile || "未選択";
+  renderGameMarkers();
 
   const manual=lastState.mode === "manual";
   autoModeBtn.classList.toggle("active",!manual);
@@ -145,8 +163,8 @@ async function fetchPagesManifest(){
   }catch{return {};}
 }
 
-async function getPagesMatchTotal(file){
-  if(!file) return 1;
+async function getPagesMatchInfo(file){
+  if(!file) return {totalSteps:1,gameStarts:[]};
   const manifest=await fetchPagesManifest();
   const rel=manifest.generated?.[file]||(/\.xg$/i.test(file)?`generated/${file}.json`:file);
   const u=new URL(`./matches/${rel}`,location.href);u.searchParams.set("t",Date.now());
@@ -154,7 +172,11 @@ async function getPagesMatchTotal(file){
   if(!r.ok) throw new Error(`棋譜データを取得できません (HTTP ${r.status})`);
   const data=await r.json();
   if(!Array.isArray(data.states)||!data.states.length) throw new Error("棋譜データに再生ステートがありません");
-  return data.states.length;
+  const gameStarts=[];
+  data.states.forEach((state,index)=>{
+    if(state && state.phase==="gameStart") gameStarts.push({index,gameNumber:Number(state.gameNumber)||gameStarts.length+1});
+  });
+  return {totalSteps:data.states.length,gameStarts};
 }
 
 async function loadPagesInitialState(){
@@ -162,7 +184,7 @@ async function loadPagesInitialState(){
   try{const r=await fetch(new URL("./stream-config.json",location.href),{cache:"no-store"});if(r.ok)lastState.meta={...lastState.meta,...await r.json()};}catch{}
   try{const s=localStorage.getItem("matchReplayMeta");if(s)lastState.meta={...lastState.meta,...JSON.parse(s)};}catch{}
   try{const s=localStorage.getItem("matchReplayPlaybackState");if(s)lastState={...lastState,...JSON.parse(s),meta:lastState.meta};}catch{}
-  try{lastState.totalSteps=await getPagesMatchTotal(lastState.meta.matchFile);lastState.index=Math.min(Number(lastState.index)||0,lastState.totalSteps-1);}catch(error){console.warn(error);lastState.totalSteps=1;lastState.index=0;}
+  try{const info=await getPagesMatchInfo(lastState.meta.matchFile);lastState.totalSteps=info.totalSteps;lastState.gameStarts=info.gameStarts;lastState.index=Math.min(Number(lastState.index)||0,lastState.totalSteps-1);}catch(error){console.warn(error);lastState.totalSteps=1;lastState.gameStarts=[];lastState.index=0;}
   renderState(lastState);
   if(pageChannel)pageChannel.postMessage({type:"state-request"});
 }
@@ -200,9 +222,10 @@ async function applyMeta(){
     }else{
       // GitHub Pagesでは実棋譜JSONを先に確認し、総ステップ数も更新する。
       const oldFile=lastState.meta.matchFile;
-      const totalSteps=await getPagesMatchTotal(nextMeta.matchFile);
+      const info=await getPagesMatchInfo(nextMeta.matchFile);
       lastState.meta={...lastState.meta,...nextMeta};
-      lastState.totalSteps=totalSteps;
+      lastState.totalSteps=info.totalSteps;
+      lastState.gameStarts=info.gameStarts;
       if(nextMeta.matchFile!==oldFile) lastState.index=0;
       else lastState.index=Math.min(lastState.index,totalSteps-1);
       localStorage.setItem("matchReplayMeta",JSON.stringify(lastState.meta));

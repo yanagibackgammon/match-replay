@@ -112,13 +112,14 @@ function safePath(urlPath){
 }
 
 ensureDirs();
-let state = {index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED,mode:"auto",meta:loadConfig(),matchError:""};
+let state = {index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED,mode:"auto",gameStarts:[],meta:loadConfig(),matchError:""};
 let timer = null;
 
 function syncSelectedMatch(resetIndex=false){
   const file = state.meta.matchFile;
   if(!file){
     state.totalSteps=1;
+    state.gameStarts=[];
     state.matchError="";
     if(resetIndex) state.index=0;
     return;
@@ -126,11 +127,16 @@ function syncSelectedMatch(resetIndex=false){
   try{
     const data=loadMatchData(file);
     state.totalSteps=Math.max(1,data.states.length);
+    state.gameStarts=data.states.reduce((list,item,index)=>{
+      if(item && item.phase==="gameStart") list.push({index,gameNumber:Number(item.gameNumber)||list.length+1});
+      return list;
+    },[]);
     state.matchError="";
     if(resetIndex) state.index=0;
     else state.index=Math.min(state.index,state.totalSteps-1);
   }catch(error){
     state.totalSteps=1;
+    state.gameStarts=[];
     state.index=0;
     state.matchError=String(error.message||error);
     console.error(error);

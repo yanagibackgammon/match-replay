@@ -16,37 +16,60 @@
     <div id="connection" class="connection offline">DISCONNECTED</div>
   </header>
 
-  <section class="status-card">
-    <div class="status-row">
-      <span>現在位置</span>
-      <strong id="stepText">1 / 6</strong>
+  <section class="match-card">
+    <div class="match-file-row">
+      <label class="match-file-field">
+        <span>棋譜ファイル</span>
+        <select id="matchFileSelect">
+          <option value="">(未選択)</option>
+        </select>
+      </label>
+      <div class="match-actions">
+        <button id="refreshMatchesBtn">棋譜一覧 更新</button>
+        <button id="applyMetaBtn" class="primary">表示へ反映</button>
+      </div>
     </div>
-    <div class="status-row">
-      <span>再生状態</span>
-      <strong id="playState">PAUSE</strong>
+    <div class="loaded-file">
+      <span>読み込み中</span>
+      <strong id="loadedFileName">未選択</strong>
+    </div>
+  </section>
+
+  <section class="status-card">
+    <div class="status-top">
+      <div class="status-row">
+        <span>現在位置</span>
+        <strong id="stepText">1 / 1</strong>
+      </div>
+      <div class="status-row status-row-right">
+        <span>再生状態</span>
+        <strong id="playState">PAUSE</strong>
+      </div>
+    </div>
+    <div class="timeline-block">
+      <label for="timeline">棋譜位置</label>
+      <div class="timeline-wrap">
+        <div id="gameMarkers" class="game-markers" aria-hidden="true"></div>
+        <input id="timeline" type="range" min="0" max="0" step="1" value="0">
+      </div>
     </div>
   </section>
 
   <section class="mode-card">
-    <span>再生モード</span>
-    <div class="mode-buttons">
-      <button id="autoModeBtn" class="active">自動</button>
-      <button id="manualModeBtn">手動</button>
+    <div class="mode-head">
+      <span>再生モード</span>
+      <div class="mode-buttons">
+        <button id="autoModeBtn" class="active">自動</button>
+        <button id="manualModeBtn">手動</button>
+      </div>
+    </div>
+    <div class="transport">
+      <button id="prevBtn">◀ 前へ</button>
+      <button id="playBtn" class="primary">▶ 再生</button>
+      <button id="pauseBtn">Ⅱ 停止</button>
+      <button id="nextBtn">次へ ▶</button>
     </div>
   </section>
-
-  <section class="transport">
-    <button id="prevBtn">◀ 前へ</button>
-    <button id="playBtn" class="primary">▶ 再生</button>
-    <button id="pauseBtn">Ⅱ 停止</button>
-    <button id="nextBtn">次へ ▶</button>
-  </section>
-
-  <section class="seek-card">
-    <label for="timeline">棋譜位置</label>
-    <input id="timeline" type="range" min="0" max="5" step="1" value="0">
-  </section>
-
 
   <section class="meta-card">
     <div class="meta-grid">
@@ -78,17 +101,6 @@
         <span>白スコア</span>
         <input id="whiteScoreInput" type="number" value="0">
       </label>
-      <label>
-        <span>棋譜ファイル</span>
-        <select id="matchFileSelect">
-          <option value="">(未選択)</option>
-        </select>
-      </label>
-    </div>
-
-    <div class="meta-actions">
-      <button id="refreshMatchesBtn">棋譜一覧更新</button>
-      <button id="applyMetaBtn" class="primary">表示へ反映</button>
     </div>
   </section>
 
