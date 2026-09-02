@@ -35,6 +35,8 @@ const PLAYBACK_SPEED=1000;
 let pagesState={index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED,mode:"auto"};
 const isLocal=()=>location.hostname==="localhost"||location.hostname==="127.0.0.1";
 const pageChannel=(!isLocal()&&"BroadcastChannel" in window)?new BroadcastChannel("match-replay-control"):null;
+let pagesMetaRevision="";
+let pagesMetaPoller=null;
 
 const els={
   stageWrap:document.getElementById("stage-wrap"),stage:document.getElementById("stage"),
@@ -341,10 +343,43 @@ function handlePagesCommand(command,value){
   index=pagesState.index;render();publishPagesState();
 }
 
+async function applyPagesMeta(nextMeta,{force=false}={}){
+  if(isLocal()||!nextMeta||typeof nextMeta!=="object") return;
+  const oldFile=meta.matchFile;
+  meta={...meta,...nextMeta};
+  const fileChanged=meta.matchFile!==oldFile;
+  if(force||fileChanged||meta.matchFile!==loadedMatchFile){
+    await loadMatch(meta.matchFile,{force:true,resetIndex:fileChanged});
+  }
+  if(fileChanged){
+    pagesState.index=0;
+    index=0;
+  }
+  render();
+  publishPagesState();
+}
+
+function startPagesMetaPolling(){
+  if(isLocal()||pagesMetaPoller) return;
+  try{pagesMetaRevision=localStorage.getItem("matchReplayMetaRevision")||"";}catch{}
+  pagesMetaPoller=setInterval(async()=>{
+    try{
+      const revision=localStorage.getItem("matchReplayMetaRevision")||"";
+      if(!revision||revision===pagesMetaRevision) return;
+      pagesMetaRevision=revision;
+      const raw=localStorage.getItem("matchReplayMeta");
+      if(!raw) return;
+      await applyPagesMeta(JSON.parse(raw),{force:true});
+    }catch(error){
+      console.warn("Failed to synchronize display settings",error);
+    }
+  },300);
+}
+
 async function loadInitialPagesMeta(){
   if(isLocal())return;
   try{const r=await fetch(new URL("./stream-config.json",location.href),{cache:"no-store"});if(r.ok)meta={...meta,...await r.json()};}catch{}
-  try{const s=localStorage.getItem("matchReplayMeta");if(s)meta={...meta,...JSON.parse(s)};}catch{}
+  try{const s=localStorage.getItem("matchReplayMeta");if(s)meta={...meta,...JSON.parse(s)};pagesMetaRevision=localStorage.getItem("matchReplayMetaRevision")||"";}catch{}
   try{const s=localStorage.getItem("matchReplayPlaybackState");if(s){const p=JSON.parse(s);pagesState={...pagesState,...p,speed:PLAYBACK_SPEED};index=Number(p.index)||0;}}catch{}
   pagesState.speed=PLAYBACK_SPEED;
   await loadMatch(meta.matchFile,{force:true});
@@ -361,17 +396,26 @@ function connectWebSocket(){
 if(pageChannel)pageChannel.addEventListener("message",async e=>{
   const m=e.data||{};
   if(m.type==="meta"){
-    const old=meta.matchFile;meta={...meta,...m.meta};
-    await loadMatch(meta.matchFile,{force:true,resetIndex:meta.matchFile!==old});
-    if(meta.matchFile!==old){pagesState.index=0;index=0;}
-    render();publishPagesState();
+    if(m.revision) pagesMetaRevision=String(m.revision);
+    await applyPagesMeta(m.meta,{force:true});
   }else if(m.type==="command"){
     handlePagesCommand(m.command,m.value);
   }else if(m.type==="state-request"){
     publishPagesState();
   }
 });
-addEventListener("storage",async e=>{if(!isLocal()&&e.key==="matchReplayMeta"&&e.newValue){try{const old=meta.matchFile;meta={...meta,...JSON.parse(e.newValue)};await loadMatch(meta.matchFile,{force:true,resetIndex:meta.matchFile!==old});render();publishPagesState();}catch{}}});
+addEventListener("storage",async e=>{
+  if(isLocal()) return;
+  try{
+    if(e.key==="matchReplayMetaRevision"){
+      pagesMetaRevision=e.newValue||"";
+      const raw=localStorage.getItem("matchReplayMeta");
+      if(raw) await applyPagesMeta(JSON.parse(raw),{force:true});
+    }else if(e.key==="matchReplayMeta"&&e.newValue){
+      await applyPagesMeta(JSON.parse(e.newValue),{force:true});
+    }
+  }catch(error){console.warn("Failed to synchronize display settings",error);}
+});
 
 async function loadAds(){
   try{let r;if(isLocal())r=await fetch("/api/ads",{cache:"no-store"});else{const u=new URL("./ads/manifest.json",location.href);u.searchParams.set("t",Date.now());r=await fetch(u,{cache:"no-store"});}const d=await r.json();adFiles=Array.isArray(d.files)?d.files:[];}catch{adFiles=[];}
@@ -390,4 +434,4 @@ async function cycleAds(){
 }
 function startAdRotation(){if(adTimer)clearInterval(adTimer);cycleAds();adTimer=setInterval(cycleAds,60000);}
 function scaleStage(){const vw=document.documentElement.clientWidth||innerWidth||1920,s=vw/1920;els.stage.style.transform=`scale(${s})`;els.stageWrap.style.height=`${Math.ceil(1080*s)}px`;}
-addEventListener("resize",scaleStage);scaleStage();render();loadDesignPresets();startAdRotation();loadInitialPagesMeta();connectWebSocket();
+addEventListener("resize",scaleStage);scaleStage();render();loadDesignPresets();startAdRotation();loadInitialPagesMeta();startPagesMetaPolling();connectWebSocket();

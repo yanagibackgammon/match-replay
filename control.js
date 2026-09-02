@@ -233,6 +233,13 @@ async function loadPagesInitialState(){
   if(pageChannel)pageChannel.postMessage({type:"state-request"});
 }
 
+function writePagesMeta(meta){
+  const revision=`${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+  localStorage.setItem("matchReplayMeta",JSON.stringify(meta));
+  localStorage.setItem("matchReplayMetaRevision",revision);
+  return revision;
+}
+
 async function applyMeta(){
   const nextMeta = {
     tournamentTitleLine1: tournamentLine1Input.value.trim(),
@@ -271,9 +278,9 @@ async function applyMeta(){
       lastState.gameStarts=info.gameStarts;
       if(nextMeta.matchFile!==oldFile) lastState.index=0;
       else lastState.index=Math.min(lastState.index,lastState.totalSteps-1);
-      localStorage.setItem("matchReplayMeta",JSON.stringify(lastState.meta));
+      const revision=writePagesMeta(lastState.meta);
       localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:1000,mode:lastState.mode||"auto"}));
-      if(pageChannel)pageChannel.postMessage({type:"meta",meta:lastState.meta});
+      if(pageChannel)pageChannel.postMessage({type:"meta",meta:lastState.meta,revision});
       renderState(lastState);
     }
 
