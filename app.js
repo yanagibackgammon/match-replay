@@ -6,6 +6,13 @@ const boardSvg=document.getElementById("board");
 const gameOverlayG=document.createElementNS("http://www.w3.org/2000/svg","g");
 gameOverlayG.setAttribute("id","gameOverlay");
 boardSvg.appendChild(gameOverlayG);
+const moveAnimationG=document.createElementNS("http://www.w3.org/2000/svg","g");
+moveAnimationG.setAttribute("id","moveAnimation");
+boardSvg.appendChild(moveAnimationG);
+let moveAnimationToken=0;
+let moveAnimationRunning=false;
+let lastMoveAnimationKey="";
+const CHECKER_MOVE_DURATION=500;
 
 const defaultMeta={
   tournamentTitleLine1:"JBS第31期名人戦 準々決勝",
@@ -124,6 +131,135 @@ function drawCheckers(position){
   addBarStack(395.5,position?.blackBar||0,"checker-piece-black");
   addBearOffStack(position?.whiteOff||0,"checker-piece-white",true);
   addBearOffStack(position?.blackOff||0,"checker-piece-black",false);
+}
+
+function cloneVisualPosition(position){
+  return {
+    points:(position?.points||Array(25).fill(0)).slice(),
+    blackBar:Number(position?.blackBar||0),whiteBar:Number(position?.whiteBar||0),
+    blackOff:Number(position?.blackOff||0),whiteOff:Number(position?.whiteOff||0)
+  };
+}
+function moveCheckerClass(activePlayer){return activePlayer===1?"checker-piece-black":"checker-piece-white";}
+function ownCountAt(position,point,activePlayer){
+  const v=Number(position?.points?.[point]||0);
+  return activePlayer===1?Math.max(0,v):Math.max(0,-v);
+}
+function stackTopCoord(point,count){
+  const q=pointCoord(point),i=Math.max(0,Math.min(Math.max(1,count),5)-1);
+  return {x:q.x,y:q.y+q.dir*i*43};
+}
+function barMoveCoord(position,activePlayer){
+  const count=Math.max(1,Number(activePlayer===1?position?.blackBar:position?.whiteBar)||1);
+  const centerY=activePlayer===1?395.5:150.5;
+  const spacing=count<=1?0:Math.min(38,190/(count-1));
+  const firstY=centerY-spacing*(count-1)/2;
+  // バー中央寄りの一枚から動かす。
+  const y=activePlayer===1?firstY:firstY+spacing*(count-1);
+  return {x:350.5,y};
+}
+function bearOffMoveCoord(position,activePlayer){
+  const h=9,pitch=14,x=668.5;
+  if(activePlayer===1){
+    const n=Math.max(0,Number(position?.blackOff)||0);
+    return {x,y:499-h-n*pitch+h/2};
+  }
+  const n=Math.max(0,Number(position?.whiteOff)||0);
+  return {x,y:38+n*pitch+h/2};
+}
+function sourceMoveCoord(position,segment,activePlayer){
+  if(segment?.source==="bar")return barMoveCoord(position,activePlayer);
+  const p=Number(segment?.source);
+  if(Number.isInteger(p)&&p>=1&&p<=24)return stackTopCoord(p,ownCountAt(position,p,activePlayer));
+  return {x:350.5,y:273};
+}
+function destinationMoveCoord(positionAfterSource,segment,activePlayer){
+  const p=Number(segment?.destination);
+  if(Number.isInteger(p)&&p>=1&&p<=24){
+    const q=pointCoord(p),own=ownCountAt(positionAfterSource,p,activePlayer);
+    const v=Number(positionAfterSource?.points?.[p]||0);
+    const opponentBlot=activePlayer===1?v===-1:v===1;
+    const i=opponentBlot?0:Math.min(own,4);
+    return {x:q.x,y:q.y+q.dir*i*43};
+  }
+  return bearOffMoveCoord(positionAfterSource,activePlayer);
+}
+function removeMovingChecker(position,segment,activePlayer){
+  const out=cloneVisualPosition(position),sign=activePlayer===1?1:-1;
+  if(segment?.source==="bar"){
+    if(activePlayer===1)out.blackBar=Math.max(0,out.blackBar-1);else out.whiteBar=Math.max(0,out.whiteBar-1);
+  }else{
+    const p=Number(segment?.source);if(Number.isInteger(p)&&p>=1&&p<=24)out.points[p]-=sign;
+  }
+  return out;
+}
+function finishMovingChecker(positionAfterSource,segment,activePlayer){
+  const out=cloneVisualPosition(positionAfterSource),sign=activePlayer===1?1:-1;
+  const p=Number(segment?.destination);
+  if(Number.isInteger(p)&&p>=1&&p<=24){
+    if(activePlayer===1&&out.points[p]===-1){out.points[p]=0;out.whiteBar+=1;}
+    else if(activePlayer===-1&&out.points[p]===1){out.points[p]=0;out.blackBar+=1;}
+    out.points[p]+=sign;
+  }else if(activePlayer===1)out.blackOff+=1;else out.whiteOff+=1;
+  return out;
+}
+function easeCheckerMove(t){return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
+function animateCheckerBetween(from,to,activePlayer,token){
+  return new Promise(resolve=>{
+    if(token!==moveAnimationToken){resolve(false);return;}
+    const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    c.setAttribute("cx",String(from.x));c.setAttribute("cy",String(from.y));c.setAttribute("r","21.1");
+    c.setAttribute("class",moveCheckerClass(activePlayer));
+    moveAnimationG.appendChild(c);
+    const started=performance.now();
+    const frame=now=>{
+      if(token!==moveAnimationToken){c.remove();resolve(false);return;}
+      const t=Math.min(1,(now-started)/CHECKER_MOVE_DURATION),e=easeCheckerMove(t);
+      c.setAttribute("cx",String(from.x+(to.x-from.x)*e));
+      c.setAttribute("cy",String(from.y+(to.y-from.y)*e));
+      if(t>=1){c.remove();resolve(true);return;}
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  });
+}
+function cancelCheckerAnimation(){
+  moveAnimationToken+=1;moveAnimationRunning=false;moveAnimationG.innerHTML="";
+}
+async function runCheckerAnimation(state,key){
+  const token=++moveAnimationToken;
+  moveAnimationRunning=true;moveAnimationG.innerHTML="";
+  let board=cloneVisualPosition(state.moveAnimation.beforePosition);
+  drawCheckers(board);
+  for(const segment of state.moveAnimation.segments||[]){
+    if(token!==moveAnimationToken)return;
+    const from=sourceMoveCoord(board,segment,state.activePlayer);
+    const withoutSource=removeMovingChecker(board,segment,state.activePlayer);
+    const to=destinationMoveCoord(withoutSource,segment,state.activePlayer);
+    drawCheckers(withoutSource);
+    const completed=await animateCheckerBetween(from,to,state.activePlayer,token);
+    if(!completed||token!==moveAnimationToken)return;
+    board=finishMovingChecker(withoutSource,segment,state.activePlayer);
+    drawCheckers(board);
+  }
+  if(token!==moveAnimationToken)return;
+  moveAnimationRunning=false;moveAnimationG.innerHTML="";
+  drawCheckers(state.position);
+}
+function renderAnimatedCheckers(state){
+  const eligible=state?.phase==="analysis"&&state?.moveAnimation&&Array.isArray(state.moveAnimation.segments)&&state.moveAnimation.segments.length>0;
+  const key=`${loadedMatchFile}|${index}`;
+  if(!eligible){
+    if(moveAnimationRunning)cancelCheckerAnimation();
+    lastMoveAnimationKey="";moveAnimationG.innerHTML="";drawCheckers(state?.position);return;
+  }
+  if(lastMoveAnimationKey!==key){
+    if(moveAnimationRunning)cancelCheckerAnimation();
+    lastMoveAnimationKey=key;
+    runCheckerAnimation(state,key);
+    return;
+  }
+  if(!moveAnimationRunning)drawCheckers(state.position);
 }
 function drawDice(vals,activePlayer,{luckKind=null}={}){
   diceG.innerHTML="";
@@ -412,7 +548,7 @@ function render(){
   els.winBarBlack.style.width=`${b}%`;els.winBarWhite.style.width=`${w}%`;els.blackRateText.textContent=`${displayBlack}%`;els.whiteRateText.textContent=`${displayWhite}%`;
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
   els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);
-  drawPointLabels(s.activePlayer);drawCheckers(s.position);drawDice(s.dice,s.activePlayer,{luckKind:s.luckKind||null});drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
+  drawPointLabels(s.activePlayer);renderAnimatedCheckers(s);drawDice(s.dice,s.activePlayer,{luckKind:s.luckKind||null});drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
 }
 
 async function fetchManifest(){try{const u=new URL("./matches/manifest.json",location.href);u.searchParams.set("t",Date.now());const r=await fetch(u,{cache:"no-store"});return r.ok?await r.json():{};}catch{return {};}}

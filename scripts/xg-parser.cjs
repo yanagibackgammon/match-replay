@@ -508,7 +508,7 @@ function parseMove(rec, version){
 
   return {
     positionI,positionEnd,activePlayer,moveRaw,move,dice,cubeCode,best,playedIndex,
-    errMove,errLuck,initEq,invalidM,beforePosition,afterPosition:applied.position,expectedEnd
+    errMove,errLuck,initEq,invalidM,beforePosition,afterPosition:applied.position,appliedSegments:applied.segments,expectedEnd
   };
 }
 
@@ -755,6 +755,9 @@ function buildTimeline(parsed, sourceFile){
         phase:'analysis',gameNumber,score:[...score],activePlayer:r.activePlayer,
         position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,luckKind,
         analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
+        // 配信側でムーブ前→ムーブ後を順番に0.5秒ずつアニメーションするため、
+        // 実棋譜の移動区間をそのまま保持する。外部ファイル参照は不要。
+        moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
         historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'}
       });
       pushState({
