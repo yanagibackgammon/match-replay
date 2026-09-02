@@ -130,7 +130,7 @@ async function refreshMatches(){
   matchFileSelect.value = current || lastState.meta.matchFile || "";
 }
 
-function applyMeta(){
+async function applyMeta(){
   const nextMeta = {
     tournamentTitleLine1: tournamentLine1Input.value.trim(),
     tournamentTitleLine2: tournamentLine2Input.value.trim(),
@@ -140,13 +140,44 @@ function applyMeta(){
     whiteScore: Number(whiteScoreInput.value || 0),
     matchFile: matchFileSelect.value
   };
-  if(isLocalRuntime()){
-    sendCommand("setMeta", nextMeta);
-  }else{
-    lastState.meta = {...lastState.meta, ...nextMeta};
-    try{ localStorage.setItem("matchReplayMeta", JSON.stringify(lastState.meta)); }catch(error){ console.warn(error); }
-    if(pageChannel) pageChannel.postMessage({type:"meta", meta:lastState.meta});
-    renderState({meta:lastState.meta});
+
+  const originalText = applyMetaBtn.textContent;
+  applyMetaBtn.disabled = true;
+  applyMetaBtn.textContent = "反映中…";
+
+  try{
+    if(isLocalRuntime()){
+      // WebSocketの接続状態に依存せず、HTTP APIで確実に反映する。
+      const res = await fetch("/api/meta", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        cache:"no-store",
+        body:JSON.stringify(nextMeta)
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok){
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      if(data.state) renderState(data.state);
+    }else{
+      // GitHub Pagesでは同一originの表示画面へBroadcastChannel/localStorageで反映。
+      lastState.meta = {...lastState.meta, ...nextMeta};
+      localStorage.setItem("matchReplayMeta", JSON.stringify(lastState.meta));
+      if(pageChannel) pageChannel.postMessage({type:"meta", meta:lastState.meta});
+      renderState({meta:lastState.meta});
+    }
+
+    applyMetaBtn.textContent = "反映済み";
+    setTimeout(() => {
+      applyMetaBtn.textContent = originalText;
+      applyMetaBtn.disabled = false;
+    }, 1200);
+  }catch(error){
+    console.error("Failed to apply display settings", error);
+    applyMetaBtn.textContent = "反映エラー";
+    applyMetaBtn.disabled = false;
+    alert(`表示への反映に失敗しました。\n${error.message || error}`);
+    setTimeout(() => { applyMetaBtn.textContent = originalText; }, 1800);
   }
 }
 
@@ -190,7 +221,6 @@ timeline.addEventListener("input", () => sendCommand("seek", Number(timeline.val
 speedButtons.forEach(button => button.addEventListener("click", () => sendCommand("speed", Number(button.dataset.speed))));
 applyMetaBtn.addEventListener("click", applyMeta);
 refreshMatchesBtn.addEventListener("click", refreshMatches);
-matchFileSelect.addEventListener("change", applyMeta);
 
 renderState(lastState);
 refreshMatches();

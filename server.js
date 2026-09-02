@@ -141,8 +141,39 @@ function json(res,payload,status=200){
   res.end(JSON.stringify(payload));
 }
 
-const server=http.createServer((req,res)=>{
+function readJsonBody(req, limit=1024*1024){
+  return new Promise((resolve,reject)=>{
+    let body="";
+    req.setEncoding("utf8");
+    req.on("data",chunk=>{
+      body+=chunk;
+      if(body.length>limit){
+        reject(new Error("Request body too large"));
+        req.destroy();
+      }
+    });
+    req.on("end",()=>{
+      try{ resolve(body ? JSON.parse(body) : {}); }
+      catch(error){ reject(new Error("Invalid JSON")); }
+    });
+    req.on("error",reject);
+  });
+}
+
+const server=http.createServer(async (req,res)=>{
   const u=new URL(req.url,"http://localhost");
+
+  if(u.pathname==="/api/meta" && req.method==="POST"){
+    try{
+      const patch=await readJsonBody(req);
+      applyMetaPatch(patch||{});
+      broadcastState();
+      return json(res,{ok:true,state:{type:"state",...state}});
+    }catch(error){
+      return json(res,{ok:false,error:String(error.message||error)},400);
+    }
+  }
+
   if(u.pathname==="/api/matches") return json(res,{files:listMatchFiles()});
   if(u.pathname==="/api/ads") return json(res,{files:listAdFiles()});
   if(u.pathname==="/api/match"){
