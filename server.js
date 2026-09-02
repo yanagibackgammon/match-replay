@@ -2,17 +2,20 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { WebSocketServer, WebSocket } = require("ws");
+const { parseXgFile } = require("./scripts/xg-parser.cjs");
 
 const PORT = Number(process.env.PORT || 3000);
 const ROOT = __dirname;
 const MATCH_DIR = path.join(ROOT, "matches");
 const ADS_DIR = path.join(ROOT, "ads");
+const GENERATED_DIR = path.join(MATCH_DIR, "generated");
 const CONFIG_PATH = path.join(ROOT, "stream-config.json");
 
 const MIME = {
   ".html":"text/html; charset=utf-8",
   ".css":"text/css; charset=utf-8",
   ".js":"application/javascript; charset=utf-8",
+  ".cjs":"application/javascript; charset=utf-8",
   ".json":"application/json; charset=utf-8",
   ".svg":"image/svg+xml",
   ".png":"image/png",
@@ -35,174 +38,187 @@ const defaultMeta = {
 };
 
 function ensureDirs(){
-  if(!fs.existsSync(MATCH_DIR)) fs.mkdirSync(MATCH_DIR, {recursive:true});
-  if(!fs.existsSync(ADS_DIR)) fs.mkdirSync(ADS_DIR, {recursive:true});
+  fs.mkdirSync(MATCH_DIR,{recursive:true});
+  fs.mkdirSync(ADS_DIR,{recursive:true});
+  fs.mkdirSync(GENERATED_DIR,{recursive:true});
 }
 
 function loadConfig(){
   try{
-    const raw = fs.readFileSync(CONFIG_PATH, "utf8");
-    const parsed = JSON.parse(raw);
-    return {
-      ...defaultMeta,
-      ...parsed,
-      tournamentTitleLine1: parsed.tournamentTitleLine1 || parsed.tournamentTitle || defaultMeta.tournamentTitleLine1,
-      tournamentTitleLine2: parsed.tournamentTitleLine2 || defaultMeta.tournamentTitleLine2
-    };
+    const parsed = JSON.parse(fs.readFileSync(CONFIG_PATH,"utf8"));
+    return {...defaultMeta,...parsed};
   }catch{
     return {...defaultMeta};
   }
 }
 
 function saveConfig(meta){
-  try{
-    fs.writeFileSync(CONFIG_PATH, JSON.stringify(meta, null, 2), "utf8");
-  }catch(error){
-    console.error("Failed to save config", error);
-  }
+  try{ fs.writeFileSync(CONFIG_PATH,JSON.stringify(meta,null,2),"utf8"); }
+  catch(error){ console.error("Failed to save config",error); }
 }
 
-function listFiles(dir, regex){
+function listFiles(dir,regex){
   ensureDirs();
   try{
-    return fs.readdirSync(dir, {withFileTypes:true})
-      .filter(entry => entry.isFile())
-      .map(entry => entry.name)
-      .filter(name => regex.test(name))
-      .sort((a, b) => a.localeCompare(b, "ja"));
-  }catch{
-    return [];
-  }
+    return fs.readdirSync(dir,{withFileTypes:true})
+      .filter(e=>e.isFile())
+      .map(e=>e.name)
+      .filter(n=>regex.test(n))
+      .sort((a,b)=>a.localeCompare(b,"ja"));
+  }catch{return [];}
 }
 
-function listMatchFiles(){ return listFiles(MATCH_DIR, /\.(xg|json)$/i); }
-function listAdFiles(){ return listFiles(ADS_DIR, /\.(png|jpg|jpeg|webp|gif)$/i); }
+function listMatchFiles(){
+  return listFiles(MATCH_DIR,/\.(xg|json)$/i).filter(n=>n!=="manifest.json");
+}
+function listAdFiles(){ return listFiles(ADS_DIR,/\.(png|jpe?g|webp|gif)$/i); }
+
+function safeBasename(name){
+  if(typeof name !== "string" || !name || path.basename(name)!==name) throw new Error("Invalid file name");
+  return name;
+}
+
+const matchCache = new Map();
+function loadMatchData(file){
+  file = safeBasename(file);
+  const full = path.join(MATCH_DIR,file);
+  if(!fs.existsSync(full)) throw new Error(`Match file not found: ${file}`);
+  const stat = fs.statSync(full);
+  const key = `${file}:${stat.mtimeMs}:${stat.size}`;
+  if(matchCache.has(key)) return matchCache.get(key);
+
+  let data;
+  if(/\.xg$/i.test(file)){
+    data = parseXgFile(full);
+    const out = path.join(GENERATED_DIR,`${file}.json`);
+    fs.writeFileSync(out,JSON.stringify(data));
+  }else{
+    data = JSON.parse(fs.readFileSync(full,"utf8"));
+  }
+  if(!data || !Array.isArray(data.states)) throw new Error("Invalid replay data");
+  matchCache.clear();
+  matchCache.set(key,data);
+  return data;
+}
 
 function safePath(urlPath){
   const requested = decodeURIComponent((urlPath || "/").split("?")[0]);
   const normalized = requested === "/" ? "/index.html" : requested;
-  const filePath = path.resolve(ROOT, "." + normalized);
+  const filePath = path.resolve(ROOT,"."+normalized);
   if(!filePath.startsWith(ROOT)) return null;
   return filePath;
 }
 
 ensureDirs();
-
-let state = {
-  index:0,
-  totalSteps:6,
-  playing:false,
-  speed:1500,
-  meta: loadConfig()
-};
-
+let state = {index:0,totalSteps:1,playing:false,speed:1500,meta:loadConfig(),matchError:""};
 let timer = null;
 
-function json(res, payload){
-  res.writeHead(200, {"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"});
+function syncSelectedMatch(resetIndex=false){
+  const file = state.meta.matchFile;
+  if(!file){
+    state.totalSteps=1;
+    state.matchError="";
+    if(resetIndex) state.index=0;
+    return;
+  }
+  try{
+    const data=loadMatchData(file);
+    state.totalSteps=Math.max(1,data.states.length);
+    state.matchError="";
+    if(resetIndex) state.index=0;
+    else state.index=Math.min(state.index,state.totalSteps-1);
+  }catch(error){
+    state.totalSteps=1;
+    state.index=0;
+    state.matchError=String(error.message||error);
+    console.error(error);
+  }
+}
+syncSelectedMatch(false);
+
+function json(res,payload,status=200){
+  res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"});
   res.end(JSON.stringify(payload));
 }
 
-const server = http.createServer((req, res) => {
-  const requestPath = decodeURIComponent((req.url || "/").split("?")[0]);
-  if(requestPath === "/api/matches") return json(res, {files:listMatchFiles()});
-  if(requestPath === "/api/ads") return json(res, {files:listAdFiles()});
+const server=http.createServer((req,res)=>{
+  const u=new URL(req.url,"http://localhost");
+  if(u.pathname==="/api/matches") return json(res,{files:listMatchFiles()});
+  if(u.pathname==="/api/ads") return json(res,{files:listAdFiles()});
+  if(u.pathname==="/api/match"){
+    try{return json(res,loadMatchData(u.searchParams.get("file")||""));}
+    catch(error){return json(res,{error:String(error.message||error)},400);}
+  }
 
-  const filePath = safePath(req.url);
-  if(!filePath){ res.writeHead(403); res.end("Forbidden"); return; }
-
-  fs.stat(filePath, (statError, stat) => {
-    if(statError || !stat.isFile()){
-      res.writeHead(404); res.end("Not Found"); return;
-    }
-    const ext = path.extname(filePath).toLowerCase();
-    res.writeHead(200, {"Content-Type": MIME[ext] || "application/octet-stream","Cache-Control":"no-store"});
+  const filePath=safePath(req.url);
+  if(!filePath){res.writeHead(403);res.end("Forbidden");return;}
+  fs.stat(filePath,(err,stat)=>{
+    if(err||!stat.isFile()){res.writeHead(404);res.end("Not Found");return;}
+    const ext=path.extname(filePath).toLowerCase();
+    res.writeHead(200,{"Content-Type":MIME[ext]||"application/octet-stream","Cache-Control":"no-store"});
     fs.createReadStream(filePath).pipe(res);
   });
 });
 
-const wss = new WebSocketServer({server, path:"/ws"});
-
+const wss=new WebSocketServer({server,path:"/ws"});
 function broadcastState(){
-  const payload = JSON.stringify({type:"state", ...state});
-  for(const client of wss.clients){
-    if(client.readyState === WebSocket.OPEN) client.send(payload);
-  }
+  const payload=JSON.stringify({type:"state",...state});
+  for(const client of wss.clients) if(client.readyState===WebSocket.OPEN) client.send(payload);
 }
-
-function stopTimer(){ if(timer){ clearInterval(timer); timer = null; } }
-
+function stopTimer(){if(timer){clearInterval(timer);timer=null;}}
 function startTimer(){
   stopTimer();
-  if(!state.playing) return;
-  timer = setInterval(() => {
-    const lastIndex = Math.max(0, state.totalSteps - 1);
-    if(state.index >= lastIndex){
-      state.index = lastIndex;
-      state.playing = false;
-      stopTimer();
-      broadcastState();
-      return;
-    }
-    state.index += 1;
-    broadcastState();
-  }, state.speed);
+  if(!state.playing)return;
+  timer=setInterval(()=>{
+    const last=Math.max(0,state.totalSteps-1);
+    if(state.index>=last){state.index=last;state.playing=false;stopTimer();broadcastState();return;}
+    state.index+=1;broadcastState();
+  },state.speed);
 }
-
-function setIndex(index){
-  const lastIndex = Math.max(0, state.totalSteps - 1);
-  state.index = Math.max(0, Math.min(lastIndex, Number(index) || 0));
-}
+function setIndex(v){state.index=Math.max(0,Math.min(Math.max(0,state.totalSteps-1),Number(v)||0));}
 
 function applyMetaPatch(patch){
-  state.meta = {
+  const oldFile=state.meta.matchFile;
+  state.meta={
     ...state.meta,
-    tournamentTitleLine1: String(patch.tournamentTitleLine1 ?? state.meta.tournamentTitleLine1 || "").trim(),
-    tournamentTitleLine2: String(patch.tournamentTitleLine2 ?? state.meta.tournamentTitleLine2 || "").trim(),
-    blackName: String(patch.blackName ?? state.meta.blackName || "").trim(),
-    whiteName: String(patch.whiteName ?? state.meta.whiteName || "").trim(),
-    blackScore: Number.isFinite(Number(patch.blackScore)) ? Number(patch.blackScore) : state.meta.blackScore,
-    whiteScore: Number.isFinite(Number(patch.whiteScore)) ? Number(patch.whiteScore) : state.meta.whiteScore,
-    matchFile: String(patch.matchFile ?? state.meta.matchFile || "").trim()
+    tournamentTitleLine1:String(patch.tournamentTitleLine1 ?? state.meta.tournamentTitleLine1 ?? "").trim(),
+    tournamentTitleLine2:String(patch.tournamentTitleLine2 ?? state.meta.tournamentTitleLine2 ?? "").trim(),
+    blackName:String(patch.blackName ?? state.meta.blackName ?? "").trim(),
+    whiteName:String(patch.whiteName ?? state.meta.whiteName ?? "").trim(),
+    blackScore:Number.isFinite(Number(patch.blackScore))?Number(patch.blackScore):state.meta.blackScore,
+    whiteScore:Number.isFinite(Number(patch.whiteScore))?Number(patch.whiteScore):state.meta.whiteScore,
+    matchFile:String(patch.matchFile ?? state.meta.matchFile ?? "").trim()
   };
   saveConfig(state.meta);
+  if(state.meta.matchFile!==oldFile){state.playing=false;stopTimer();syncSelectedMatch(true);}
 }
 
-function handleCommand(message){
-  switch(message.command){
-    case "play": state.playing = true; startTimer(); break;
-    case "pause": state.playing = false; stopTimer(); break;
-    case "prev": state.playing = false; stopTimer(); setIndex(state.index - 1); break;
-    case "next": state.playing = false; stopTimer(); setIndex(state.index + 1); break;
-    case "seek": state.playing = false; stopTimer(); setIndex(message.value); break;
-    case "speed": state.speed = Math.max(200, Number(message.value) || 1500); if(state.playing) startTimer(); break;
-    case "setMeta": applyMetaPatch(message.value || {}); break;
+function handleCommand(m){
+  switch(m.command){
+    case"play":state.playing=true;startTimer();break;
+    case"pause":state.playing=false;stopTimer();break;
+    case"prev":state.playing=false;stopTimer();setIndex(state.index-1);break;
+    case"next":state.playing=false;stopTimer();setIndex(state.index+1);break;
+    case"seek":state.playing=false;stopTimer();setIndex(m.value);break;
+    case"speed":state.speed=Math.max(200,Number(m.value)||1500);if(state.playing)startTimer();break;
+    case"setMeta":applyMetaPatch(m.value||{});break;
   }
   broadcastState();
 }
 
-wss.on("connection", socket => {
-  socket.send(JSON.stringify({type:"state", ...state}));
-  socket.on("message", data => {
+wss.on("connection",socket=>{
+  socket.send(JSON.stringify({type:"state",...state}));
+  socket.on("message",data=>{
     try{
-      const message = JSON.parse(data.toString());
-      if(message.type === "hello" && message.role === "display"){
-        const totalSteps = Number(message.totalSteps);
-        if(Number.isFinite(totalSteps) && totalSteps > 0){
-          state.totalSteps = Math.floor(totalSteps);
-          setIndex(state.index);
-          broadcastState();
-        }
-        return;
-      }
-      if(message.type === "command") handleCommand(message);
-    }catch(error){
-      console.error("Invalid message:", error);
-    }
+      const m=JSON.parse(data.toString());
+      if(m.type==="command")handleCommand(m);
+      else if(m.type==="hello") socket.send(JSON.stringify({type:"state",...state}));
+    }catch(error){console.error("Invalid message",error);}
   });
 });
 
-server.listen(PORT, "127.0.0.1", () => {
+server.listen(PORT,"127.0.0.1",()=>{
   console.log(`Match Replay server: http://localhost:${PORT}/`);
   console.log(`Control panel:       http://localhost:${PORT}/control.html`);
+  if(state.matchError) console.log(`Match error: ${state.matchError}`);
 });

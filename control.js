@@ -19,6 +19,7 @@ const applyMetaBtn = document.getElementById("applyMetaBtn");
 const refreshMatchesBtn = document.getElementById("refreshMatchesBtn");
 
 let socket = null;
+const pageChannel = (!isLocalRuntime() && "BroadcastChannel" in window) ? new BroadcastChannel("match-replay-control") : null;
 let lastState = {
   index:0,
   totalSteps:6,
@@ -40,8 +41,13 @@ function isLocalRuntime(){
 }
 
 function sendCommand(command, value){
-  if(!socket || socket.readyState !== WebSocket.OPEN) return;
-  socket.send(JSON.stringify({type:"command", command, value}));
+  if(socket && socket.readyState === WebSocket.OPEN){
+    socket.send(JSON.stringify({type:"command", command, value}));
+    return;
+  }
+  if(!isLocalRuntime() && pageChannel){
+    pageChannel.postMessage({type:"command", command, value});
+  }
 }
 
 function ensureOption(value){
@@ -125,7 +131,7 @@ async function refreshMatches(){
 }
 
 function applyMeta(){
-  sendCommand("setMeta", {
+  const nextMeta = {
     tournamentTitleLine1: tournamentLine1Input.value.trim(),
     tournamentTitleLine2: tournamentLine2Input.value.trim(),
     blackName: blackNameInput.value.trim(),
@@ -133,7 +139,15 @@ function applyMeta(){
     blackScore: Number(blackScoreInput.value || 0),
     whiteScore: Number(whiteScoreInput.value || 0),
     matchFile: matchFileSelect.value
-  });
+  };
+  if(isLocalRuntime()){
+    sendCommand("setMeta", nextMeta);
+  }else{
+    lastState.meta = {...lastState.meta, ...nextMeta};
+    try{ localStorage.setItem("matchReplayMeta", JSON.stringify(lastState.meta)); }catch(error){ console.warn(error); }
+    if(pageChannel) pageChannel.postMessage({type:"meta", meta:lastState.meta});
+    renderState({meta:lastState.meta});
+  }
 }
 
 function connect(){
