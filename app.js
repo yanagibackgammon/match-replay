@@ -91,7 +91,7 @@ function pointCoord(p){const c=[81.75,126.25,170.75,215.25,259.75,304.25,397.75,
 function addStack(x,y,dir,n,klass){
   if(!n)return;const max=Math.min(n,5);
   for(let i=0;i<max;i++){const c=document.createElementNS("http://www.w3.org/2000/svg","circle");c.setAttribute("cx",x);c.setAttribute("cy",y+dir*i*43);c.setAttribute("r","21.1");c.setAttribute("class",klass);checkersG.appendChild(c);}
-  if(n>5){const t=document.createElementNS("http://www.w3.org/2000/svg","text");t.setAttribute("x",x);t.setAttribute("y",y+dir*4*43+6);t.setAttribute("class","checker-text");const checkerFill=klass.includes("black")?(currentDesign?.checkers?.player1||"#111111"):(currentDesign?.checkers?.player2||"#FFFFFF");
+  if(n>5){const t=document.createElementNS("http://www.w3.org/2000/svg","text");t.setAttribute("x",x);t.setAttribute("y",y+dir*4*43);t.setAttribute("class","checker-text");const checkerFill=klass.includes("black")?(currentDesign?.checkers?.player1||"#111111"):(currentDesign?.checkers?.player2||"#FFFFFF");
     t.setAttribute("fill",contrastText(checkerFill));t.textContent=n;checkersG.appendChild(t);}
 }
 function addBarStack(centerY,n,klass){

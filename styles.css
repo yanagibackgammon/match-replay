@@ -203,12 +203,12 @@ html,body{
   line-height:1;
 }
 .score-value.is-score-gain{color:#0d8b50}
-.score-value.score-gain-animate{animation:scoreGainRise 1.35s cubic-bezier(.18,.72,.22,1) both}
+.score-value.score-gain-animate{animation:scoreGainRise 2.4s cubic-bezier(.18,.72,.22,1) both}
 @keyframes scoreGainRise{
-  0%{transform:translateY(72px);opacity:0}
-  28%{opacity:1}
-  72%{transform:translateY(-5px);opacity:1}
-  100%{transform:translateY(0);opacity:1}
+  0%{transform:translateY(76px);opacity:0}
+  18%{transform:translateY(0);opacity:1}
+  70%{transform:translateY(0);opacity:1}
+  100%{transform:translateY(-76px);opacity:0}
 }
 
 .eval-wrap{
@@ -336,8 +336,8 @@ html,body{
 .history-player-name::after{
   content:"";
   position:absolute;
-  left:6%;
-  right:6%;
+  left:1%;
+  right:1%;
   bottom:4px;
   height:5px;
   border-radius:3px;
