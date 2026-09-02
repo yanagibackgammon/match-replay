@@ -282,7 +282,7 @@ html,body{
   width:840px;
   height:280px;
   display:grid;
-  grid-template-rows:54px 216px;
+  grid-template-rows:45px 225px;
   padding:8px 14px 2px;
   box-sizing:border-box;
   overflow:hidden;
@@ -320,16 +320,16 @@ html,body{
 .history-player-name.active-turn::after{background:#d00000}
 
 .history-list{
-  height:216px;
+  height:225px;
   display:flex;
   flex-direction:column;
-  gap:8px;
+  gap:0;
   overflow:hidden;
 }
 
 .history-timeline-row{
-  flex:0 0 48px;
-  height:48px;
+  flex:0 0 45px;
+  height:45px;
   display:grid;
   grid-template-columns:1fr 1fr;
   min-width:0;
@@ -365,7 +365,7 @@ html,body{
   align-items:center;
   justify-content:center;
   width:100%;
-  height:48px;
+  height:45px;
   font-size:25px;
   font-weight:900;
   letter-spacing:.04em;
@@ -466,12 +466,13 @@ html,body{
 .analysis-dice-block.minus{background:var(--red-bg)}
 
 .analysis-moves{
-  height:100%;
+  height:225px;
+  margin:20.5px 0;
   overflow:hidden;
 }
 
 .analysis-row{
-  height:42px;
+  height:45px;
   display:grid;
   grid-template-columns:1fr 110px;
   align-items:center;
@@ -496,6 +497,7 @@ html,body{
   color:#fff;
 }
 .analysis-row.is-selected .analysis-eq{color:#fff}
+.analysis-row-empty{background:#fff}
 
 .ad-area{
   width:840px;

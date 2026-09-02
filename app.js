@@ -295,14 +295,16 @@ function collectHistoryRows(){
     }
     openMoveRow[event.player]=event;
   }
-  return rows.slice(-4);
+  return rows.slice(-5);
 }
 function renderHistory(){
   const rows=collectHistoryRows();
   // v36で履歴DOM構造を変更したため、Pages/OBSのキャッシュでHTMLとJSの
   // 世代が一時的にずれても描画全体を止めないよう新旧DOMの両方に対応する。
   if(els.historyList){
-    els.historyList.innerHTML=rows.map(row=>{
+    const padded=[...Array(Math.max(0,5-rows.length)).fill(null),...rows].slice(-5);
+    els.historyList.innerHTML=padded.map(row=>{
+      if(!row)return `<div class="history-timeline-row history-empty-row">${historyCell(null,"black")}${historyCell(null,"white")}</div>`;
       if(row.kind==="game")return `<div class="history-timeline-row history-game-row"><div class="history-game-label">Game ${row.gameNumber}</div></div>`;
       return `<div class="history-timeline-row">${historyCell(row.black,"black")}${historyCell(row.white,"white")}</div>`;
     }).join("");
@@ -328,8 +330,9 @@ function renderAnalysis(a){
     const entry={candidate:all[selectedIndex],index:selectedIndex};
     if(visible.length<5)visible.push(entry);else visible[4]=entry;
   }
-  const rows=visible.map(({candidate:c,index:i})=>`<div class="analysis-row${i===selectedIndex?" is-selected":""}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq">${Number(c.error??0).toFixed(3)}</span></div>`).join("");
-  els.analysisContent.innerHTML=`<div class="analysis-moves">${rows}</div>`;
+  const rows=visible.map(({candidate:c,index:i})=>`<div class="analysis-row${i===selectedIndex?" is-selected":""}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq">${Number(c.error??0).toFixed(3)}</span></div>`);
+  while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span></div>');
+  els.analysisContent.innerHTML=`<div class="analysis-moves">${rows.slice(0,5).join("")}</div>`;
 }
 function currentState(){return matchData.states[Math.max(0,Math.min(index,matchData.states.length-1))]||emptyState;}
 function render(){
