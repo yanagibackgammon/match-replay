@@ -8,7 +8,8 @@ const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const speedButtons = [...document.querySelectorAll("[data-speed]")];
 
-const tournamentInput = document.getElementById("tournamentInput");
+const tournamentLine1Input = document.getElementById("tournamentLine1Input");
+const tournamentLine2Input = document.getElementById("tournamentLine2Input");
 const blackNameInput = document.getElementById("blackNameInput");
 const whiteNameInput = document.getElementById("whiteNameInput");
 const blackScoreInput = document.getElementById("blackScoreInput");
@@ -24,7 +25,8 @@ let lastState = {
   playing:false,
   speed:1500,
   meta:{
-    tournamentTitle:"JBS第31期名人戦 準々決勝　25ptマッチ",
+    tournamentTitleLine1:"JBS第31期名人戦 準々決勝",
+    tournamentTitleLine2:"2025/08/30　25ポイントマッチ　勝てばベスト4",
     blackName:"柳 暢祐",
     whiteName:"平林 直",
     blackScore:0,
@@ -35,11 +37,7 @@ let lastState = {
 
 function sendCommand(command, value){
   if(!socket || socket.readyState !== WebSocket.OPEN) return;
-  socket.send(JSON.stringify({
-    type:"command",
-    command,
-    value
-  }));
+  socket.send(JSON.stringify({type:"command", command, value}));
 }
 
 function ensureOption(value){
@@ -67,7 +65,8 @@ function renderState(state){
     button.classList.toggle("active", Number(button.dataset.speed) === Number(lastState.speed));
   });
 
-  tournamentInput.value = lastState.meta.tournamentTitle || "";
+  tournamentLine1Input.value = lastState.meta.tournamentTitleLine1 || lastState.meta.tournamentTitle || "";
+  tournamentLine2Input.value = lastState.meta.tournamentTitleLine2 || "";
   blackNameInput.value = lastState.meta.blackName || "";
   whiteNameInput.value = lastState.meta.whiteName || "";
   blackScoreInput.value = lastState.meta.blackScore ?? 0;
@@ -97,7 +96,8 @@ async function refreshMatches(){
 
 function applyMeta(){
   sendCommand("setMeta", {
-    tournamentTitle: tournamentInput.value.trim(),
+    tournamentTitleLine1: tournamentLine1Input.value.trim(),
+    tournamentTitleLine2: tournamentLine2Input.value.trim(),
     blackName: blackNameInput.value.trim(),
     whiteName: whiteNameInput.value.trim(),
     blackScore: Number(blackScoreInput.value || 0),
@@ -119,9 +119,7 @@ function connect(){
   socket.addEventListener("message", event => {
     try{
       const message = JSON.parse(event.data);
-      if(message.type === "state"){
-        renderState(message);
-      }
+      if(message.type === "state") renderState(message);
     }catch(error){
       console.warn("Invalid WebSocket message", error);
     }
@@ -139,16 +137,8 @@ pauseBtn.addEventListener("click", () => sendCommand("pause"));
 prevBtn.addEventListener("click", () => sendCommand("prev"));
 nextBtn.addEventListener("click", () => sendCommand("next"));
 
-timeline.addEventListener("input", () => {
-  sendCommand("seek", Number(timeline.value));
-});
-
-speedButtons.forEach(button => {
-  button.addEventListener("click", () => {
-    sendCommand("speed", Number(button.dataset.speed));
-  });
-});
-
+timeline.addEventListener("input", () => sendCommand("seek", Number(timeline.value)));
+speedButtons.forEach(button => button.addEventListener("click", () => sendCommand("speed", Number(button.dataset.speed))));
 applyMetaBtn.addEventListener("click", applyMeta);
 refreshMatchesBtn.addEventListener("click", refreshMatches);
 matchFileSelect.addEventListener("change", applyMeta);

@@ -4,7 +4,8 @@ const diceG = document.getElementById("dice");
 const cubeG = document.getElementById("cube");
 
 const defaultMeta = {
-  tournamentTitle: "JBS第31期名人戦 準々決勝　25ptマッチ",
+  tournamentTitleLine1: "JBS第31期名人戦 準々決勝",
+  tournamentTitleLine2: "2025/08/30　25ポイントマッチ　勝てばベスト4",
   blackName: "柳 暢祐",
   whiteName: "平林 直",
   blackScore: 0,
@@ -12,7 +13,6 @@ const defaultMeta = {
   matchFile: ""
 };
 
-const diceChars = {1:"⚀",2:"⚁",3:"⚂",4:"⚃",5:"⚄",6:"⚅"};
 const JOKER_WINRATE_THRESHOLD = 5.0;
 
 const states = [
@@ -250,7 +250,8 @@ let adTimer = null;
 const els = {
   stageWrap: document.getElementById("stage-wrap"),
   stage: document.getElementById("stage"),
-  tournamentTitle: document.getElementById("tournamentTitle"),
+  tournamentTitleLine1: document.getElementById("tournamentTitleLine1"),
+  tournamentTitleLine2: document.getElementById("tournamentTitleLine2"),
   blackName: document.getElementById("blackName"),
   whiteName: document.getElementById("whiteName"),
   blackHistoryName: document.getElementById("blackHistoryName"),
@@ -269,7 +270,8 @@ const els = {
 };
 
 function renderMeta(){
-  els.tournamentTitle.textContent = meta.tournamentTitle;
+  els.tournamentTitleLine1.textContent = meta.tournamentTitleLine1;
+  els.tournamentTitleLine2.textContent = meta.tournamentTitleLine2;
   els.blackName.textContent = meta.blackName;
   els.whiteName.textContent = meta.whiteName;
   els.blackHistoryName.textContent = meta.blackName;
@@ -278,19 +280,32 @@ function renderMeta(){
   els.whiteScore.textContent = meta.whiteScore;
 }
 
+function diePipPositions(face){
+  const map = {
+    1:["p5"],
+    2:["p1","p9"],
+    3:["p1","p5","p9"],
+    4:["p1","p3","p7","p9"],
+    5:["p1","p3","p5","p7","p9"],
+    6:["p1","p3","p4","p6","p7","p9"]
+  };
+  return map[face] || [];
+}
+
 function renderDie(face){
-  return `<span class="die">${diceChars[face] || ""}</span>`;
+  const pips = diePipPositions(face).map(cls => `<span class="die-pip ${cls}"></span>`).join("");
+  return `<span class="die">${pips}</span>`;
 }
 
 function renderDicePairInline(pair){
   if(!pair || pair.length < 2){
-    return '<div class="dice-pair-inline"><span class="die">■</span></div>';
+    return '<div class="dice-pair-inline"><span class="die"></span></div>';
   }
   return `<div class="dice-pair-inline">${renderDie(pair[0])}${renderDie(pair[1])}</div>`;
 }
 
 function renderHistoryColumn(player){
-  const rows = states
+  return states
     .slice(1, index + 1)
     .filter(s => s.player === player)
     .slice(-6)
@@ -301,7 +316,6 @@ function renderHistoryColumn(player){
         <span class="history-move">${s.moveText || ""}</span>
       </div>
     `).join("");
-  return rows;
 }
 
 function renderHistory(){
@@ -341,11 +355,8 @@ function renderMoves(state){
 }
 
 function renderAnalysis(state){
-  if(state.mode === "jokers"){
-    renderJokers(state);
-  }else{
-    renderMoves(state);
-  }
+  if(state.mode === "jokers") renderJokers(state);
+  else renderMoves(state);
 }
 
 function renderState(){
@@ -362,12 +373,8 @@ function renderState(){
 }
 
 function applyRemoteState(message){
-  if(typeof message.index === "number"){
-    index = Math.max(0, Math.min(states.length - 1, message.index));
-  }
-  if(message.meta && typeof message.meta === "object"){
-    meta = {...meta, ...message.meta};
-  }
+  if(typeof message.index === "number") index = Math.max(0, Math.min(states.length - 1, message.index));
+  if(message.meta && typeof message.meta === "object") meta = {...meta, ...message.meta};
   renderMeta();
   renderState();
 }

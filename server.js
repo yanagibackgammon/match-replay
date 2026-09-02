@@ -25,7 +25,8 @@ const MIME = {
 };
 
 const defaultMeta = {
-  tournamentTitle: "JBS第31期名人戦 準々決勝　25ptマッチ",
+  tournamentTitleLine1: "JBS第31期名人戦 準々決勝",
+  tournamentTitleLine2: "2025/08/30　25ポイントマッチ　勝てばベスト4",
   blackName: "柳 暢祐",
   whiteName: "平林 直",
   blackScore: 0,
@@ -42,7 +43,12 @@ function loadConfig(){
   try{
     const raw = fs.readFileSync(CONFIG_PATH, "utf8");
     const parsed = JSON.parse(raw);
-    return {...defaultMeta, ...parsed};
+    return {
+      ...defaultMeta,
+      ...parsed,
+      tournamentTitleLine1: parsed.tournamentTitleLine1 || parsed.tournamentTitle || defaultMeta.tournamentTitleLine1,
+      tournamentTitleLine2: parsed.tournamentTitleLine2 || defaultMeta.tournamentTitleLine2
+    };
   }catch{
     return {...defaultMeta};
   }
@@ -69,13 +75,8 @@ function listFiles(dir, regex){
   }
 }
 
-function listMatchFiles(){
-  return listFiles(MATCH_DIR, /\.(xg|json)$/i);
-}
-
-function listAdFiles(){
-  return listFiles(ADS_DIR, /\.(png|jpg|jpeg|webp|gif)$/i);
-}
+function listMatchFiles(){ return listFiles(MATCH_DIR, /\.(xg|json)$/i); }
+function listAdFiles(){ return listFiles(ADS_DIR, /\.(png|jpg|jpeg|webp|gif)$/i); }
 
 function safePath(urlPath){
   const requested = decodeURIComponent((urlPath || "/").split("?")[0]);
@@ -98,38 +99,24 @@ let state = {
 let timer = null;
 
 function json(res, payload){
-  res.writeHead(200, {
-    "Content-Type":"application/json; charset=utf-8",
-    "Cache-Control":"no-store"
-  });
+  res.writeHead(200, {"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"});
   res.end(JSON.stringify(payload));
 }
 
 const server = http.createServer((req, res) => {
   const requestPath = decodeURIComponent((req.url || "/").split("?")[0]);
-
   if(requestPath === "/api/matches") return json(res, {files:listMatchFiles()});
   if(requestPath === "/api/ads") return json(res, {files:listAdFiles()});
 
   const filePath = safePath(req.url);
-  if(!filePath){
-    res.writeHead(403);
-    res.end("Forbidden");
-    return;
-  }
+  if(!filePath){ res.writeHead(403); res.end("Forbidden"); return; }
 
   fs.stat(filePath, (statError, stat) => {
     if(statError || !stat.isFile()){
-      res.writeHead(404);
-      res.end("Not Found");
-      return;
+      res.writeHead(404); res.end("Not Found"); return;
     }
-
     const ext = path.extname(filePath).toLowerCase();
-    res.writeHead(200, {
-      "Content-Type": MIME[ext] || "application/octet-stream",
-      "Cache-Control":"no-store"
-    });
+    res.writeHead(200, {"Content-Type": MIME[ext] || "application/octet-stream","Cache-Control":"no-store"});
     fs.createReadStream(filePath).pipe(res);
   });
 });
@@ -143,9 +130,7 @@ function broadcastState(){
   }
 }
 
-function stopTimer(){
-  if(timer){ clearInterval(timer); timer = null; }
-}
+function stopTimer(){ if(timer){ clearInterval(timer); timer = null; } }
 
 function startTimer(){
   stopTimer();
@@ -172,7 +157,8 @@ function setIndex(index){
 function applyMetaPatch(patch){
   state.meta = {
     ...state.meta,
-    tournamentTitle: String(patch.tournamentTitle ?? state.meta.tournamentTitle || "").trim(),
+    tournamentTitleLine1: String(patch.tournamentTitleLine1 ?? state.meta.tournamentTitleLine1 || "").trim(),
+    tournamentTitleLine2: String(patch.tournamentTitleLine2 ?? state.meta.tournamentTitleLine2 || "").trim(),
     blackName: String(patch.blackName ?? state.meta.blackName || "").trim(),
     whiteName: String(patch.whiteName ?? state.meta.whiteName || "").trim(),
     blackScore: Number.isFinite(Number(patch.blackScore)) ? Number(patch.blackScore) : state.meta.blackScore,
@@ -184,43 +170,19 @@ function applyMetaPatch(patch){
 
 function handleCommand(message){
   switch(message.command){
-    case "play":
-      state.playing = true;
-      startTimer();
-      break;
-    case "pause":
-      state.playing = false;
-      stopTimer();
-      break;
-    case "prev":
-      state.playing = false;
-      stopTimer();
-      setIndex(state.index - 1);
-      break;
-    case "next":
-      state.playing = false;
-      stopTimer();
-      setIndex(state.index + 1);
-      break;
-    case "seek":
-      state.playing = false;
-      stopTimer();
-      setIndex(message.value);
-      break;
-    case "speed":
-      state.speed = Math.max(200, Number(message.value) || 1500);
-      if(state.playing) startTimer();
-      break;
-    case "setMeta":
-      applyMetaPatch(message.value || {});
-      break;
+    case "play": state.playing = true; startTimer(); break;
+    case "pause": state.playing = false; stopTimer(); break;
+    case "prev": state.playing = false; stopTimer(); setIndex(state.index - 1); break;
+    case "next": state.playing = false; stopTimer(); setIndex(state.index + 1); break;
+    case "seek": state.playing = false; stopTimer(); setIndex(message.value); break;
+    case "speed": state.speed = Math.max(200, Number(message.value) || 1500); if(state.playing) startTimer(); break;
+    case "setMeta": applyMetaPatch(message.value || {}); break;
   }
   broadcastState();
 }
 
 wss.on("connection", socket => {
   socket.send(JSON.stringify({type:"state", ...state}));
-
   socket.on("message", data => {
     try{
       const message = JSON.parse(data.toString());
