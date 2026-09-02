@@ -40,9 +40,22 @@ const els={
   adImage1:document.getElementById("adImage1"),adImage2:document.getElementById("adImage2")
 };
 
+const pointLabelCenters=[81.75,126.25,170.75,215.25,259.75,304.25,397.75,442.25,486.75,531.25,575.75,620.25];
+function drawPointLabels(activePlayer=1){
+  const labelsG=document.getElementById("pointLabels");labelsG.innerHTML="";
+  const player2=activePlayer===-1;
+  const topNums=player2?[12,11,10,9,8,7,6,5,4,3,2,1]:[13,14,15,16,17,18,19,20,21,22,23,24];
+  const bottomNums=player2?[13,14,15,16,17,18,19,20,21,22,23,24]:[12,11,10,9,8,7,6,5,4,3,2,1];
+  pointLabelCenters.forEach((cx,i)=>{
+    for(const [y,n] of [[18,topNums[i]],[540,bottomNums[i]]]){
+      const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+      t.setAttribute("x",cx);t.setAttribute("y",y);t.setAttribute("class","point-label");t.textContent=n;labelsG.appendChild(t);
+    }
+  });
+}
 function trianglePoints(){
-  pointsG.innerHTML="";const labelsG=document.getElementById("pointLabels");labelsG.innerHTML="";
-  const centers=[81.75,126.25,170.75,215.25,259.75,304.25,397.75,442.25,486.75,531.25,575.75,620.25],w=44.5;
+  pointsG.innerHTML="";
+  const centers=pointLabelCenters,w=44.5;
   for(let i=0;i<12;i++){
     const cx=centers[i],left=cx-w/2;
     for(const [top,color] of [[true,i%2===0?"#fff":"#cfcfcf"],[false,i%2===0?"#cfcfcf":"#fff"]]){
@@ -50,10 +63,7 @@ function trianglePoints(){
       p.setAttribute("points",top?`${left},30 ${left+w},30 ${cx},251`:`${left},516 ${left+w},516 ${cx},294`);pointsG.appendChild(p);
     }
   }
-  const topNums=[13,14,15,16,17,18,19,20,21,22,23,24],bottomNums=[12,11,10,9,8,7,6,5,4,3,2,1];
-  centers.forEach((cx,i)=>{
-    for(const [y,n] of [[18,topNums[i]],[540,bottomNums[i]]]){const t=document.createElementNS("http://www.w3.org/2000/svg","text");t.setAttribute("x",cx);t.setAttribute("y",y);t.setAttribute("class","point-label");t.textContent=n;labelsG.appendChild(t);}
-  });
+  drawPointLabels(1);
 }
 function pointCoord(p){const c=[81.75,126.25,170.75,215.25,259.75,304.25,397.75,442.25,486.75,531.25,575.75,620.25];return p<=12?{x:c[12-p],y:493,dir:-1}:{x:c[p-13],y:53,dir:1};}
 function addStack(x,y,dir,n,klass){
@@ -162,7 +172,7 @@ function render(){
   els.winBarBlack.style.width=`${b}%`;els.winBarWhite.style.width=`${w}%`;els.blackRateText.textContent=`${b.toFixed(1)}%`;els.whiteRateText.textContent=`${w.toFixed(1)}%`;
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
   els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);
-  drawCheckers(s.position);drawDice(s.dice,s.activePlayer);drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
+  drawPointLabels(s.activePlayer);drawCheckers(s.position);drawDice(s.dice,s.activePlayer);drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
 }
 
 async function fetchManifest(){try{const u=new URL("./matches/manifest.json",location.href);u.searchParams.set("t",Date.now());const r=await fetch(u,{cache:"no-store"});return r.ok?await r.json():{};}catch{return {};}}

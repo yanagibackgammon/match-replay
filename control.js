@@ -14,8 +14,6 @@ const tournamentLine2Input = document.getElementById("tournamentLine2Input");
 const themeColorInput = document.getElementById("themeColorInput");
 const blackNameInput = document.getElementById("blackNameInput");
 const whiteNameInput = document.getElementById("whiteNameInput");
-const blackScoreInput = document.getElementById("blackScoreInput");
-const whiteScoreInput = document.getElementById("whiteScoreInput");
 const matchFileSelect = document.getElementById("matchFileSelect");
 const applyMetaBtn = document.getElementById("applyMetaBtn");
 const refreshMatchesBtn = document.getElementById("refreshMatchesBtn");
@@ -104,8 +102,6 @@ function renderState(state){
   themeColorInput.value = lastState.meta.themeColor || "#6B670D";
   blackNameInput.value = lastState.meta.blackName || "";
   whiteNameInput.value = lastState.meta.whiteName || "";
-  blackScoreInput.value = lastState.meta.blackScore ?? 0;
-  whiteScoreInput.value = lastState.meta.whiteScore ?? 0;
   ensureOption(lastState.meta.matchFile || "");
   matchFileSelect.value = lastState.meta.matchFile || "";
 }
@@ -196,8 +192,6 @@ async function applyMeta(){
     themeColor: themeColorInput.value.trim() || "#6B670D",
     blackName: blackNameInput.value.trim(),
     whiteName: whiteNameInput.value.trim(),
-    blackScore: Number(blackScoreInput.value || 0),
-    whiteScore: Number(whiteScoreInput.value || 0),
     matchFile: matchFileSelect.value
   };
 

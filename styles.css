@@ -68,18 +68,7 @@ html,body{
     radial-gradient(ellipse at 50% 0,rgba(255,255,255,.22),transparent 62%);
   pointer-events:none;
 }
-.top-area::after{
-  content:"";
-  position:absolute;
-  left:50%;
-  top:94px;
-  width:690px;
-  height:4px;
-  transform:translateX(-50%);
-  background:linear-gradient(90deg,transparent,#fff 22%,#fff 78%,transparent);
-  opacity:.68;
-  pointer-events:none;
-}
+.top-area::after{display:none}
 
 .headline-row{
   position:relative;
@@ -173,7 +162,7 @@ html,body{
 }
 
 .score-card{
-  height:92px;
+  height:128px;
   display:flex;
   align-items:center;
   justify-content:center;
