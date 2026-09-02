@@ -419,6 +419,14 @@ html,body{
   line-height:1;
   border-bottom:1px solid #ece7dc;
 }
+.analysis-row.is-selected{
+  background:var(--gold);
+  color:#fff;
+  border-bottom-color:var(--gold);
+}
+.analysis-row.is-selected .analysis-eq{
+  color:#fff;
+}
 .analysis-move{
   white-space:nowrap;
   overflow:hidden;

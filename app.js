@@ -61,11 +61,28 @@ function addStack(x,y,dir,n,klass){
   for(let i=0;i<max;i++){const c=document.createElementNS("http://www.w3.org/2000/svg","circle");c.setAttribute("cx",x);c.setAttribute("cy",y+dir*i*43);c.setAttribute("r","21.1");c.setAttribute("class",klass);checkersG.appendChild(c);}
   if(n>5){const t=document.createElementNS("http://www.w3.org/2000/svg","text");t.setAttribute("x",x);t.setAttribute("y",y+dir*4*43+6);t.setAttribute("class","checker-text");t.setAttribute("fill",klass.includes("black")?"#fff":"#000");t.textContent=n;checkersG.appendChild(t);}
 }
+function addBarStack(centerY,n,klass){
+  const count=Math.max(0,Number(n)||0);
+  if(!count)return;
+  // Position Drill / 添付SVG準拠。バーの上下ハーフ中央を基準にし、
+  // 2枚なら 38px 間隔。枚数が多い場合だけ自動的に詰めてハーフ内へ収める。
+  const spacing=count<=1?0:Math.min(38,190/(count-1));
+  const firstY=centerY-spacing*(count-1)/2;
+  for(let i=0;i<count;i++){
+    const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    c.setAttribute("cx","350.5");
+    c.setAttribute("cy",String(firstY+spacing*i));
+    c.setAttribute("r","21.1");
+    c.setAttribute("class",klass);
+    checkersG.appendChild(c);
+  }
+}
 function drawCheckers(position){
   checkersG.innerHTML="";const arr=position?.points||standardPoints;
   for(let p=1;p<=24;p++){const v=arr[p]||0;if(!v)continue;const q=pointCoord(p);addStack(q.x,q.y,q.dir,Math.abs(v),v>0?"checker-piece-black":"checker-piece-white");}
-  addStack(350.5,474,-1,position?.blackBar||0,"checker-piece-black");
-  addStack(350.5,72,1,position?.whiteBar||0,"checker-piece-white");
+  // 添付SVG: 白は上側バー中央 (y=150.5)、黒は下側バー中央 (y=395.5)。
+  addBarStack(150.5,position?.whiteBar||0,"checker-piece-white");
+  addBarStack(395.5,position?.blackBar||0,"checker-piece-black");
 }
 function drawDice(vals,activePlayer){
   diceG.innerHTML="";if(!vals)return;const spots={1:[[18,18]],2:[[10,10],[26,26]],3:[[10,10],[18,18],[26,26]],4:[[10,10],[26,10],[10,26],[26,26]],5:[[10,10],[26,10],[18,18],[10,26],[26,26]],6:[[10,9],[26,9],[10,18],[26,18],[10,27],[26,27]]};
@@ -74,7 +91,19 @@ function drawDice(vals,activePlayer){
   const xs=activePlayer===1?[468.5,514.5]:[151.5,197.5];
   diceG.appendChild(die(xs[0],254,vals[0]));diceG.appendChild(die(xs[1],254,vals[1]));
 }
-function drawCube(v){cubeG.innerHTML="";if(!v||v<=1)return;const r=document.createElementNS("http://www.w3.org/2000/svg","rect");r.setAttribute("x","332.5");r.setAttribute("y","35");r.setAttribute("width","36");r.setAttribute("height","36");r.setAttribute("rx","3");r.setAttribute("fill","#fff");r.setAttribute("stroke","#000");cubeG.appendChild(r);const t=document.createElementNS("http://www.w3.org/2000/svg","text");t.setAttribute("x","350.5");t.setAttribute("y","60");t.setAttribute("text-anchor","middle");t.setAttribute("font-size","23");t.textContent=v;cubeG.appendChild(t);}
+function drawCube(cube){
+  cubeG.innerHTML="";
+  const value=Math.max(1,Number(cube?.value)||1);
+  const owner=cube?.owner||0;
+  // 添付SVG準拠: センターはバー中央、白所有は上端、黒所有は下端。
+  const y=owner==="white"?35:(owner==="black"?475:255);
+  const r=document.createElementNS("http://www.w3.org/2000/svg","rect");
+  r.setAttribute("x","332.5");r.setAttribute("y",String(y));r.setAttribute("width","36");r.setAttribute("height","36");r.setAttribute("rx","3");
+  r.setAttribute("fill","#fff");r.setAttribute("stroke","#000");r.setAttribute("stroke-width","1.5");cubeG.appendChild(r);
+  const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+  t.setAttribute("x","350.5");t.setAttribute("y",String(y+25));t.setAttribute("text-anchor","middle");t.setAttribute("fill","#000");
+  t.setAttribute("font-family","Arial, Helvetica, sans-serif");t.setAttribute("font-size","23");t.textContent=value;cubeG.appendChild(t);
+}
 function drawGameOverlay(state){
   gameOverlayG.innerHTML="";
   if(!state || state.phase!=="gameStart") return;
@@ -116,7 +145,15 @@ function renderAnalysis(a){
     const block=(rows,cls)=>`<div class="analysis-dice-block ${cls}">${(rows||[]).map(d=>`<div class="dice-pair-block">${renderDie(d[0])}${renderDie(d[1])}</div>`).join("")}</div>`;
     els.analysisContent.innerHTML=`<div class="analysis-jokers">${block(a.joker,"plus")}${block(a.antiJoker,"minus")}</div>`;return;
   }
-  const rows=(a.candidates||[]).slice(0,6).map(c=>`<div class="analysis-row"><span class="analysis-move">${c.move||""}</span><span class="analysis-eq">${Number(c.error??0).toFixed(3)}</span></div>`).join("");
+  const selectedIndex=Number.isInteger(a.playedIndex)?a.playedIndex:-1;
+  const all=a.candidates||[];
+  let visible=all.slice(0,6).map((c,i)=>({candidate:c,index:i}));
+  // 選択手が上位6候補の外でも必ず画面内に残す。
+  if(selectedIndex>=6 && all[selectedIndex]){
+    const entry={candidate:all[selectedIndex],index:selectedIndex};
+    if(visible.length<6)visible.push(entry);else visible[visible.length-1]=entry;
+  }
+  const rows=visible.map(({candidate:c,index:i})=>`<div class="analysis-row${i===selectedIndex?" is-selected":""}"><span class="analysis-move">${c.move||""}</span><span class="analysis-eq">${Number(c.error??0).toFixed(3)}</span></div>`).join("");
   els.analysisContent.innerHTML=`<div class="analysis-moves">${rows}</div>`;
 }
 function currentState(){return matchData.states[Math.max(0,Math.min(index,matchData.states.length-1))]||emptyState;}
@@ -125,7 +162,7 @@ function render(){
   els.winBarBlack.style.width=`${b}%`;els.winBarWhite.style.width=`${w}%`;els.blackRateText.textContent=`${b.toFixed(1)}%`;els.whiteRateText.textContent=`${w.toFixed(1)}%`;
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
   els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);
-  drawCheckers(s.position);drawDice(s.dice,s.activePlayer);drawCube(s.cube?.value||1);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
+  drawCheckers(s.position);drawDice(s.dice,s.activePlayer);drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
 }
 
 async function fetchManifest(){try{const u=new URL("./matches/manifest.json",location.href);u.searchParams.set("t",Date.now());const r=await fetch(u,{cache:"no-store"});return r.ok?await r.json():{};}catch{return {};}}

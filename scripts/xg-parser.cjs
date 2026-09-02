@@ -484,14 +484,19 @@ function buildTimeline(parsed, sourceFile){
       const played = r.best.candidates[r.playedIndex] || r.best.candidates[0] || null;
       const activeRate = played ? played.winRate : null;
       const winRate = stateWinRate(r.activePlayer,activeRate,lastBlackRate);
+      const beforePosition = r.beforePosition || normalizeStoredPosition(r.positionI);
+      const afterPosition = r.afterPosition || applyCheckerMove(beforePosition,r.activePlayer,r.moveRaw).position;
       const candidates = r.best.candidates.slice(0,10).map(c => ({
         move:c.move,
         equity:c.equity,
         error:c.equity - (r.best.candidates[0]?.equity ?? c.equity),
-        winRate:c.winRate
+        winRate:c.winRate,
+        // 候補手ごとのムーブ後盤面もJSONへ保持し、配信側だけで完結させる。
+        position:applyCheckerMove(beforePosition,r.activePlayer,c.moveRaw).position
       }));
-      const beforePosition = r.beforePosition || normalizeStoredPosition(r.positionI);
-      const afterPosition = r.afterPosition || applyCheckerMove(beforePosition,r.activePlayer,r.moveRaw).position;
+      // 選択手の表示盤面は候補側の推定値ではなく、棋譜に実際に適用したムーブ後盤面を使う。
+      // Dance / hit / bar / off を含め、次の move ステップと必ず一致させる。
+      const selectedPosition = afterPosition;
       const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode,r.activePlayer)};
 
       // Every checker play is presented as four fixed broadcast beats:
@@ -514,7 +519,8 @@ function buildTimeline(parsed, sourceFile){
       });
       states.push({
         phase:'analysis',gameNumber,score:[...score],activePlayer:r.activePlayer,
-        position:beforePosition,dice:r.dice,cube,winRate,
+        // 実際に選択された候補手のムーブ後盤面を表示する。
+        position:selectedPosition,dice:r.dice,cube,winRate,
         analysis:{type:'moves',candidates,playedIndex:r.playedIndex},historyEvent:null
       });
       states.push({
