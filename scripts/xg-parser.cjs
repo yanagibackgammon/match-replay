@@ -397,15 +397,40 @@ function buildTimeline(parsed, sourceFile){
         error:c.equity - (r.best.candidates[0]?.equity ?? c.equity),
         winRate:c.winRate
       }));
-      const position = normalizePosition(r.positionEnd,r.activePlayer);
+      const beforePosition = normalizePosition(r.positionI,r.activePlayer);
+      const afterPosition = normalizePosition(r.positionEnd,r.activePlayer);
       const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode,r.activePlayer)};
+
+      // Every checker play is presented as four fixed broadcast beats:
+      // joker -> roll -> analysis -> move. If the XG stream did not contain
+      // a pre-roll cube record, add an empty joker beat so the cadence stays fixed.
+      const previous = states[states.length - 1];
+      if(!(previous && previous.phase === 'preRoll' && previous.gameNumber === gameNumber && previous.activePlayer === r.activePlayer)){
+        states.push({
+          phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
+          position:beforePosition,dice:null,cube,winRate:{black:lastBlackRate,white:100-lastBlackRate},
+          analysis:{type:'jokers',joker:[],antiJoker:[],thresholdWinRatePoints:JOKER_WINRATE_THRESHOLD},
+          historyEvent:null
+        });
+      }
+
+      states.push({
+        phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
+        position:beforePosition,dice:r.dice,cube,winRate,
+        analysis:{type:'none'},historyEvent:null
+      });
+      states.push({
+        phase:'analysis',gameNumber,score:[...score],activePlayer:r.activePlayer,
+        position:beforePosition,dice:r.dice,cube,winRate,
+        analysis:{type:'moves',candidates,playedIndex:r.playedIndex},historyEvent:null
+      });
       states.push({
         phase:'move',gameNumber,score:[...score],activePlayer:r.activePlayer,
-        position,dice:r.dice,cube,winRate,
-        analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
+        position:afterPosition,dice:r.dice,cube,winRate,
+        analysis:{type:'none'},
         historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'}
       });
-      lastPosition = position;
+      lastPosition = afterPosition;
       lastCube = cube;
       lastBlackRate = winRate.black;
       continue;
@@ -422,7 +447,7 @@ function buildTimeline(parsed, sourceFile){
   }
 
   return {
-    schemaVersion:1,
+    schemaVersion:2,
     sourceFile,
     generatedAt:new Date().toISOString(),
     match:{...parsed.match, blackSourcePlayer:parsed.match.player1, whiteSourcePlayer:parsed.match.player2},

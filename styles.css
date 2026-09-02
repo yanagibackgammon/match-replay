@@ -166,9 +166,13 @@ html,body{
   line-height:1;
   z-index:2;
   pointer-events:none;
+  color:#fff;
+  -webkit-text-stroke:2px #000;
+  paint-order:stroke fill;
+  text-shadow:0 4px 3px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.35);
 }
 .bar-rate-left{left:24px;color:#fff}
-.bar-rate-right{right:24px;color:#111}
+.bar-rate-right{right:24px;color:#fff}
 
 .main-area{
   width:1920px;
@@ -230,7 +234,19 @@ html,body{
   font-weight:900;
   margin-bottom:10px;
   white-space:nowrap;
+  position:relative;
 }
+.history-player-name::after{
+  content:"";
+  position:absolute;
+  left:12%;
+  right:12%;
+  bottom:-5px;
+  height:5px;
+  border-radius:3px;
+  background:transparent;
+}
+.history-player-name.active-turn::after{background:#d00000}
 
 .history-list-column{
   height:216px;

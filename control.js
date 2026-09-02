@@ -6,6 +6,8 @@ const playBtn = document.getElementById("playBtn");
 const pauseBtn = document.getElementById("pauseBtn");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
+const autoModeBtn = document.getElementById("autoModeBtn");
+const manualModeBtn = document.getElementById("manualModeBtn");
 
 const tournamentLine1Input = document.getElementById("tournamentLine1Input");
 const blackNameInput = document.getElementById("blackNameInput");
@@ -22,7 +24,8 @@ let lastState = {
   index:0,
   totalSteps:1,
   playing:false,
-  speed:1500,
+  speed:1000,
+  mode:"auto",
   meta:{
     tournamentTitleLine1:"JBS第31期名人戦 準々決勝",
     blackName:"柳 暢祐",
@@ -59,14 +62,20 @@ function ensureOption(value){
 }
 
 function renderState(state){
-  lastState = {...lastState, ...state, speed:1500};
+  lastState = {...lastState, ...state, speed:1000};
   lastState.meta = {...(lastState.meta || {}), ...((state && state.meta) || {})};
 
   const total = Math.max(1, lastState.totalSteps || 1);
   timeline.max = total - 1;
   timeline.value = Math.min(lastState.index || 0, total - 1);
   stepText.textContent = `${Number(timeline.value) + 1} / ${total}`;
-  playState.textContent = lastState.playing ? "PLAYING" : "PAUSE";
+  playState.textContent = lastState.mode === "manual" ? "MANUAL" : (lastState.playing ? "PLAYING" : "PAUSE");
+
+  const manual=lastState.mode === "manual";
+  autoModeBtn.classList.toggle("active",!manual);
+  manualModeBtn.classList.toggle("active",manual);
+  playBtn.disabled=manual;
+  pauseBtn.disabled=manual;
 
   tournamentLine1Input.value = lastState.meta.tournamentTitleLine1 || lastState.meta.tournamentTitle || "";
   blackNameInput.value = lastState.meta.blackName || "";
@@ -190,7 +199,7 @@ async function applyMeta(){
       if(nextMeta.matchFile!==oldFile) lastState.index=0;
       else lastState.index=Math.min(lastState.index,totalSteps-1);
       localStorage.setItem("matchReplayMeta",JSON.stringify(lastState.meta));
-      localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:1500}));
+      localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:1000,mode:lastState.mode||"auto"}));
       if(pageChannel)pageChannel.postMessage({type:"meta",meta:lastState.meta});
       renderState(lastState);
     }
@@ -223,7 +232,6 @@ function connect(){
     connectionEl.textContent = "CONNECTED";
     connectionEl.className = "connection online";
     socket.send(JSON.stringify({type:"hello", role:"control"}));
-    socket.send(JSON.stringify({type:"command", command:"speed", value:1500}));
   });
 
   socket.addEventListener("message", event => {
@@ -251,6 +259,8 @@ if(pageChannel){
   });
 }
 
+autoModeBtn.addEventListener("click", () => sendCommand("setMode","auto"));
+manualModeBtn.addEventListener("click", () => sendCommand("setMode","manual"));
 playBtn.addEventListener("click", () => sendCommand("play"));
 pauseBtn.addEventListener("click", () => sendCommand("pause"));
 prevBtn.addEventListener("click", () => sendCommand("prev"));

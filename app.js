@@ -2,6 +2,10 @@ const pointsG=document.getElementById("points");
 const checkersG=document.getElementById("checkers");
 const diceG=document.getElementById("dice");
 const cubeG=document.getElementById("cube");
+const boardSvg=document.getElementById("board");
+const gameOverlayG=document.createElementNS("http://www.w3.org/2000/svg","g");
+gameOverlayG.setAttribute("id","gameOverlay");
+boardSvg.appendChild(gameOverlayG);
 
 const defaultMeta={
   tournamentTitleLine1:"JBS第31期名人戦 準々決勝",
@@ -16,8 +20,8 @@ const emptyState={
 let index=0,meta={...defaultMeta},matchData={states:[emptyState]},loadedMatchFile="",socket=null;
 let adFiles=[],adIndex=0,adTimer=null;
 let pagesTimer=null;
-const PLAYBACK_SPEED=1500;
-let pagesState={index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED};
+const PLAYBACK_SPEED=1000;
+let pagesState={index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED,mode:"auto"};
 const isLocal=()=>location.hostname==="localhost"||location.hostname==="127.0.0.1";
 const pageChannel=(!isLocal()&&"BroadcastChannel" in window)?new BroadcastChannel("match-replay-control"):null;
 
@@ -69,6 +73,18 @@ function drawDice(vals,activePlayer){
   diceG.appendChild(die(xs[0],254,vals[0]));diceG.appendChild(die(xs[1],254,vals[1]));
 }
 function drawCube(v){cubeG.innerHTML="";if(!v||v<=1)return;const r=document.createElementNS("http://www.w3.org/2000/svg","rect");r.setAttribute("x","332.5");r.setAttribute("y","35");r.setAttribute("width","36");r.setAttribute("height","36");r.setAttribute("rx","3");r.setAttribute("fill","#fff");r.setAttribute("stroke","#000");cubeG.appendChild(r);const t=document.createElementNS("http://www.w3.org/2000/svg","text");t.setAttribute("x","350.5");t.setAttribute("y","60");t.setAttribute("text-anchor","middle");t.setAttribute("font-size","23");t.textContent=v;cubeG.appendChild(t);}
+function drawGameOverlay(state){
+  gameOverlayG.innerHTML="";
+  if(!state || state.phase!=="gameStart") return;
+  const r=document.createElementNS("http://www.w3.org/2000/svg","rect");
+  r.setAttribute("x","246");r.setAttribute("y","232");r.setAttribute("width","210");r.setAttribute("height","82");r.setAttribute("rx","14");
+  r.setAttribute("fill","rgba(0,0,0,.82)");r.setAttribute("stroke","#fff");r.setAttribute("stroke-width","2");
+  gameOverlayG.appendChild(r);
+  const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+  t.setAttribute("x","351");t.setAttribute("y","286");t.setAttribute("text-anchor","middle");t.setAttribute("fill","#fff");
+  t.setAttribute("font-family","Arial, Helvetica, sans-serif");t.setAttribute("font-size","42");t.setAttribute("font-weight","700");
+  t.textContent=`Game ${state.gameNumber || 1}`;gameOverlayG.appendChild(t);
+}
 trianglePoints();
 
 function renderMeta(state){
@@ -98,7 +114,9 @@ function currentState(){return matchData.states[Math.max(0,Math.min(index,matchD
 function render(){
   const s=currentState(),b=Number(s.winRate?.black??50),w=Number(s.winRate?.white??(100-b));renderMeta(s);
   els.winBarBlack.style.width=`${b}%`;els.winBarWhite.style.width=`${w}%`;els.blackRateText.textContent=`${b.toFixed(1)}%`;els.whiteRateText.textContent=`${w.toFixed(1)}%`;
-  drawCheckers(s.position);drawDice(s.dice,s.activePlayer);drawCube(s.cube?.value||1);renderHistory();renderAnalysis(s.analysis);
+  els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
+  els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);
+  drawCheckers(s.position);drawDice(s.dice,s.activePlayer);drawCube(s.cube?.value||1);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
 }
 
 async function fetchManifest(){try{const u=new URL("./matches/manifest.json",location.href);u.searchParams.set("t",Date.now());const r=await fetch(u,{cache:"no-store"});return r.ok?await r.json():{};}catch{return {};}}
@@ -173,7 +191,7 @@ function publishPagesState(extra={}){
 function stopPagesTimer(){if(pagesTimer){clearInterval(pagesTimer);pagesTimer=null;}}
 function startPagesTimer(){
   stopPagesTimer();
-  if(!pagesState.playing) return;
+  if(!pagesState.playing || pagesState.mode!=="auto") return;
   pagesTimer=setInterval(()=>{
     const last=Math.max(0,pagesState.totalSteps-1);
     if(pagesState.index>=last){
@@ -185,7 +203,13 @@ function startPagesTimer(){
 function handlePagesCommand(command,value){
   pagesState.speed=PLAYBACK_SPEED;
   switch(command){
-    case "play": pagesState.playing=true;startPagesTimer();break;
+    case "setMode":
+      pagesState.mode=value==="manual"?"manual":"auto";
+      pagesState.playing=false;stopPagesTimer();
+      break;
+    case "play":
+      if(pagesState.mode==="auto"){pagesState.playing=true;startPagesTimer();}
+      break;
     case "pause": pagesState.playing=false;stopPagesTimer();break;
     case "prev": pagesState.playing=false;stopPagesTimer();pagesState.index=Math.max(0,pagesState.index-1);break;
     case "next": pagesState.playing=false;stopPagesTimer();pagesState.index=Math.min(Math.max(0,pagesState.totalSteps-1),pagesState.index+1);break;
