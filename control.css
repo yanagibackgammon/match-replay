@@ -91,3 +91,35 @@ button:disabled{opacity:.35;cursor:not-allowed}
   border:1px solid #111;
   background:#6B670D;
 }
+
+/* v44 compact operator layout */
+.control-header{min-height:38px;padding-bottom:6px}
+.control-header h1,.control-header h1 span{font-size:26px;line-height:1;font-weight:900;letter-spacing:.03em}
+.connection{padding:7px 12px;font-size:12px}
+
+.match-card,.status-card,.mode-card{padding:14px 16px}
+.match-card,.status-card,.mode-card,.info-card,.meta-card{margin-top:14px}
+.match-file-row{align-items:center}
+.match-file-field{display:block;min-width:0}
+.match-file-field select{min-height:50px}
+.loaded-file{margin-top:9px;padding-top:9px}
+
+.status-card{padding-bottom:14px}
+.status-summary{display:flex;align-items:baseline;gap:8px;min-height:28px;white-space:nowrap}
+.status-summary span{font-size:13px;font-weight:900;letter-spacing:.08em;color:#777}
+.status-summary strong{font-size:20px;line-height:1}
+.status-summary .status-divider{margin-left:22px}
+.timeline-block{margin-top:8px;padding-top:0;border-top:0}
+.timeline-wrap{padding-top:18px}
+
+.mode-card{padding-top:12px;padding-bottom:12px}
+.playback-buttons{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.playback-buttons button{min-width:0;min-height:50px;padding:0 8px;font-size:16px;white-space:nowrap}
+.playback-buttons button.active{background:#111;color:#fff}
+
+@media(max-width:760px){
+  .control-header h1,.control-header h1 span{font-size:22px}
+  .status-summary{flex-wrap:wrap}
+  .status-summary .status-divider{margin-left:10px}
+  .playback-buttons{grid-template-columns:repeat(3,minmax(0,1fr))}
+}

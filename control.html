@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Match Replay Control</title>
-<link rel="stylesheet" href="./control.css?v=42">
+<link rel="stylesheet" href="./control.css?v=44">
 </head>
 <body>
 <main class="control-shell">
@@ -16,8 +16,7 @@
   <section class="match-card">
     <div class="match-file-row">
       <label class="match-file-field">
-        <span>棋譜ファイル</span>
-        <select id="matchFileSelect">
+        <select id="matchFileSelect" aria-label="棋譜ファイル">
           <option value="">(未選択)</option>
         </select>
       </label>
@@ -33,34 +32,22 @@
   </section>
 
   <section class="status-card">
-    <div class="status-top">
-      <div class="status-row">
-        <span>現在位置</span>
-        <strong id="stepText">1 / 1</strong>
-      </div>
-      <div class="status-row status-row-right">
-        <span>再生状態</span>
-        <strong id="playState">PAUSE</strong>
-      </div>
+    <div class="status-summary">
+      <span>現在位置</span><strong id="stepText">1 / 1</strong>
+      <span class="status-divider">再生状態</span><strong id="playState">PAUSE</strong>
     </div>
     <div class="timeline-block">
-      <label for="timeline">棋譜位置</label>
       <div class="timeline-wrap">
         <div id="gameMarkers" class="game-markers" aria-hidden="true"></div>
-        <input id="timeline" type="range" min="0" max="0" step="1" value="0">
+        <input id="timeline" type="range" min="0" max="0" step="1" value="0" aria-label="棋譜位置">
       </div>
     </div>
   </section>
 
   <section class="mode-card">
-    <div class="mode-head">
-      <span>再生モード</span>
-      <div class="mode-buttons">
-        <button id="autoModeBtn" class="active">自動</button>
-        <button id="manualModeBtn">手動</button>
-      </div>
-    </div>
-    <div class="transport">
+    <div class="playback-buttons">
+      <button id="autoModeBtn" class="active">自動</button>
+      <button id="manualModeBtn">手動</button>
       <button id="prevBtn">◀ 前へ</button>
       <button id="playBtn" class="primary">▶ 再生</button>
       <button id="pauseBtn">Ⅱ 停止</button>
@@ -110,6 +97,6 @@
     <code>/matches/</code>
   </section>
 </main>
-<script src="./control.js?v=42"></script>
+<script src="./control.js?v=44"></script>
 </body>
 </html>
