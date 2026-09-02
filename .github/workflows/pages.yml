@@ -26,28 +26,54 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Generate match manifest
+      - name: Generate manifests
         shell: bash
         run: |
-          mkdir -p matches
+          mkdir -p matches ads
           python - <<'PY'
           import json
           from pathlib import Path
 
-          root = Path("matches")
-          files = sorted(
-              p.name for p in root.iterdir()
-              if p.is_file() and p.suffix.lower() in {".xg", ".json"} and p.name != "manifest.json"
+          match_root = Path("matches")
+          match_files = sorted(
+              p.name for p in match_root.iterdir()
+              if p.is_file()
+              and p.suffix.lower() in {".xg", ".json"}
+              and p.name != "manifest.json"
           )
-          payload = {
+
+          generated = {}
+          generated_root = match_root / "generated"
+          if generated_root.exists():
+              for src in match_files:
+                  if src.lower().endswith(".xg"):
+                      candidate = generated_root / f"{src}.json"
+                      if candidate.is_file():
+                          generated[src] = f"generated/{candidate.name}"
+
+          match_payload = {
               "activeFile": "",
-              "files": files,
+              "files": match_files,
+              "generated": generated,
           }
-          (root / "manifest.json").write_text(
-              json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+          (match_root / "manifest.json").write_text(
+              json.dumps(match_payload, ensure_ascii=False, indent=2) + "\n",
               encoding="utf-8",
           )
-          print(f"Generated manifest with {len(files)} file(s).")
+          print(f"Generated match manifest with {len(match_files)} file(s).")
+
+          ad_root = Path("ads")
+          ad_files = sorted(
+              p.name for p in ad_root.iterdir()
+              if p.is_file()
+              and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+          )
+          ad_payload = {"files": ad_files}
+          (ad_root / "manifest.json").write_text(
+              json.dumps(ad_payload, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(f"Generated ad manifest with {len(ad_files)} file(s).")
           PY
 
       - name: Configure GitHub Pages
