@@ -35,6 +35,10 @@ let lastState = {
   }
 };
 
+function isLocalRuntime(){
+  return location.hostname === "localhost" || location.hostname === "127.0.0.1";
+}
+
 function sendCommand(command, value){
   if(!socket || socket.readyState !== WebSocket.OPEN) return;
   socket.send(JSON.stringify({type:"command", command, value}));
@@ -75,23 +79,49 @@ function renderState(state){
   matchFileSelect.value = lastState.meta.matchFile || "";
 }
 
-async function refreshMatches(){
-  try{
-    const res = await fetch("/api/matches", {cache:"no-store"});
-    const data = await res.json();
-    const current = matchFileSelect.value;
-    matchFileSelect.innerHTML = '<option value="">(未選択)</option>';
-    (data.files || []).forEach(file => {
-      const option = document.createElement("option");
-      option.value = file;
-      option.textContent = file;
-      matchFileSelect.appendChild(option);
-    });
-    if(current) ensureOption(current);
-    matchFileSelect.value = current || (lastState.meta.matchFile || "");
-  }catch(error){
-    console.warn("Failed to load matches", error);
+async function loadMatchList(){
+  // ローカル起動時は server.js のAPIを優先。
+  if(isLocalRuntime()){
+    try{
+      const res = await fetch("/api/matches", {cache:"no-store"});
+      if(res.ok){
+        const data = await res.json();
+        if(Array.isArray(data.files)) return data.files;
+      }
+    }catch(error){
+      console.warn("Local match API unavailable, falling back to manifest.", error);
+    }
   }
+
+  // GitHub PagesおよびAPI利用不可時は静的manifestを使用。
+  try{
+    const manifestUrl = new URL("./matches/manifest.json", location.href);
+    manifestUrl.searchParams.set("t", Date.now());
+    const res = await fetch(manifestUrl, {cache:"no-store"});
+    if(!res.ok) throw new Error(`manifest HTTP ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data.files) ? data.files : [];
+  }catch(error){
+    console.warn("Failed to load match manifest.", error);
+    return [];
+  }
+}
+
+async function refreshMatches(){
+  const current = matchFileSelect.value;
+  const files = await loadMatchList();
+
+  matchFileSelect.innerHTML = '<option value="">(未選択)</option>';
+  files.forEach(file => {
+    const option = document.createElement("option");
+    option.value = file;
+    option.textContent = file;
+    matchFileSelect.appendChild(option);
+  });
+
+  if(current) ensureOption(current);
+  if(lastState.meta.matchFile) ensureOption(lastState.meta.matchFile);
+  matchFileSelect.value = current || lastState.meta.matchFile || "";
 }
 
 function applyMeta(){
@@ -107,6 +137,12 @@ function applyMeta(){
 }
 
 function connect(){
+  if(!isLocalRuntime()){
+    connectionEl.textContent = "PAGES MODE";
+    connectionEl.className = "connection offline";
+    return;
+  }
+
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   socket = new WebSocket(`${protocol}//${location.host}/ws`);
 
@@ -136,7 +172,6 @@ playBtn.addEventListener("click", () => sendCommand("play"));
 pauseBtn.addEventListener("click", () => sendCommand("pause"));
 prevBtn.addEventListener("click", () => sendCommand("prev"));
 nextBtn.addEventListener("click", () => sendCommand("next"));
-
 timeline.addEventListener("input", () => sendCommand("seek", Number(timeline.value)));
 speedButtons.forEach(button => button.addEventListener("click", () => sendCommand("speed", Number(button.dataset.speed))));
 applyMetaBtn.addEventListener("click", applyMeta);
