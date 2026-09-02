@@ -5,7 +5,7 @@ const { WebSocketServer, WebSocket } = require("ws");
 const { parseXgFile } = require("./scripts/xg-parser.cjs");
 
 const PORT = Number(process.env.PORT || 3000);
-const PLAYBACK_SPEED = 1000;
+const PLAYBACK_SPEED = 2000;
 const ROOT = __dirname;
 const MATCH_DIR = path.join(ROOT, "matches");
 const ADS_DIR = path.join(ROOT, "ads");

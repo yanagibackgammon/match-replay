@@ -11,6 +11,10 @@
   --theme-color:#6B670D;
   --checker-player1:#111111;
   --checker-player2:#FFFFFF;
+  --die-player1:#111111;
+  --die-player2:#FFFFFF;
+  --die-player1-pip:#FFFFFF;
+  --die-player2-pip:#111111;
   --win-player1:#111111;
   --win-player2:#FFFFFF;
   --board-surface:#FFFFFF;
@@ -59,11 +63,13 @@ html,body{
   grid-template-rows:96px 144px;
   overflow:hidden;
   background:
-    linear-gradient(105deg,
+    radial-gradient(ellipse at 50% -42%,rgba(255,255,255,.20) 0%,rgba(255,255,255,0) 58%),
+    linear-gradient(90deg,
       color-mix(in srgb,var(--theme-color) 54%,#090909) 0%,
-      color-mix(in srgb,var(--theme-color) 83%,#111) 42%,
-      var(--theme-color) 55%,
-      color-mix(in srgb,var(--theme-color) 55%,#090909) 100%);
+      color-mix(in srgb,var(--theme-color) 74%,#111) 24%,
+      var(--theme-color) 50%,
+      color-mix(in srgb,var(--theme-color) 74%,#111) 76%,
+      color-mix(in srgb,var(--theme-color) 54%,#090909) 100%);
   border-bottom:4px solid color-mix(in srgb,var(--theme-color) 62%,#fff);
   box-shadow:inset 0 -1px 0 rgba(255,255,255,.28);
 }
@@ -73,8 +79,11 @@ html,body{
   z-index:-1;
   inset:-70px 0;
   background:
-    linear-gradient(118deg,transparent 0 27%,rgba(255,255,255,.10) 27% 30%,transparent 30% 64%,rgba(255,255,255,.06) 64% 66%,transparent 66%),
-    radial-gradient(ellipse at 50% 0,rgba(255,255,255,.22),transparent 62%);
+    linear-gradient(90deg,
+      transparent 0 24%,rgba(255,255,255,.075) 24% 26%,transparent 26% 47%,
+      rgba(255,255,255,.055) 47% 53%,
+      transparent 53% 74%,rgba(255,255,255,.075) 74% 76%,transparent 76% 100%),
+    radial-gradient(ellipse at 50% 0,rgba(255,255,255,.16),transparent 62%);
   pointer-events:none;
 }
 .top-area::after{display:none}
@@ -166,8 +175,9 @@ html,body{
   align-items:center;
   justify-content:center;
   text-align:center;
-  font-size:26px;
+  font-size:30px;
   font-weight:700;
+  transform:translateY(-5px);
   line-height:1.1;
   color:#fff;
   text-shadow:0 2px 4px rgba(0,0,0,.55);
@@ -211,7 +221,7 @@ html,body{
   border-radius:16px;
 }
 
-.winrate-fill{height:100%}
+.winrate-fill{height:100%;transition:width 1.75s cubic-bezier(.22,.61,.36,1);will-change:width}
 .winrate-fill.black{background:var(--win-player1)}
 .winrate-fill.white{background:var(--win-player2);border-left:4px solid #111}
 
@@ -347,11 +357,17 @@ html,body{
   width:var(--die-size);
   height:var(--die-size);
   border-radius:10px;
-  background:linear-gradient(180deg,#ffffff 0%,#f5f5f5 100%);
-  border:2px solid rgba(0,0,0,.25);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 2px 5px rgba(0,0,0,.08);
+  background:var(--die-player2);
+  border:2px solid var(--die-player2-pip);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28), 0 2px 5px rgba(0,0,0,.10);
   flex:0 0 auto;
 }
+
+
+.die.player1{background:var(--die-player1);border-color:var(--die-player1-pip)}
+.die.player1 .die-pip{background:var(--die-player1-pip)}
+.die.player2{background:var(--die-player2);border-color:var(--die-player2-pip)}
+.die.player2 .die-pip{background:var(--die-player2-pip)}
 
 .dice-pair-inline .die{--die-size:44px;--pip-size:8px}
 .analysis-dice-block .die{--die-size:46px;--pip-size:9px}
@@ -361,8 +377,8 @@ html,body{
   width:var(--pip-size);
   height:var(--pip-size);
   border-radius:50%;
-  background:#111;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.25);
+  background:var(--die-player2-pip);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22);
 }
 .die-pip.p1{left:8px; top:8px}
 .die-pip.p2{left:50%; top:8px; transform:translateX(-50%)}

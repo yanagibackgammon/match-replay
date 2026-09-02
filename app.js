@@ -31,7 +31,7 @@ let appliedDesignPresetId="";
 let index=0,meta={...defaultMeta},matchData={states:[emptyState]},loadedMatchFile="",socket=null;
 let adFiles=[],adIndex=0,adTimer=null;
 let pagesTimer=null;
-const PLAYBACK_SPEED=1000;
+const PLAYBACK_SPEED=2000;
 let pagesState={index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED,mode:"auto"};
 const isLocal=()=>location.hostname==="localhost"||location.hostname==="127.0.0.1";
 const pageChannel=(!isLocal()&&"BroadcastChannel" in window)?new BroadcastChannel("match-replay-control"):null;
@@ -111,9 +111,12 @@ function drawCheckers(position){
 }
 function drawDice(vals,activePlayer){
   diceG.innerHTML="";if(!vals)return;const spots={1:[[18,18]],2:[[10,10],[26,26]],3:[[10,10],[18,18],[26,26]],4:[[10,10],[26,10],[10,26],[26,26]],5:[[10,10],[26,10],[18,18],[10,26],[26,26]],6:[[10,9],[26,9],[10,18],[26,18],[10,27],[26,27]]};
-  function die(x,y,n){const g=document.createElementNS("http://www.w3.org/2000/svg","g"),black=activePlayer===1,r=document.createElementNS("http://www.w3.org/2000/svg","rect");r.setAttribute("x",x);r.setAttribute("y",y);r.setAttribute("width",36);r.setAttribute("height",36);r.setAttribute("rx",4);r.setAttribute("fill",black?"#000":"#fff");r.setAttribute("stroke","#000");g.appendChild(r);(spots[n]||[]).forEach(([dx,dy])=>{const c=document.createElementNS("http://www.w3.org/2000/svg","circle");c.setAttribute("cx",x+dx);c.setAttribute("cy",y+dy);c.setAttribute("r","3.4");c.setAttribute("fill",black?"#fff":"#000");g.appendChild(c);});return g;}
-  // Player 1 (black) is shown in the center of the right half; Player 2 (white) in the center of the left half.
-  const xs=activePlayer===1?[468.5,514.5]:[151.5,197.5];
+  const player1=activePlayer===1;
+  const face=normalizeHex(player1?currentDesign?.checkers?.player1:currentDesign?.checkers?.player2,player1?"#111111":"#FFFFFF");
+  const pip=contrastText(face);
+  function die(x,y,n){const g=document.createElementNS("http://www.w3.org/2000/svg","g"),r=document.createElementNS("http://www.w3.org/2000/svg","rect");r.setAttribute("x",x);r.setAttribute("y",y);r.setAttribute("width",36);r.setAttribute("height",36);r.setAttribute("rx",4);r.setAttribute("fill",face);r.setAttribute("stroke",pip);r.setAttribute("stroke-width","1.5");g.appendChild(r);(spots[n]||[]).forEach(([dx,dy])=>{const c=document.createElementNS("http://www.w3.org/2000/svg","circle");c.setAttribute("cx",x+dx);c.setAttribute("cy",y+dy);c.setAttribute("r","3.4");c.setAttribute("fill",pip);g.appendChild(c);});return g;}
+  // Player 1 is shown in the center of the right half; Player 2 in the center of the left half.
+  const xs=player1?[468.5,514.5]:[151.5,197.5];
   diceG.appendChild(die(xs[0],254,vals[0]));diceG.appendChild(die(xs[1],254,vals[1]));
 }
 function drawCube(cube){
@@ -167,8 +170,14 @@ function applyDesignPreset(id){
   if(appliedDesignPresetId===next.id) return;
   appliedDesignPresetId=next.id;
   const root=document.documentElement;
-  root.style.setProperty("--checker-player1",normalizeHex(next.checkers?.player1,"#111111"));
-  root.style.setProperty("--checker-player2",normalizeHex(next.checkers?.player2,"#FFFFFF"));
+  const checkerPlayer1=normalizeHex(next.checkers?.player1,"#111111");
+  const checkerPlayer2=normalizeHex(next.checkers?.player2,"#FFFFFF");
+  root.style.setProperty("--checker-player1",checkerPlayer1);
+  root.style.setProperty("--checker-player2",checkerPlayer2);
+  root.style.setProperty("--die-player1",checkerPlayer1);
+  root.style.setProperty("--die-player2",checkerPlayer2);
+  root.style.setProperty("--die-player1-pip",contrastText(checkerPlayer1));
+  root.style.setProperty("--die-player2-pip",contrastText(checkerPlayer2));
   root.style.setProperty("--win-player1",normalizeHex(next.winRate?.player1,"#111111"));
   root.style.setProperty("--win-player2",normalizeHex(next.winRate?.player2,"#FFFFFF"));
   root.style.setProperty("--board-surface",normalizeHex(next.board?.surface,"#FFFFFF"));
@@ -210,18 +219,20 @@ function renderMeta(state){
   const score=state?.score||[meta.blackScore,meta.whiteScore];els.blackScore.textContent=score[0]??meta.blackScore;els.whiteScore.textContent=score[1]??meta.whiteScore;
 }
 function diePips(face){return {1:["p5"],2:["p1","p9"],3:["p1","p5","p9"],4:["p1","p3","p7","p9"],5:["p1","p3","p5","p7","p9"],6:["p1","p3","p4","p6","p7","p9"]}[face]||[];}
-function renderDie(face){return `<span class="die">${diePips(face).map(c=>`<span class="die-pip ${c}"></span>`).join("")}</span>`;}
-function renderPair(pair){return pair&&pair.length===2?`<div class="dice-pair-inline">${renderDie(pair[0])}${renderDie(pair[1])}</div>`:'<div class="dice-pair-inline"></div>';}
+function diePlayerClass(player){return player===1||player==="black"?"player1":"player2";}
+function renderDie(face,player){return `<span class="die ${diePlayerClass(player)}">${diePips(face).map(c=>`<span class="die-pip ${c}"></span>`).join("")}</span>`;}
+function renderPair(pair,player){return pair&&pair.length===2?`<div class="dice-pair-inline">${renderDie(pair[0],player)}${renderDie(pair[1],player)}</div>`:'<div class="dice-pair-inline"></div>';}
 function historyClass(error){if(error<=-0.080)return"error-red";if(error<=-0.020)return"error-green";return"";}
 function renderHistoryColumn(player){
   const events=matchData.states.slice(0,index+1).map(s=>s.historyEvent).filter(e=>e&&e.player===player).slice(-4);
-  return events.map(e=>`<div class="history-row ${historyClass(e.error)}">${renderPair(e.dice)}<span class="history-move">${e.move||""}</span></div>`).join("");
+  return events.map(e=>`<div class="history-row ${historyClass(e.error)}">${renderPair(e.dice,player)}<span class="history-move">${e.move||""}</span></div>`).join("");
 }
 function renderHistory(){els.blackHistoryList.innerHTML=renderHistoryColumn("black");els.whiteHistoryList.innerHTML=renderHistoryColumn("white");}
 function renderAnalysis(a){
   if(!a||a.type==="none"){els.analysisContent.innerHTML="";return;}
   if(a.type==="jokers"){
-    const block=(rows,cls)=>`<div class="analysis-dice-block ${cls}">${(rows||[]).map(d=>`<div class="dice-pair-block">${renderDie(d[0])}${renderDie(d[1])}</div>`).join("")}</div>`;
+    const activePlayer=currentState().activePlayer===1?1:-1;
+    const block=(rows,cls)=>`<div class="analysis-dice-block ${cls}">${(rows||[]).map(d=>`<div class="dice-pair-block">${renderDie(d[0],activePlayer)}${renderDie(d[1],activePlayer)}</div>`).join("")}</div>`;
     els.analysisContent.innerHTML=`<div class="analysis-jokers">${block(a.joker,"plus")}${block(a.antiJoker,"minus")}</div>`;return;
   }
   const selectedIndex=Number.isInteger(a.playedIndex)?a.playedIndex:-1;
