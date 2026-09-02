@@ -48,6 +48,7 @@ const els={
   winBarBlack:document.getElementById("winBarBlack"),winBarWhite:document.getElementById("winBarWhite"),
   blackRateText:document.getElementById("blackRateText"),whiteRateText:document.getElementById("whiteRateText"),
   historyList:document.getElementById("historyList"),
+  blackHistoryList:document.getElementById("blackHistoryList"),whiteHistoryList:document.getElementById("whiteHistoryList"),
   analysisContent:document.getElementById("analysisContent"),
   adImage1:document.getElementById("adImage1"),adImage2:document.getElementById("adImage2")
 };
@@ -265,10 +266,19 @@ function collectHistoryRows(){
 }
 function renderHistory(){
   const rows=collectHistoryRows();
-  els.historyList.innerHTML=rows.map(row=>{
-    if(row.kind==="game")return `<div class="history-timeline-row history-game-row"><div class="history-game-label">Game ${row.gameNumber}</div></div>`;
-    return `<div class="history-timeline-row">${historyCell(row.black,"black")}${historyCell(row.white,"white")}</div>`;
-  }).join("");
+  // v36で履歴DOM構造を変更したため、Pages/OBSのキャッシュでHTMLとJSの
+  // 世代が一時的にずれても描画全体を止めないよう新旧DOMの両方に対応する。
+  if(els.historyList){
+    els.historyList.innerHTML=rows.map(row=>{
+      if(row.kind==="game")return `<div class="history-timeline-row history-game-row"><div class="history-game-label">Game ${row.gameNumber}</div></div>`;
+      return `<div class="history-timeline-row">${historyCell(row.black,"black")}${historyCell(row.white,"white")}</div>`;
+    }).join("");
+    return;
+  }
+  if(els.blackHistoryList&&els.whiteHistoryList){
+    els.blackHistoryList.innerHTML=rows.map(row=>row.kind==="game"?`<div class="history-row">Game ${row.gameNumber}</div>`:historyCell(row.black,"black")).join("");
+    els.whiteHistoryList.innerHTML=rows.map(row=>row.kind==="game"?'<div class="history-row"></div>':historyCell(row.white,"white")).join("");
+  }
 }
 function renderAnalysis(a){
   if(!a||a.type==="none"){els.analysisContent.innerHTML="";return;}
