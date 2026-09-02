@@ -46,6 +46,62 @@ let lastState = {
 
 let designPresets=[];
 
+
+// 操作画面の入力中データを、再生状態の定期受信で上書きしない。
+// 「表示へ反映」が成功した時点で編集状態を確定する。
+const dirtyMetaFields = new Set();
+const metaEditors = [
+  [tournamentLine1Input,"tournamentTitleLine1","input"],
+  [tournamentLine2Input,"tournamentTitleLine2","input"],
+  [themeColorInput,"themeColor","input"],
+  [designPresetSelect,"designPreset","change"],
+  [blackNameInput,"blackName","input"],
+  [whiteNameInput,"whiteName","input"],
+  [matchFileSelect,"matchFile","change"]
+];
+
+for(const [element,key,eventName] of metaEditors){
+  if(!element) continue;
+  element.addEventListener(eventName,()=>dirtyMetaFields.add(key));
+}
+
+function syncEditorValue(element,key,value){
+  if(!element) return;
+  if(dirtyMetaFields.has(key)) return;
+  element.value = value ?? "";
+}
+
+function acceptAppliedMeta(){
+  dirtyMetaFields.clear();
+  // lastState は反映後の確定値を保持しているため、ここで入力欄も確定値へ揃える。
+  syncMetaEditorsFromState();
+}
+
+function syncMetaEditorsFromState(){
+  syncEditorValue(tournamentLine1Input,"tournamentTitleLine1",lastState.meta.tournamentTitleLine1 || lastState.meta.tournamentTitle || "");
+  syncEditorValue(tournamentLine2Input,"tournamentTitleLine2",lastState.meta.tournamentTitleLine2 || "");
+  syncEditorValue(themeColorInput,"themeColor",lastState.meta.themeColor || "#6B670D");
+  syncEditorValue(blackNameInput,"blackName",lastState.meta.blackName || "");
+  syncEditorValue(whiteNameInput,"whiteName",lastState.meta.whiteName || "");
+
+  if(designPresetSelect && !dirtyMetaFields.has("designPreset")){
+    const presetId=lastState.meta.designPreset||"classic";
+    if(![...designPresetSelect.options].some(opt=>opt.value===presetId)){
+      const option=document.createElement("option");
+      option.value=presetId;
+      option.textContent=presetId;
+      designPresetSelect.appendChild(option);
+    }
+    designPresetSelect.value=presetId;
+    renderDesignPreview();
+  }
+
+  if(matchFileSelect && !dirtyMetaFields.has("matchFile")){
+    ensureOption(lastState.meta.matchFile || "");
+    matchFileSelect.value = lastState.meta.matchFile || "";
+  }
+}
+
 function isLocalRuntime(){
   return location.hostname === "localhost" || location.hostname === "127.0.0.1";
 }
@@ -138,20 +194,7 @@ function renderState(state){
   playBtn.disabled=manual;
   pauseBtn.disabled=manual;
 
-  tournamentLine1Input.value = lastState.meta.tournamentTitleLine1 || lastState.meta.tournamentTitle || "";
-  tournamentLine2Input.value = lastState.meta.tournamentTitleLine2 || "";
-  themeColorInput.value = lastState.meta.themeColor || "#6B670D";
-  if(designPresetSelect){
-    const presetId=lastState.meta.designPreset||"classic";
-    if(![...designPresetSelect.options].some(opt=>opt.value===presetId)){
-      const option=document.createElement("option");option.value=presetId;option.textContent=presetId;designPresetSelect.appendChild(option);
-    }
-    designPresetSelect.value=presetId;renderDesignPreview();
-  }
-  blackNameInput.value = lastState.meta.blackName || "";
-  whiteNameInput.value = lastState.meta.whiteName || "";
-  ensureOption(lastState.meta.matchFile || "");
-  matchFileSelect.value = lastState.meta.matchFile || "";
+  syncMetaEditorsFromState();
 }
 
 async function loadMatchList(){
@@ -196,7 +239,8 @@ async function refreshMatches(){
 
   if(current) ensureOption(current);
   if(lastState.meta.matchFile) ensureOption(lastState.meta.matchFile);
-  matchFileSelect.value = current || lastState.meta.matchFile || "";
+  if(dirtyMetaFields.has("matchFile")) matchFileSelect.value = current || "";
+  else matchFileSelect.value = lastState.meta.matchFile || current || "";
 }
 
 async function fetchPagesManifest(){
@@ -284,6 +328,7 @@ async function applyMeta(){
       renderState(lastState);
     }
 
+    acceptAppliedMeta();
     applyMetaBtn.textContent = "反映済み";
     setTimeout(() => {
       applyMetaBtn.textContent = originalText;

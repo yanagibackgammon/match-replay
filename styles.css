@@ -100,9 +100,10 @@ html,body{
   text-align:center;
   color:#fff;
   text-shadow:0 2px 4px rgba(0,0,0,.55);
+  transform:translateY(10px);
 }
-.headline-name.left{text-align:left}
-.headline-name.right{text-align:right}
+.headline-name.left{text-align:left;padding-left:10px}
+.headline-name.right{text-align:right;padding-right:10px}
 
 .headline-title-block{
   height:100%;
@@ -112,6 +113,7 @@ html,body{
   justify-content:center;
   min-width:0;
   text-align:center;
+  transform:translateY(10px);
 }
 
 .headline-title-main{
@@ -205,11 +207,7 @@ html,body{
   border-radius:16px;
 }
 
-.winrate-fill{
-  height:100%;
-  transition:width .8s cubic-bezier(.22,.61,.36,1);
-  will-change:width;
-}
+.winrate-fill{height:100%}
 .winrate-fill.black{background:var(--win-player1)}
 .winrate-fill.white{background:var(--win-player2);border-left:4px solid #111}
 
