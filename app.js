@@ -4,12 +4,12 @@ const diceG = document.getElementById("dice");
 const cubeG = document.getElementById("cube");
 
 const states = [
-  { game:1, move:1, black:0, white:0, action:"Opening position", big:"GAME START", dice:null, cube:1, blackRate:50.0, whiteRate:50.0 },
-  { game:1, move:2, black:0, white:0, action:"柳 31: 8/5 6/5", big:"BLACK 31", dice:[3,1], cube:1, blackRate:51.8, whiteRate:48.2 },
-  { game:1, move:3, black:0, white:0, action:"平林 42: 8/4 6/4", big:"WHITE 42", dice:[4,2], cube:1, blackRate:49.4, whiteRate:50.6 },
-  { game:1, move:4, black:0, white:0, action:"柳 65: 13/7 13/8", big:"BLACK 65", dice:[6,5], cube:1, blackRate:55.1, whiteRate:44.9 },
-  { game:1, move:5, black:0, white:0, action:"平林 Doubles", big:"DOUBLE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3 },
-  { game:1, move:6, black:0, white:0, action:"柳 Takes", big:"TAKE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3 }
+  { action:"Opening position", big:"GAME START", dice:null, cube:1, blackRate:50.0, whiteRate:50.0 },
+  { action:"柳 31: 8/5 6/5", big:"BLACK 31", dice:[3,1], cube:1, blackRate:51.8, whiteRate:48.2 },
+  { action:"平林 42: 8/4 6/4", big:"WHITE 42", dice:[4,2], cube:1, blackRate:49.4, whiteRate:50.6 },
+  { action:"柳 65: 13/7 13/8", big:"BLACK 65", dice:[6,5], cube:1, blackRate:55.1, whiteRate:44.9 },
+  { action:"平林 Doubles", big:"DOUBLE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3 },
+  { action:"柳 Takes", big:"TAKE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3 }
 ];
 
 const start=[0,2,0,0,0,0,-5,0,-3,0,0,0,5,-5,0,0,0,3,0,5,0,0,0,0,-2];
@@ -80,10 +80,9 @@ function pointCoord(p){
   if(p <= 12){
     const idx = 12 - p;
     return {x:centers[idx], y:493, dir:-1};
-  }else{
-    const idx = p - 13;
-    return {x:centers[idx], y:53, dir:1};
   }
+  const idx = p - 13;
+  return {x:centers[idx], y:53, dir:1};
 }
 
 function drawCheckers(arr){
@@ -151,7 +150,6 @@ function drawDice(vals, action){
       c.setAttribute("fill", isBlack ? "#ffffff" : "#000000");
       g.appendChild(c);
     });
-
     return g;
   }
 
@@ -187,28 +185,20 @@ function drawCube(v){
 
 trianglePoints();
 
-let index = 0;
-let timer = null;
-
 const els = {
   winBarBlack:document.getElementById("winBarBlack"),
   winBarWhite:document.getElementById("winBarWhite"),
   blackRateText:document.getElementById("blackRateText"),
   whiteRateText:document.getElementById("whiteRateText"),
   bigAction:document.getElementById("bigAction"),
-  diceText:document.getElementById("diceText"),
-  moveList:document.getElementById("moveList"),
-  timeline:document.getElementById("timeline"),
-  stepLabel:document.getElementById("stepLabel"),
-  playBtn:document.getElementById("playBtn"),
-  speed:document.getElementById("speed")
+  moveList:document.getElementById("moveList")
 };
 
-els.timeline.max = states.length - 1;
+let index = 0;
 
 function renderList(){
   els.moveList.innerHTML = states.map((s, i) =>
-    `<div class="move-row ${i === index ? "active" : ""}" data-i="${i}">
+    `<div class="move-row ${i === index ? "active" : ""}">
       <span class="n">${String(i + 1).padStart(2, "0")}</span>
       <span>${s.action}</span>
     </div>`
@@ -222,71 +212,54 @@ function render(){
   els.blackRateText.textContent = `${s.blackRate.toFixed(1)}%`;
   els.whiteRateText.textContent = `${s.whiteRate.toFixed(1)}%`;
   els.bigAction.textContent = s.big;
-  els.diceText.textContent = s.dice ? `DICE ${s.dice[0]}-${s.dice[1]}` : "DICE —";
-  els.timeline.value = index;
-  els.stepLabel.textContent = `${index + 1} / ${states.length}`;
   drawCheckers(positions[index]);
   drawDice(s.dice, s.action);
   drawCube(s.cube);
   renderList();
 }
 
-function stop(){
-  clearInterval(timer);
-  timer = null;
-  els.playBtn.textContent = "▶ PLAY";
-}
-function play(){
-  if(timer){
-    stop();
-    return;
-  }
-  els.playBtn.textContent = "Ⅱ PAUSE";
-  const tick = () => {
-    if(index >= states.length - 1){
-      stop();
-      return;
-    }
-    index++;
+function applyRemoteState(message){
+  if(typeof message.index === "number"){
+    index = Math.max(0, Math.min(states.length - 1, message.index));
     render();
-  };
-  timer = setInterval(tick, Number(els.speed.value));
+  }
 }
 
-document.getElementById("prevBtn").onclick = () => {
-  stop();
-  index = Math.max(0, index - 1);
-  render();
-};
-document.getElementById("nextBtn").onclick = () => {
-  stop();
-  index = Math.min(states.length - 1, index + 1);
-  render();
-};
-els.playBtn.onclick = play;
-els.timeline.oninput = e => {
-  stop();
-  index = Number(e.target.value);
-  render();
-};
-els.speed.onchange = () => {
-  if(timer){
-    stop();
-    play();
-  }
-};
-els.moveList.onclick = e => {
-  const row = e.target.closest(".move-row");
-  if(!row) return;
-  stop();
-  index = Number(row.dataset.i);
-  render();
-};
+function connectWebSocket(){
+  if(!location.host) return;
+  const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+  const socket = new WebSocket(`${protocol}//${location.host}/ws`);
+
+  socket.addEventListener("open", () => {
+    socket.send(JSON.stringify({
+      type:"hello",
+      role:"display",
+      totalSteps:states.length
+    }));
+  });
+
+  socket.addEventListener("message", event => {
+    try{
+      const message = JSON.parse(event.data);
+      if(message.type === "state"){
+        applyRemoteState(message);
+      }
+    }catch(error){
+      console.warn("Invalid WebSocket message", error);
+    }
+  });
+
+  socket.addEventListener("close", () => {
+    setTimeout(connectWebSocket, 1500);
+  });
+}
 
 function scaleStage(){
   const s = Math.min(innerWidth / 1920, innerHeight / 1080);
   document.getElementById("stage").style.transform = `scale(${s})`;
 }
+
 addEventListener("resize", scaleStage);
 scaleStage();
 render();
+connectWebSocket();

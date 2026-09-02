@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Backgammon Auto Replay - Prototype</title>
+<title>Backgammon Match Replay</title>
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -64,28 +64,6 @@
 
     <footer class="title-area">
       <div class="title-main" id="tournamentTitle">第31期名人戦 準々決勝</div>
-
-      <div class="bottom-controls">
-        <button id="prevBtn" aria-label="previous">◀</button>
-        <button id="playBtn" class="play">▶ PLAY</button>
-        <button id="nextBtn" aria-label="next">▶</button>
-
-        <div class="timeline-wrap">
-          <input id="timeline" type="range" min="0" max="5" step="1" value="0">
-          <div class="timeline-label">
-            <span id="stepLabel">1 / 6</span>
-            <span id="diceText">—</span>
-          </div>
-        </div>
-
-        <label class="speed">SPEED
-          <select id="speed">
-            <option value="2500">0.5×</option>
-            <option value="1500" selected>1×</option>
-            <option value="800">2×</option>
-          </select>
-        </label>
-      </div>
     </footer>
   </main>
 </div>
