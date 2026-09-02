@@ -101,20 +101,104 @@ function extractArchive(raw){
   return {files, headerSize, thumbnailSize, archiveVersion};
 }
 
-function normalizePosition(pos, activePlayer){
+function normalizeStoredPosition(pos){
   const points = Array(25).fill(0);
-  let blackBar = 0;
-  let whiteBar = 0;
-  if(activePlayer === 1){
-    for(let p=1;p<=24;p++) points[p] = pos[p];
-    blackBar = Math.max(0, pos[25] || 0);
-    whiteBar = Math.max(0, -(pos[0] || 0));
-  }else{
-    for(let p=1;p<=24;p++) points[25 - p] = -(pos[p] || 0);
-    whiteBar = Math.max(0, pos[25] || 0);
-    blackBar = Math.max(0, -(pos[0] || 0));
+  for(let p=1;p<=24;p++) points[p] = Number(pos[p] || 0);
+  return {
+    points,
+    blackBar: Math.max(0, Number(pos[25] || 0)),
+    whiteBar: Math.max(0, -Number(pos[0] || 0))
+  };
+}
+
+function normalizeMoveEndPosition(pos, activePlayer){
+  if(activePlayer === 1) return normalizeStoredPosition(pos);
+  const points = Array(25).fill(0);
+  for(let p=1;p<=24;p++) points[25 - p] = -Number(pos[p] || 0);
+  return {
+    points,
+    blackBar: Math.max(0, -Number(pos[0] || 0)),
+    whiteBar: Math.max(0, Number(pos[25] || 0))
+  };
+}
+
+function cloneBoardPosition(position){
+  return {
+    points: (position?.points || Array(25).fill(0)).slice(),
+    blackBar: Number(position?.blackBar || 0),
+    whiteBar: Number(position?.whiteBar || 0)
+  };
+}
+
+function canonicalPointFromMoveIndex(index, activePlayer){
+  if(index == null || index < 0) return null;
+  if(index === 24) return 'bar';
+  return activePlayer === 1 ? index + 1 : 24 - index;
+}
+
+function applyCheckerMove(beforePosition, activePlayer, raw){
+  const board = cloneBoardPosition(beforePosition);
+  const sign = activePlayer === 1 ? 1 : -1;
+  const segments = [];
+
+  for(let i=0;i<8;i+=2){
+    const from = Number(raw[i]);
+    const to = Number(raw[i+1]);
+    if(!Number.isFinite(from) || from < 0) break;
+
+    const source = canonicalPointFromMoveIndex(from, activePlayer);
+    const destination = to < 0 ? null : canonicalPointFromMoveIndex(to, activePlayer);
+    let hit = false;
+
+    if(source === 'bar'){
+      if(sign === 1) board.blackBar = Math.max(0, board.blackBar - 1);
+      else board.whiteBar = Math.max(0, board.whiteBar - 1);
+    }else if(Number.isInteger(source) && source >= 1 && source <= 24){
+      board.points[source] -= sign;
+    }
+
+    if(destination != null){
+      if(sign === 1 && board.points[destination] === -1){
+        board.points[destination] = 0;
+        board.whiteBar += 1;
+        hit = true;
+      }else if(sign === -1 && board.points[destination] === 1){
+        board.points[destination] = 0;
+        board.blackBar += 1;
+        hit = true;
+      }
+      board.points[destination] += sign;
+    }
+
+    segments.push({from,to,source,destination,hit});
   }
-  return {points, blackBar, whiteBar};
+
+  return {position:board,segments};
+}
+
+function formatCheckerMove(raw, beforePosition, activePlayer){
+  const applied = applyCheckerMove(beforePosition, activePlayer, raw);
+  if(!applied.segments.length) return 'Dance';
+
+  const rendered = applied.segments.map(seg => {
+    const fromText = seg.from === 24 ? 'bar' : String(seg.from + 1);
+    const toText = seg.to < 0 ? 'off' : String(seg.to + 1);
+    return {route:`${fromText}/${toText}`, hit:seg.hit};
+  });
+
+  // Position Drill準拠: 同一ムーブが連続する場合は (2) などにまとめる。
+  // ヒットが含まれる場合はルート末尾に * を一度だけ付ける。
+  const compact = [];
+  for(const item of rendered){
+    const last = compact[compact.length - 1];
+    if(last && last.route === item.route){
+      last.count += 1;
+      last.hit = last.hit || item.hit;
+    }else{
+      compact.push({route:item.route,count:1,hit:item.hit});
+    }
+  }
+  return compact.map(item => `${item.route}${item.hit ? '*' : ''}${item.count > 1 ? `(${item.count})` : ''}`).join(' ');
 }
 
 function cubeValueFromCode(code){
@@ -127,19 +211,6 @@ function cubeOwnerFromCode(code, activePlayer){
   const ownerIsActive = code > 0;
   const owner = ownerIsActive ? activePlayer : -activePlayer;
   return owner === 1 ? 'black' : 'white';
-}
-
-function formatMove(raw){
-  const parts = [];
-  for(let i=0;i<8;i+=2){
-    const from = raw[i];
-    const to = raw[i+1];
-    if(from == null || from < 0) break;
-    const fromText = from === 24 ? 'bar' : String(from + 1);
-    const toText = to < 0 ? 'off' : String(to + 1);
-    parts.push(`${fromText}/${toText}`);
-  }
-  return parts.join(' ');
 }
 
 function readPosition(buf, off){
@@ -169,7 +240,7 @@ function parseBestMoveEngine(rec, base){
     candidates.push({
       pos,
       moveRaw,
-      move: formatMove(moveRaw),
+      move: '',
       result,
       winRate: result[3] * 100,
       equity: result[6]
@@ -248,7 +319,29 @@ function parseMove(rec, version){
   const initEq = float64(rec,2336);
   let playedIndex = best.candidates.findIndex(c => samePosition(c.pos, positionEnd));
   if(playedIndex < 0) playedIndex = 0;
-  return {positionI,positionEnd,activePlayer,moveRaw,move:formatMove(moveRaw),dice,cubeCode,best,playedIndex,errMove,errLuck,initEq};
+
+  // PositionI / Cube.Position are always treated as the canonical board.
+  // PositionEnd uses XG's active-player orientation for player -1, so the
+  // replay board is rebuilt from the actual move sequence instead of trusting
+  // the raw end-position orientation.
+  const beforePosition = normalizeStoredPosition(positionI);
+  const applied = applyCheckerMove(beforePosition, activePlayer, moveRaw);
+  const expectedEnd = normalizeMoveEndPosition(positionEnd, activePlayer);
+  const move = formatCheckerMove(moveRaw, beforePosition, activePlayer);
+
+  const isDance = !applied.segments.length;
+  for(const candidate of best.candidates){
+    if(isDance && samePosition(candidate.pos, positionEnd)){
+      candidate.move = 'Dance';
+    }else{
+      candidate.move = formatCheckerMove(candidate.moveRaw, beforePosition, activePlayer);
+    }
+  }
+
+  return {
+    positionI,positionEnd,activePlayer,moveRaw,move,dice,cubeCode,best,playedIndex,
+    errMove,errLuck,initEq,beforePosition,afterPosition:applied.position,expectedEnd
+  };
 }
 
 function parseCube(rec){
@@ -325,7 +418,7 @@ function buildTimeline(parsed, sourceFile){
     if(r.type === 'gameHeader'){
       gameNumber = r.gameNumber;
       score = [r.score1,r.score2];
-      lastPosition = normalizePosition(r.pos, 1);
+      lastPosition = normalizeStoredPosition(r.pos);
       lastCube = {value: 2 ** Math.max(0,r.autoDoubles || 0), owner:0};
       lastBlackRate = 50;
       states.push({
@@ -338,7 +431,7 @@ function buildTimeline(parsed, sourceFile){
     }
 
     if(r.type === 'cube'){
-      const position = normalizePosition(r.position, r.activePlayer);
+      const position = normalizeStoredPosition(r.position);
       const activeRate = r.analysis && r.analysis.result ? r.analysis.result[3] * 100 : null;
       let winRate = stateWinRate(r.activePlayer, activeRate, lastBlackRate);
       if(r.analysis.result.every(v => v === 0)) winRate = {black:lastBlackRate,white:100-lastBlackRate};
@@ -397,8 +490,8 @@ function buildTimeline(parsed, sourceFile){
         error:c.equity - (r.best.candidates[0]?.equity ?? c.equity),
         winRate:c.winRate
       }));
-      const beforePosition = normalizePosition(r.positionI,r.activePlayer);
-      const afterPosition = normalizePosition(r.positionEnd,r.activePlayer);
+      const beforePosition = r.beforePosition || normalizeStoredPosition(r.positionI);
+      const afterPosition = r.afterPosition || applyCheckerMove(beforePosition,r.activePlayer,r.moveRaw).position;
       const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode,r.activePlayer)};
 
       // Every checker play is presented as four fixed broadcast beats:

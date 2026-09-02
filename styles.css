@@ -7,7 +7,8 @@
   --red:#c43b3b;
   --red-bg:#fff0f0;
   --text:#111;
-  --top-bg:#eef7ee;
+  --top-bg:#f3f3ed;
+  --theme-color:#6B670D;
   --line:#d6e2d6;
 }
 
@@ -51,6 +52,8 @@ html,body{
 }
 
 .headline-row{
+  position:relative;
+  isolation:isolate;
   width:1920px;
   height:96px;
   display:grid;
@@ -59,6 +62,36 @@ html,body{
   gap:22px;
   padding:0 30px;
   overflow:hidden;
+  background:
+    linear-gradient(105deg,
+      color-mix(in srgb,var(--theme-color) 54%,#090909) 0%,
+      color-mix(in srgb,var(--theme-color) 83%,#111) 42%,
+      var(--theme-color) 55%,
+      color-mix(in srgb,var(--theme-color) 55%,#090909) 100%);
+  border-bottom:4px solid color-mix(in srgb,var(--theme-color) 62%,#fff);
+  box-shadow:inset 0 -1px 0 rgba(255,255,255,.28);
+}
+.headline-row::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:-40px 0;
+  background:
+    linear-gradient(118deg,transparent 0 27%,rgba(255,255,255,.10) 27% 30%,transparent 30% 64%,rgba(255,255,255,.06) 64% 66%,transparent 66%),
+    radial-gradient(ellipse at 50% 0,rgba(255,255,255,.22),transparent 58%);
+  pointer-events:none;
+}
+.headline-row::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:0;
+  width:690px;
+  height:4px;
+  transform:translateX(-50%);
+  background:linear-gradient(90deg,transparent,#fff 22%,#fff 78%,transparent);
+  opacity:.68;
+  pointer-events:none;
 }
 
 .headline-name{
@@ -67,6 +100,8 @@ html,body{
   line-height:1;
   white-space:nowrap;
   text-align:center;
+  color:#fff;
+  text-shadow:0 2px 4px rgba(0,0,0,.55);
 }
 .headline-name.left{text-align:left}
 .headline-name.right{text-align:right}
@@ -85,10 +120,12 @@ html,body{
   width:100%;
   text-align:center;
   font-family:"Noto Sans JP",Inter,"Yu Gothic",Meiryo,sans-serif;
-  font-size:46px;
+  font-size:50px;
   font-weight:900;
   line-height:1;
   letter-spacing:.01em;
+  color:#fff;
+  text-shadow:0 3px 6px rgba(0,0,0,.58);
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;

@@ -11,6 +11,7 @@ const manualModeBtn = document.getElementById("manualModeBtn");
 
 const tournamentLine1Input = document.getElementById("tournamentLine1Input");
 const tournamentLine2Input = document.getElementById("tournamentLine2Input");
+const themeColorInput = document.getElementById("themeColorInput");
 const blackNameInput = document.getElementById("blackNameInput");
 const whiteNameInput = document.getElementById("whiteNameInput");
 const blackScoreInput = document.getElementById("blackScoreInput");
@@ -34,7 +35,8 @@ let lastState = {
     whiteName:"平林 直",
     blackScore:0,
     whiteScore:0,
-    matchFile:""
+    matchFile:"",
+    themeColor:"#6B670D"
   }
 };
 
@@ -81,6 +83,7 @@ function renderState(state){
 
   tournamentLine1Input.value = lastState.meta.tournamentTitleLine1 || lastState.meta.tournamentTitle || "";
   tournamentLine2Input.value = lastState.meta.tournamentTitleLine2 || "";
+  themeColorInput.value = lastState.meta.themeColor || "#6B670D";
   blackNameInput.value = lastState.meta.blackName || "";
   whiteNameInput.value = lastState.meta.whiteName || "";
   blackScoreInput.value = lastState.meta.blackScore ?? 0;
@@ -168,6 +171,7 @@ async function applyMeta(){
   const nextMeta = {
     tournamentTitleLine1: tournamentLine1Input.value.trim(),
     tournamentTitleLine2: tournamentLine2Input.value.trim(),
+    themeColor: themeColorInput.value.trim() || "#6B670D",
     blackName: blackNameInput.value.trim(),
     whiteName: whiteNameInput.value.trim(),
     blackScore: Number(blackScoreInput.value || 0),

@@ -35,7 +35,8 @@ const defaultMeta = {
   whiteName: "平林 直",
   blackScore: 0,
   whiteScore: 0,
-  matchFile: ""
+  matchFile: "",
+  themeColor: "#6B670D"
 };
 
 function ensureDirs(){
@@ -216,6 +217,7 @@ function applyMetaPatch(patch){
     ...state.meta,
     tournamentTitleLine1:String(patch.tournamentTitleLine1 ?? state.meta.tournamentTitleLine1 ?? "").trim(),
     tournamentTitleLine2:String(patch.tournamentTitleLine2 ?? state.meta.tournamentTitleLine2 ?? "").trim(),
+    themeColor:/^#[0-9a-fA-F]{6}$/.test(String(patch.themeColor ?? state.meta.themeColor ?? "")) ? String(patch.themeColor ?? state.meta.themeColor) : "#6B670D",
     blackName:String(patch.blackName ?? state.meta.blackName ?? "").trim(),
     whiteName:String(patch.whiteName ?? state.meta.whiteName ?? "").trim(),
     blackScore:Number.isFinite(Number(patch.blackScore))?Number(patch.blackScore):state.meta.blackScore,

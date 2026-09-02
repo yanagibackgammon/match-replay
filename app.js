@@ -10,7 +10,7 @@ boardSvg.appendChild(gameOverlayG);
 const defaultMeta={
   tournamentTitleLine1:"JBS第31期名人戦 準々決勝",
   tournamentTitleLine2:"2025-08-30　25ポイントマッチ　勝てばベスト4",
-  blackName:"柳 暢祐",whiteName:"平林 直",blackScore:0,whiteScore:0,matchFile:""
+  blackName:"柳 暢祐",whiteName:"平林 直",blackScore:0,whiteScore:0,matchFile:"",themeColor:"#6B670D"
 };
 const standardPoints=[0,-2,0,0,0,0,5,0,3,0,0,0,-5,5,0,0,0,-3,0,-5,0,0,0,0,2];
 const emptyState={
@@ -89,7 +89,13 @@ function drawGameOverlay(state){
 }
 trianglePoints();
 
+function normalizeThemeColor(value){
+  const text=String(value||"").trim();
+  return /^#[0-9a-fA-F]{6}$/.test(text)?text:"#6B670D";
+}
+
 function renderMeta(state){
+  document.documentElement.style.setProperty("--theme-color",normalizeThemeColor(meta.themeColor));
   els.tournamentTitleLine1.textContent=meta.tournamentTitleLine1;
   els.tournamentTitleLine2.textContent=meta.tournamentTitleLine2||"";
   els.blackName.textContent=meta.blackName;els.whiteName.textContent=meta.whiteName;els.blackHistoryName.textContent=meta.blackName;els.whiteHistoryName.textContent=meta.whiteName;
