@@ -177,7 +177,7 @@ html,body{
   letter-spacing:.03em;
   white-space:nowrap;
 }
-.point{stroke:none}
+.point{stroke:#000;stroke-width:1;stroke-linejoin:round}
 .checker-piece-black{fill:#000;stroke:#000;stroke-width:1.2}
 .checker-piece-white{fill:#fff;stroke:#000;stroke-width:1.2}
 .point-label{
