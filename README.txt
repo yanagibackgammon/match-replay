@@ -1,11 +1,11 @@
-MATCH REPLAY v19
+MATCH REPLAY v21
 
-■ 修正内容
-- GitHub Pages デプロイ時に ads/manifest.json を自動生成
-- ads/ 内の PNG / JPG / JPEG / WEBP / GIF を自動検出
-- 広告画像を追加・削除しても manifest.json の手動更新不要
-- matches/manifest.json の generated マッピングも生成済みJSONから補完
-
-■ 原因
-広告画像自体はPages artifactへ正常にアップロードされていましたが、
-ads/manifest.json が files: [] のままだったため、配信画面が広告なしと判断していました。
+■変更
+- 履歴を各プレイヤー4行固定に変更
+- 履歴は古い→新しい順で上から下へ表示
+- 5件目以降は最古の1件を押し出して1行ずつ上へ移動
+- 履歴フォントとサイコロを拡大
+- 大会名を1行表示のみに変更し、操作画面も大会名1項目に整理
+- 左プレイヤー名を左寄せ、右プレイヤー名を右寄せ
+- スコア枠の高さを勝率バーと同じ92pxに統一
+- 広告切替を30秒から60秒へ変更

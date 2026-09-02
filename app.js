@@ -5,7 +5,6 @@ const cubeG=document.getElementById("cube");
 
 const defaultMeta={
   tournamentTitleLine1:"JBS第31期名人戦 準々決勝",
-  tournamentTitleLine2:"2025/08/30　25ポイントマッチ　勝てばベスト4",
   blackName:"柳 暢祐",whiteName:"平林 直",blackScore:0,whiteScore:0,matchFile:""
 };
 const standardPoints=[0,-2,0,0,0,0,5,0,3,0,0,0,-5,5,0,0,0,-3,0,-5,0,0,0,0,2];
@@ -23,7 +22,7 @@ const pageChannel=(!isLocal()&&"BroadcastChannel" in window)?new BroadcastChanne
 
 const els={
   stageWrap:document.getElementById("stage-wrap"),stage:document.getElementById("stage"),
-  tournamentTitleLine1:document.getElementById("tournamentTitleLine1"),tournamentTitleLine2:document.getElementById("tournamentTitleLine2"),
+  tournamentTitleLine1:document.getElementById("tournamentTitleLine1"),
   blackName:document.getElementById("blackName"),whiteName:document.getElementById("whiteName"),
   blackHistoryName:document.getElementById("blackHistoryName"),whiteHistoryName:document.getElementById("whiteHistoryName"),
   blackScore:document.getElementById("blackScore"),whiteScore:document.getElementById("whiteScore"),
@@ -70,7 +69,7 @@ function drawCube(v){cubeG.innerHTML="";if(!v||v<=1)return;const r=document.crea
 trianglePoints();
 
 function renderMeta(state){
-  els.tournamentTitleLine1.textContent=meta.tournamentTitleLine1;els.tournamentTitleLine2.textContent=meta.tournamentTitleLine2;
+  els.tournamentTitleLine1.textContent=meta.tournamentTitleLine1;
   els.blackName.textContent=meta.blackName;els.whiteName.textContent=meta.whiteName;els.blackHistoryName.textContent=meta.blackName;els.whiteHistoryName.textContent=meta.whiteName;
   const score=state?.score||[meta.blackScore,meta.whiteScore];els.blackScore.textContent=score[0]??meta.blackScore;els.whiteScore.textContent=score[1]??meta.whiteScore;
 }
@@ -79,7 +78,7 @@ function renderDie(face){return `<span class="die">${diePips(face).map(c=>`<span
 function renderPair(pair){return pair&&pair.length===2?`<div class="dice-pair-inline">${renderDie(pair[0])}${renderDie(pair[1])}</div>`:'<div class="dice-pair-inline"></div>';}
 function historyClass(error){if(error<=-0.080)return"error-red";if(error<=-0.020)return"error-green";return"";}
 function renderHistoryColumn(player){
-  const events=matchData.states.slice(0,index+1).map(s=>s.historyEvent).filter(e=>e&&e.player===player).slice(-6).reverse();
+  const events=matchData.states.slice(0,index+1).map(s=>s.historyEvent).filter(e=>e&&e.player===player).slice(-4);
   return events.map(e=>`<div class="history-row ${historyClass(e.error)}">${renderPair(e.dice)}<span class="history-move">${e.move||""}</span></div>`).join("");
 }
 function renderHistory(){els.blackHistoryList.innerHTML=renderHistoryColumn("black");els.whiteHistoryList.innerHTML=renderHistoryColumn("white");}
@@ -238,6 +237,6 @@ async function cycleAds(){
   setAdImage(els.adImage1,first);setAdImage(els.adImage2,second);
   adIndex=(adIndex+2)%adFiles.length;
 }
-function startAdRotation(){if(adTimer)clearInterval(adTimer);cycleAds();adTimer=setInterval(cycleAds,30000);}
+function startAdRotation(){if(adTimer)clearInterval(adTimer);cycleAds();adTimer=setInterval(cycleAds,60000);}
 function scaleStage(){const vw=document.documentElement.clientWidth||innerWidth||1920,s=vw/1920;els.stage.style.transform=`scale(${s})`;els.stageWrap.style.height=`${Math.ceil(1080*s)}px`;}
 addEventListener("resize",scaleStage);scaleStage();render();startAdRotation();loadInitialPagesMeta();connectWebSocket();

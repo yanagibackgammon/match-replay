@@ -68,6 +68,8 @@ html,body{
   white-space:nowrap;
   text-align:center;
 }
+.headline-name.left{text-align:left}
+.headline-name.right{text-align:right}
 
 .headline-title-block{
   display:flex;
@@ -116,13 +118,13 @@ html,body{
 }
 
 .score-card{
-  height:118px;
+  height:92px;
   display:flex;
   align-items:center;
   justify-content:center;
   background:#fff;
   border:3px solid #111;
-  border-radius:20px;
+  border-radius:16px;
 }
 
 .score-value{
@@ -230,21 +232,21 @@ html,body{
 }
 
 .history-list-column{
-  height:214px;
+  height:216px;
   overflow:hidden;
 }
 
 .history-row{
-  height:32px;
+  height:48px;
   display:grid;
-  grid-template-columns:92px 1fr;
+  grid-template-columns:108px 1fr;
   align-items:center;
   gap:12px;
-  font-size:18px;
-  font-weight:800;
+  font-size:24px;
+  font-weight:900;
   line-height:1;
 }
-.history-row + .history-row{margin-top:6px}
+.history-row + .history-row{margin-top:8px}
 
 .history-move{
   white-space:nowrap;
@@ -276,7 +278,7 @@ html,body{
   flex:0 0 auto;
 }
 
-.dice-pair-inline .die{--die-size:36px;--pip-size:7px}
+.dice-pair-inline .die{--die-size:44px;--pip-size:8px}
 .analysis-dice-block .die{--die-size:46px;--pip-size:9px}
 
 .die-pip{
@@ -287,15 +289,15 @@ html,body{
   background:#111;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.25);
 }
-.die-pip.p1{left:7px; top:7px}
-.die-pip.p2{left:50%; top:7px; transform:translateX(-50%)}
-.die-pip.p3{right:7px; top:7px}
-.die-pip.p4{left:7px; top:50%; transform:translateY(-50%)}
+.die-pip.p1{left:8px; top:8px}
+.die-pip.p2{left:50%; top:8px; transform:translateX(-50%)}
+.die-pip.p3{right:8px; top:8px}
+.die-pip.p4{left:8px; top:50%; transform:translateY(-50%)}
 .die-pip.p5{left:50%; top:50%; transform:translate(-50%,-50%)}
-.die-pip.p6{right:7px; top:50%; transform:translateY(-50%)}
-.die-pip.p7{left:7px; bottom:7px}
-.die-pip.p8{left:50%; bottom:7px; transform:translateX(-50%)}
-.die-pip.p9{right:7px; bottom:7px}
+.die-pip.p6{right:8px; top:50%; transform:translateY(-50%)}
+.die-pip.p7{left:8px; bottom:8px}
+.die-pip.p8{left:50%; bottom:8px; transform:translateX(-50%)}
+.die-pip.p9{right:8px; bottom:8px}
 
 .analysis-area{
   width:840px;
