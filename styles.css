@@ -599,3 +599,65 @@ html,body{
 .history-cell.error-red .history-move{color:#c43b3b}
 
 #boardBase{stroke:var(--board-line)!important}
+
+/* v45: PR header alignment, cube icon, history error colors */
+.history-player-name{
+  display:grid;
+  grid-template-columns:108px 1fr;
+  align-items:center;
+  justify-content:stretch;
+  gap:12px;
+  text-align:left;
+}
+.history-player-name:first-child{padding-right:14px}
+.history-player-name + .history-player-name{padding-left:14px}
+.history-pr{
+  display:block;
+  width:108px;
+  text-align:center;
+  font-size:21px;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.history-name-text{
+  display:block;
+  min-width:0;
+  text-align:left;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:24px;
+  font-weight:900;
+}
+.history-cube-pair{
+  width:96px;
+  height:44px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex:0 0 auto;
+}
+.history-icon-spacer{width:44px;height:44px;flex:0 0 44px}
+.history-cube-icon{
+  width:44px;
+  height:44px;
+  flex:0 0 44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:2px solid #111;
+  border-radius:5px;
+  background:#fff;
+  color:#111;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:24px;
+  font-weight:900;
+  line-height:1;
+  box-shadow:0 2px 5px rgba(0,0,0,.10);
+}
+.history-cell.history-error .history-move{color:#d01818}
+.history-cell.history-blunder .history-move{color:#7a1fa2}
+.history-cell.history-error .history-cube-icon{color:#d01818;border-color:#d01818}
+.history-cell.history-blunder .history-cube-icon{color:#7a1fa2;border-color:#7a1fa2}
+.bar-rate{font-size:42px}

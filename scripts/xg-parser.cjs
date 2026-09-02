@@ -263,7 +263,8 @@ function parseBestMoveEngine(rec, base){
       equity: result[6]
     });
   }
-  return {nMoves, candidates};
+  const unused = int8(rec, base + 2180);
+  return {nMoves, candidates, unused};
 }
 
 function parseDoubleEngine(rec, base){
@@ -334,6 +335,7 @@ function parseMove(rec, version){
   const errMove = float64(rec,2312);
   const errLuck = float64(rec,2320);
   const initEq = float64(rec,2336);
+  const invalidM = int32(rec,2480);
   let playedIndex = best.candidates.findIndex(c => samePosition(c.pos, positionEnd));
   if(playedIndex < 0) playedIndex = 0;
 
@@ -357,7 +359,7 @@ function parseMove(rec, version){
 
   return {
     positionI,positionEnd,activePlayer,moveRaw,move,dice,cubeCode,best,playedIndex,
-    errMove,errLuck,initEq,beforePosition,afterPosition:applied.position,expectedEnd
+    errMove,errLuck,initEq,invalidM,beforePosition,afterPosition:applied.position,expectedEnd
   };
 }
 
@@ -372,7 +374,8 @@ function parseCube(rec){
   const analysis = parseDoubleEngine(rec,64);
   const errCube = float64(rec,200);
   const errTake = float64(rec,216);
-  return {activePlayer,doubleAction,take,beaver,raccoon,cubeCode,position,analysis,errCube,errTake};
+  const isValid = int32(rec,260);
+  return {activePlayer,doubleAction,take,beaver,raccoon,cubeCode,position,analysis,errCube,errTake,isValid};
 }
 
 function parseFooterGame(rec){
@@ -428,6 +431,40 @@ function buildTimeline(parsed, sourceFile){
   let lastBlackRate = 50;
   let lastPosition = null;
   let lastCube = {value:1,owner:0};
+  const prStats = {
+    black:{error:0,decisions:0},
+    white:{error:0,decisions:0}
+  };
+  const validDecisionError = value => Number.isFinite(Number(value)) && Math.abs(Number(value)) < 999;
+  const playerKey = activePlayer => activePlayer === 1 ? 'black' : 'white';
+  const snapshotPR = () => ({
+    black:prStats.black.decisions ? prStats.black.error / prStats.black.decisions * 500 : 0,
+    white:prStats.white.decisions ? prStats.white.error / prStats.white.decisions * 500 : 0,
+    decisions:{black:prStats.black.decisions,white:prStats.white.decisions}
+  });
+  const addPrDecision = (activePlayer,error,counts=true) => {
+    if(!counts || !validDecisionError(error)) return;
+    const key=playerKey(activePlayer);
+    prStats[key].error += Math.abs(Number(error));
+    prStats[key].decisions += 1;
+  };
+  const cubeOfferCounts = r => {
+    if(r.isValid && r.isValid !== 0) return false;
+    if(!validDecisionError(r.errCube)) return false;
+    const nd=Number(r.analysis?.equityNoDouble),dt=Number(r.analysis?.equityDoubleTake),dp=Number(r.analysis?.equityDrop);
+    if(![nd,dt,dp].every(Number.isFinite)) return false;
+    const doubled=Math.min(dt,dp);
+    if(Math.abs(nd-doubled)<0.001) return false;
+    if(nd-doubled>=0.200) return false;
+    return true;
+  };
+  const takePassCounts = r => {
+    if(r.isValid && r.isValid !== 0) return false;
+    if(!validDecisionError(r.errTake)) return false;
+    const dt=Number(r.analysis?.equityDoubleTake),dp=Number(r.analysis?.equityDrop);
+    return Number.isFinite(dt)&&Number.isFinite(dp)&&Math.abs(dt-dp)>=0.001;
+  };
+  const pushState = state => states.push({...state,pr:snapshotPR()});
 
   const recs = parsed.records;
   for(let i=0;i<recs.length;i++){
@@ -438,7 +475,7 @@ function buildTimeline(parsed, sourceFile){
       lastPosition = normalizeStoredPosition(r.pos);
       lastCube = {value: 2 ** Math.max(0,r.autoDoubles || 0), owner:0};
       lastBlackRate = 50;
-      states.push({
+      pushState({
         phase:'gameStart', gameNumber, score:[...score], activePlayer:0,
         position:lastPosition, dice:null, cube:lastCube,
         winRate:{black:lastBlackRate,white:100-lastBlackRate},
@@ -455,27 +492,57 @@ function buildTimeline(parsed, sourceFile){
       const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode)};
 
       if(r.doubleAction === 1){
-        const candidates = [
-          {move:'Double / Take', equity:r.analysis.equityDoubleTake},
-          {move:'No Double', equity:r.analysis.equityNoDouble},
-          {move:'Double / Pass', equity:r.analysis.equityDrop}
-        ].sort((a,b)=>b.equity-a.equity);
-        const bestEq = candidates[0]?.equity ?? 0;
-        for(const c of candidates) c.error = c.equity - bestEq;
         const doubler=r.activePlayer===1?'black':'white';
         const responder=doubler==='black'?'white':'black';
-        const historyEvents=[
-          {player:doubler,dice:null,move:'Double',error:r.errCube,kind:'cube'}
+        const responderActive=-r.activePlayer;
+        const offeredValue=Math.max(2,(Number(cube.value)||1)*2);
+        const pairId=`cube-${gameNumber}-${r.index}`;
+
+        // Double / No Double: the actual Double is selected here.
+        const nd=Number(r.analysis.equityNoDouble);
+        const dt=Number(r.analysis.equityDoubleTake);
+        const dp=Number(r.analysis.equityDrop);
+        const doubledEq=Math.min(dt,dp);
+        const offerBest=Math.max(nd,doubledEq);
+        const offerCandidates=[
+          {move:'Double',equity:doubledEq,error:doubledEq-offerBest},
+          {move:'No Double',equity:nd,error:nd-offerBest}
         ];
-        if(r.take===1) historyEvents.push({player:responder,dice:null,move:'Take',error:r.errTake,kind:'cubeResponse'});
-        else if(r.take===0) historyEvents.push({player:responder,dice:null,move:'Pass',error:r.errTake,kind:'cubeResponse'});
-        states.push({
-          phase:'cube',gameNumber,score:[...score],activePlayer:r.activePlayer,
+        addPrDecision(r.activePlayer,r.errCube,cubeOfferCounts(r));
+        pushState({
+          phase:'cubeOffer',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position,dice:null,cube,winRate,
-          analysis:{type:'moves',candidates},
-          historyEvent:null,historyEvents
+          analysis:{type:'moves',candidates:offerCandidates,playedIndex:0},
+          historyEvent:{player:doubler,dice:null,move:'Double',error:-Math.abs(Number(r.errCube)||0),kind:'cube',cubeValue:offeredValue,pairId}
         });
+
+        // Take / Pass candidates are shown once without a selection, then the actual response is selected.
+        const responseBest=Math.min(dt,dp);
+        const responseCandidates=[
+          {move:'Take',equity:dt,error:-(dt-responseBest)},
+          {move:'Pass',equity:dp,error:-(dp-responseBest)}
+        ];
+        pushState({
+          phase:'cubeResponse',gameNumber,score:[...score],activePlayer:responderActive,
+          position,dice:null,cube,winRate,
+          analysis:{type:'moves',candidates:responseCandidates},historyEvent:null
+        });
+
+        const responseIndex=r.take===1||r.take===2?0:1;
+        const responseMove=responseIndex===0?'Take':'Pass';
+        const cubeAfter=responseMove==='Take'?{value:offeredValue,owner:responder}:cube;
+        addPrDecision(responderActive,r.errTake,takePassCounts(r));
+        pushState({
+          phase:'cubeResponseSelect',gameNumber,score:[...score],activePlayer:responderActive,
+          position,dice:null,cube:cubeAfter,winRate,
+          analysis:{type:'moves',candidates:responseCandidates,playedIndex:responseIndex},
+          historyEvent:{player:responder,dice:null,move:responseMove,error:-Math.abs(Number(r.errTake)||0),kind:'cubeResponse',pairId}
+        });
+        lastCube=cubeAfter;
       }else{
+        // A non-obvious No Double is also a PR decision, even though it does not need a separate visual beat.
+        addPrDecision(r.activePlayer,r.errCube,cubeOfferCounts(r));
+
         // Pre-roll state. Peek at the upcoming move to classify the actual roll as joker/anti-joker.
         const next = recs[i+1];
         const joker = [];
@@ -490,15 +557,15 @@ function buildTimeline(parsed, sourceFile){
             if(delta <= -JOKER_WINRATE_THRESHOLD) antiJoker.push(next.dice);
           }
         }
-        states.push({
+        pushState({
           phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position,dice:null,cube,winRate,
           analysis:{type:'jokers',joker,antiJoker,thresholdWinRatePoints:JOKER_WINRATE_THRESHOLD},
           historyEvent:null
         });
+        lastCube = cube;
       }
       lastPosition = position;
-      lastCube = cube;
       lastBlackRate = winRate.black;
       continue;
     }
@@ -530,7 +597,7 @@ function buildTimeline(parsed, sourceFile){
       // XGにpre-roll cube recordが無い場合も空のJoker段階を補う。
       const previous = states[states.length - 1];
       if(!(previous && previous.phase === 'preRoll' && previous.gameNumber === gameNumber && previous.activePlayer === r.activePlayer)){
-        states.push({
+        pushState({
           phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:null,cube,winRate:{black:lastBlackRate,white:100-lastBlackRate},
           analysis:{type:'jokers',joker:[],antiJoker:[],thresholdWinRatePoints:JOKER_WINRATE_THRESHOLD},
@@ -538,18 +605,19 @@ function buildTimeline(parsed, sourceFile){
         });
       }
 
-      states.push({
+      pushState({
         phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
         position:beforePosition,dice:r.dice,cube,winRate:bestWinRate,
         analysis:{type:'moves',candidates},historyEvent:null
       });
-      states.push({
+      addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
+      pushState({
         phase:'analysis',gameNumber,score:[...score],activePlayer:r.activePlayer,
         position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,
         analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
         historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'}
       });
-      states.push({
+      pushState({
         phase:'move',gameNumber,score:[...score],activePlayer:r.activePlayer,
         position:afterPosition,dice:null,cube,winRate:selectedWinRate,
         analysis:{type:'none'},historyEvent:null
@@ -561,9 +629,19 @@ function buildTimeline(parsed, sourceFile){
     }
 
     if(r.type === 'gameFooter'){
-      score = [r.score1,r.score2];
-      states.push({
-        phase:'gameEnd',gameNumber,score:[...score],activePlayer:0,
+      const beforeScore=[...score];
+      const afterScore=[r.score1,r.score2];
+      const winner=r.winner===1?'black':(r.winner===-1?'white':null);
+      const points=Math.max(0,Number(r.pointsWon)||0);
+      pushState({
+        phase:'gameEnd',gameNumber,score:[...beforeScore],activePlayer:0,
+        position:lastPosition,dice:null,cube:lastCube,
+        winRate:{black:lastBlackRate,white:100-lastBlackRate},analysis:{type:'none'},historyEvent:null,
+        scoreDelta:winner&&points?{winner,points}:null
+      });
+      score=afterScore;
+      pushState({
+        phase:'scoreUpdate',gameNumber,score:[...score],activePlayer:0,
         position:lastPosition,dice:null,cube:lastCube,
         winRate:{black:lastBlackRate,white:100-lastBlackRate},analysis:{type:'none'},historyEvent:null
       });
@@ -571,7 +649,7 @@ function buildTimeline(parsed, sourceFile){
   }
 
   return {
-    schemaVersion:2,
+    schemaVersion:3,
     sourceFile,
     generatedAt:new Date().toISOString(),
     match:{...parsed.match, blackSourcePlayer:parsed.match.player1, whiteSourcePlayer:parsed.match.player2},

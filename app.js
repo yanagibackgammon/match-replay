@@ -226,27 +226,61 @@ async function loadDesignPresets(){
   render();
 }
 
+function ensureHistoryHeader(el){
+  if(!el)return {pr:null,name:null};
+  let pr=el.querySelector('.history-pr');
+  let name=el.querySelector('.history-name-text');
+  if(!pr||!name){
+    el.textContent='';
+    pr=document.createElement('span');pr.className='history-pr';
+    name=document.createElement('span');name.className='history-name-text';
+    el.append(pr,name);
+  }
+  return {pr,name};
+}
+function renderHistoryHeader(el,prValue,nameText){
+  const parts=ensureHistoryHeader(el);
+  if(parts.pr)parts.pr.textContent=`PR ${Number(prValue||0).toFixed(1)}`;
+  if(parts.name)parts.name.textContent=nameText||'';
+}
 function renderMeta(state){
   document.documentElement.style.setProperty("--theme-color",normalizeThemeColor(meta.themeColor));
   applyDesignPreset(meta.designPreset||"classic");
   els.tournamentTitleLine1.textContent=meta.tournamentTitleLine1;
   els.tournamentTitleLine2.textContent=meta.tournamentTitleLine2||"";
-  els.blackName.textContent=meta.blackName;els.whiteName.textContent=meta.whiteName;els.blackHistoryName.textContent=meta.blackName;els.whiteHistoryName.textContent=meta.whiteName;
-  const score=state?.score||[meta.blackScore,meta.whiteScore];els.blackScore.textContent=score[0]??meta.blackScore;els.whiteScore.textContent=score[1]??meta.whiteScore;
+  els.blackName.textContent=meta.blackName;els.whiteName.textContent=meta.whiteName;
+  renderHistoryHeader(els.blackHistoryName,state?.pr?.black,meta.blackName);
+  renderHistoryHeader(els.whiteHistoryName,state?.pr?.white,meta.whiteName);
+  const score=state?.score||[meta.blackScore,meta.whiteScore];
+  let blackScore=score[0]??meta.blackScore,whiteScore=score[1]??meta.whiteScore;
+  if(state?.scoreDelta?.winner==='black')blackScore=`+${state.scoreDelta.points}`;
+  if(state?.scoreDelta?.winner==='white')whiteScore=`+${state.scoreDelta.points}`;
+  els.blackScore.textContent=blackScore;els.whiteScore.textContent=whiteScore;
 }
 function diePips(face){return {1:["p5"],2:["p1","p9"],3:["p1","p5","p9"],4:["p1","p3","p7","p9"],5:["p1","p3","p5","p7","p9"],6:["p1","p3","p4","p6","p7","p9"]}[face]||[];}
 function diePlayerClass(player){return player===1||player==="black"?"player1":"player2";}
 function renderDie(face,player){return `<span class="die ${diePlayerClass(player)}">${diePips(face).map(c=>`<span class="die-pip ${c}"></span>`).join("")}</span>`;}
 function renderPair(pair,player){return pair&&pair.length===2?`<div class="dice-pair-inline">${renderDie(pair[0],player)}${renderDie(pair[1],player)}</div>`:'<div class="dice-pair-inline"></div>';}
-function historyClass(error){if(error<=-0.080)return"error-red";if(error<=-0.020)return"error-green";return"";}
+function renderHistoryCube(value){
+  const shown=Math.max(2,Number(value)||2);
+  return `<div class="history-cube-pair"><span class="history-icon-spacer"></span><span class="history-cube-icon">${shown}</span></div>`;
+}
+function historyClass(error){
+  const loss=Math.abs(Number(error)||0);
+  if(loss>=0.080)return"history-blunder";
+  if(loss>=0.020)return"history-error";
+  return"";
+}
 function candidateErrorClass(error){const value=Number(error);if(value<=-0.080)return"error-purple";if(value<=-0.020)return"error-red";return"";}
 function historyMoveLabel(move){return move==="Dance"?"Cannot Move":(move||"");}
 function historyCell(event,player){
   if(!event)return '<div class="history-cell"></div>';
-  return `<div class="history-cell ${historyClass(event.error)}">${renderPair(event.dice,player)}<span class="history-move">${historyMoveLabel(event.move)}</span></div>`;
+  const icon=event.kind==="cube"?renderHistoryCube(event.cubeValue):renderPair(event.dice,player);
+  return `<div class="history-cell ${historyClass(event.error)}">${icon}<span class="history-move">${historyMoveLabel(event.move)}</span></div>`;
 }
 function collectHistoryRows(){
   const rows=[];
+  const cubeRows=new Map();
   let leadPlayer=null;
   let openMoveRow=null;
   for(let stateIndex=0;stateIndex<=index&&stateIndex<matchData.states.length;stateIndex++){
@@ -254,8 +288,7 @@ function collectHistoryRows(){
     if(!state)continue;
     if(state.phase==="gameStart"){
       rows.push({kind:"game",gameNumber:Number(state.gameNumber)||1});
-      leadPlayer=null;
-      openMoveRow=null;
+      leadPlayer=null;openMoveRow=null;cubeRows.clear();
       continue;
     }
 
@@ -264,62 +297,44 @@ function collectHistoryRows(){
     if(state.phase==="preRoll"){
       const turnPlayer=state.activePlayer===1?"black":(state.activePlayer===-1?"white":null);
       if(turnPlayer){
-        if(!leadPlayer) leadPlayer=turnPlayer;
-        if(turnPlayer===leadPlayer){
-          openMoveRow={kind:"actions",black:null,white:null};
-          rows.push(openMoveRow);
-        }
+        if(!leadPlayer)leadPlayer=turnPlayer;
+        if(turnPlayer===leadPlayer){openMoveRow={kind:"actions",black:null,white:null};rows.push(openMoveRow);}
       }
     }
 
+    // Legacy generated JSON compatibility.
     const grouped=Array.isArray(state.historyEvents)?state.historyEvents.filter(Boolean):[];
     if(grouped.length){
       const row={kind:"actions",black:null,white:null};
-      for(const event of grouped){
-        if(event.player==="black"||event.player==="white")row[event.player]=event;
-      }
-      rows.push(row);
-      openMoveRow=null;
-      continue;
+      for(const event of grouped){if(event.player==="black"||event.player==="white")row[event.player]=event;}
+      rows.push(row);openMoveRow=null;continue;
     }
 
     const event=state.historyEvent;
     if(event&&(event.player==="black"||event.player==="white")){
       if(event.kind==="cube"){
         const row={kind:"actions",black:null,white:null};
-        row[event.player]=event;
-        rows.push(row);
-        openMoveRow=null;
+        row[event.player]=event;rows.push(row);openMoveRow=null;
+        if(event.pairId)cubeRows.set(event.pairId,row);
         continue;
       }
-      if(!leadPlayer) leadPlayer=event.player;
-
-      if(event.player===leadPlayer){
-        if(!openMoveRow || openMoveRow[event.player]){
-          openMoveRow={kind:"actions",black:null,white:null};
-          rows.push(openMoveRow);
-        }
-        openMoveRow[event.player]=event;
-      }else{
-        if(!openMoveRow || openMoveRow[event.player]){
-          openMoveRow={kind:"actions",black:null,white:null};
-          rows.push(openMoveRow);
-        }
-        openMoveRow[event.player]=event;
+      if(event.kind==="cubeResponse"){
+        let row=event.pairId?cubeRows.get(event.pairId):null;
+        if(!row){row={kind:"actions",black:null,white:null};rows.push(row);if(event.pairId)cubeRows.set(event.pairId,row);}
+        row[event.player]=event;openMoveRow=null;continue;
       }
+      if(!leadPlayer)leadPlayer=event.player;
+      if(!openMoveRow||openMoveRow[event.player]){openMoveRow={kind:"actions",black:null,white:null};rows.push(openMoveRow);}
+      openMoveRow[event.player]=event;
       continue;
     }
 
     // ロールした瞬間は、現在行にダイスだけ先に表示する。
-    // 過去のrollステートは再処理せず、現在ステートだけを仮表示する。
-    if(stateIndex===index && state.phase==="roll" && Array.isArray(state.dice)){
+    if(stateIndex===index&&state.phase==="roll"&&Array.isArray(state.dice)){
       const turnPlayer=state.activePlayer===1?"black":(state.activePlayer===-1?"white":null);
       if(turnPlayer){
-        if(!leadPlayer) leadPlayer=turnPlayer;
-        if(!openMoveRow || openMoveRow[turnPlayer]){
-          openMoveRow={kind:"actions",black:null,white:null};
-          rows.push(openMoveRow);
-        }
+        if(!leadPlayer)leadPlayer=turnPlayer;
+        if(!openMoveRow||openMoveRow[turnPlayer]){openMoveRow={kind:"actions",black:null,white:null};rows.push(openMoveRow);}
         openMoveRow[turnPlayer]={player:turnPlayer,dice:state.dice,move:"",error:0,kind:"roll"};
       }
     }
