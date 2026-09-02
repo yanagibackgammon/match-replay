@@ -104,10 +104,16 @@ function extractArchive(raw){
 function normalizeStoredPosition(pos){
   const points = Array(25).fill(0);
   for(let p=1;p<=24;p++) points[p] = Number(pos[p] || 0);
+  const blackBar = Math.max(0, Number(pos[25] || 0));
+  const whiteBar = Math.max(0, -Number(pos[0] || 0));
+  const blackOnBoard = points.slice(1).reduce((sum,v)=>sum+Math.max(0,Number(v)||0),0) + blackBar;
+  const whiteOnBoard = points.slice(1).reduce((sum,v)=>sum+Math.max(0,-(Number(v)||0)),0) + whiteBar;
   return {
     points,
-    blackBar: Math.max(0, Number(pos[25] || 0)),
-    whiteBar: Math.max(0, -Number(pos[0] || 0))
+    blackBar,
+    whiteBar,
+    blackOff: Math.max(0, 15 - blackOnBoard),
+    whiteOff: Math.max(0, 15 - whiteOnBoard)
   };
 }
 
@@ -115,10 +121,16 @@ function normalizeMoveEndPosition(pos, activePlayer){
   if(activePlayer === 1) return normalizeStoredPosition(pos);
   const points = Array(25).fill(0);
   for(let p=1;p<=24;p++) points[25 - p] = -Number(pos[p] || 0);
+  const blackBar = Math.max(0, -Number(pos[0] || 0));
+  const whiteBar = Math.max(0, Number(pos[25] || 0));
+  const blackOnBoard = points.slice(1).reduce((sum,v)=>sum+Math.max(0,Number(v)||0),0) + blackBar;
+  const whiteOnBoard = points.slice(1).reduce((sum,v)=>sum+Math.max(0,-(Number(v)||0)),0) + whiteBar;
   return {
     points,
-    blackBar: Math.max(0, -Number(pos[0] || 0)),
-    whiteBar: Math.max(0, Number(pos[25] || 0))
+    blackBar,
+    whiteBar,
+    blackOff: Math.max(0, 15 - blackOnBoard),
+    whiteOff: Math.max(0, 15 - whiteOnBoard)
   };
 }
 
@@ -126,7 +138,9 @@ function cloneBoardPosition(position){
   return {
     points: (position?.points || Array(25).fill(0)).slice(),
     blackBar: Number(position?.blackBar || 0),
-    whiteBar: Number(position?.whiteBar || 0)
+    whiteBar: Number(position?.whiteBar || 0),
+    blackOff: Number(position?.blackOff || 0),
+    whiteOff: Number(position?.whiteOff || 0)
   };
 }
 
@@ -168,6 +182,9 @@ function applyCheckerMove(beforePosition, activePlayer, raw){
         hit = true;
       }
       board.points[destination] += sign;
+    }else{
+      if(sign === 1) board.blackOff += 1;
+      else board.whiteOff += 1;
     }
 
     segments.push({from,to,source,destination,hit});

@@ -14,7 +14,7 @@ const defaultMeta={
 };
 const standardPoints=[0,-2,0,0,0,0,5,0,3,0,0,0,-5,5,0,0,0,-3,0,-5,0,0,0,0,2];
 const emptyState={
-  phase:"empty",score:[0,0],activePlayer:0,position:{points:standardPoints,blackBar:0,whiteBar:0},
+  phase:"empty",score:[0,0],activePlayer:0,position:{points:standardPoints,blackBar:0,whiteBar:0,blackOff:0,whiteOff:0},
   dice:null,cube:{value:1,owner:0},winRate:{black:50,white:50},analysis:{type:"none"},historyEvent:null
 };
 
@@ -103,15 +103,30 @@ function addBarStack(centerY,n,klass){
     checkersG.appendChild(c);
   }
 }
+function addBearOffStack(count,klass,upper){
+  const n=Math.max(0,Math.min(15,Number(count)||0));
+  if(!n)return;
+  // ベアオフは右端トレイに薄いチェッカーを積む。選手2=上、選手1=下。
+  const x=651.5,w=34,h=9,pitch=14;
+  for(let i=0;i<n;i++){
+    const r=document.createElementNS("http://www.w3.org/2000/svg","rect");
+    r.setAttribute("x",String(x));
+    r.setAttribute("y",String(upper ? 38+i*pitch : 499-h-i*pitch));
+    r.setAttribute("width",String(w));r.setAttribute("height",String(h));r.setAttribute("rx","4.5");
+    r.setAttribute("class",klass);checkersG.appendChild(r);
+  }
+}
 function drawCheckers(position){
   checkersG.innerHTML="";const arr=position?.points||standardPoints;
   for(let p=1;p<=24;p++){const v=arr[p]||0;if(!v)continue;const q=pointCoord(p);addStack(q.x,q.y,q.dir,Math.abs(v),v>0?"checker-piece-black":"checker-piece-white");}
   // 添付SVG: 白は上側バー中央 (y=150.5)、黒は下側バー中央 (y=395.5)。
   addBarStack(150.5,position?.whiteBar||0,"checker-piece-white");
   addBarStack(395.5,position?.blackBar||0,"checker-piece-black");
+  addBearOffStack(position?.whiteOff||0,"checker-piece-white",true);
+  addBearOffStack(position?.blackOff||0,"checker-piece-black",false);
 }
-function drawDice(vals,activePlayer){
-  diceG.innerHTML="";if(!vals)return;const spots={1:[[18,18]],2:[[10,10],[26,26]],3:[[10,10],[18,18],[26,26]],4:[[10,10],[26,10],[10,26],[26,26]],5:[[10,10],[26,10],[18,18],[10,26],[26,26]],6:[[10,9],[26,9],[10,18],[26,18],[10,27],[26,27]]};
+function drawDice(vals,activePlayer,{jokerGlow=false}={}){
+  diceG.innerHTML="";diceG.classList.toggle("is-joker-glow",Boolean(jokerGlow));if(!vals)return;const spots={1:[[18,18]],2:[[10,10],[26,26]],3:[[10,10],[18,18],[26,26]],4:[[10,10],[26,10],[10,26],[26,26]],5:[[10,10],[26,10],[18,18],[10,26],[26,26]],6:[[10,9],[26,9],[10,18],[26,18],[10,27],[26,27]]};
   const player1=activePlayer===1;
   const face=normalizeHex(player1?currentDesign?.checkers?.player1:currentDesign?.checkers?.player2,player1?"#111111":"#FFFFFF");
   const pip=contrastText(face);
@@ -234,7 +249,8 @@ function collectHistoryRows(){
   const rows=[];
   let leadPlayer=null;
   let openMoveRow=null;
-  for(const state of matchData.states.slice(0,index+1)){
+  for(let stateIndex=0;stateIndex<=index&&stateIndex<matchData.states.length;stateIndex++){
+    const state=matchData.states[stateIndex];
     if(!state)continue;
     if(state.phase==="gameStart"){
       rows.push({kind:"game",gameNumber:Number(state.gameNumber)||1});
@@ -268,33 +284,45 @@ function collectHistoryRows(){
     }
 
     const event=state.historyEvent;
-    if(!event||(event.player!=="black"&&event.player!=="white"))continue;
-    if(event.kind==="cube"){
-      const row={kind:"actions",black:null,white:null};
-      row[event.player]=event;
-      rows.push(row);
-      openMoveRow=null;
-      continue;
-    }
-    if(!leadPlayer) leadPlayer=event.player;
-
-    if(event.player===leadPlayer){
-      // 通常はpreRollで既に作成済みの行へ書き込む。
-      // 古い生成JSONなどpreRollが無い場合のみここで新規行を作る。
-      if(!openMoveRow || openMoveRow[event.player]){
-        openMoveRow={kind:"actions",black:null,white:null};
-        rows.push(openMoveRow);
+    if(event&&(event.player==="black"||event.player==="white")){
+      if(event.kind==="cube"){
+        const row={kind:"actions",black:null,white:null};
+        row[event.player]=event;
+        rows.push(row);
+        openMoveRow=null;
+        continue;
       }
-      openMoveRow[event.player]=event;
+      if(!leadPlayer) leadPlayer=event.player;
+
+      if(event.player===leadPlayer){
+        if(!openMoveRow || openMoveRow[event.player]){
+          openMoveRow={kind:"actions",black:null,white:null};
+          rows.push(openMoveRow);
+        }
+        openMoveRow[event.player]=event;
+      }else{
+        if(!openMoveRow || openMoveRow[event.player]){
+          openMoveRow={kind:"actions",black:null,white:null};
+          rows.push(openMoveRow);
+        }
+        openMoveRow[event.player]=event;
+      }
       continue;
     }
 
-    // 後攻は、先行が開始した同じ行の空欄へ入れる。
-    if(!openMoveRow || openMoveRow[event.player]){
-      openMoveRow={kind:"actions",black:null,white:null};
-      rows.push(openMoveRow);
+    // ロールした瞬間は、現在行にダイスだけ先に表示する。
+    // 過去のrollステートは再処理せず、現在ステートだけを仮表示する。
+    if(stateIndex===index && state.phase==="roll" && Array.isArray(state.dice)){
+      const turnPlayer=state.activePlayer===1?"black":(state.activePlayer===-1?"white":null);
+      if(turnPlayer){
+        if(!leadPlayer) leadPlayer=turnPlayer;
+        if(!openMoveRow || openMoveRow[turnPlayer]){
+          openMoveRow={kind:"actions",black:null,white:null};
+          rows.push(openMoveRow);
+        }
+        openMoveRow[turnPlayer]={player:turnPlayer,dice:state.dice,move:"",error:0,kind:"roll"};
+      }
     }
-    openMoveRow[event.player]=event;
   }
   return rows.slice(-4);
 }
@@ -320,8 +348,9 @@ function renderAnalysis(a){
   if(!a||a.type==="none"){els.analysisContent.innerHTML="";return;}
   if(a.type==="jokers"){
     const activePlayer=currentState().activePlayer===1?1:-1;
-    const pair=(d,cls)=>`<div class="joker-glow ${cls}"><div class="dice-pair-block">${renderDie(d[0],activePlayer)}${renderDie(d[1],activePlayer)}</div></div>`;
-    const items=[...(a.joker||[]).map(d=>pair(d,"plus")),...(a.antiJoker||[]).map(d=>pair(d,"minus"))];
+    const pair=d=>`<div class="joker-glow"><div class="dice-pair-block">${renderDie(d[0],activePlayer)}${renderDie(d[1],activePlayer)}</div></div>`;
+    // Anti-Jokerは相手から見ればJokerなので、演出色はすべて緑に統一。
+    const items=[...(a.joker||[]).map(pair),...(a.antiJoker||[]).map(pair)];
     els.analysisContent.innerHTML=`<div class="analysis-jokers">${items.join("")}</div>`;return;
   }
   const selectedIndex=Number.isInteger(a.playedIndex)?a.playedIndex:-1;
@@ -332,7 +361,12 @@ function renderAnalysis(a){
     const entry={candidate:all[selectedIndex],index:selectedIndex};
     if(visible.length<5)visible.push(entry);else visible[4]=entry;
   }
-  const rows=visible.map(({candidate:c,index:i})=>`<div class="analysis-row${i===selectedIndex?" is-selected":""}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${candidateErrorClass(c.error)}">${Number(c.error??0).toFixed(3)}</span></div>`);
+  const rows=visible.map(({candidate:c,index:i})=>{
+    const errorClass=candidateErrorClass(c.error);
+    const selected=i===selectedIndex;
+    const selectedClass=selected?(errorClass==="error-purple"?" is-selected is-selected-blunder":errorClass==="error-red"?" is-selected is-selected-error":" is-selected"):"";
+    return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${Number(c.error??0).toFixed(3)}</span></div>`;
+  });
   while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span></div>');
   els.analysisContent.innerHTML=`<div class="analysis-moves">${rows.slice(0,5).join("")}</div>`;
 }
@@ -343,7 +377,8 @@ function render(){
   els.winBarBlack.style.width=`${b}%`;els.winBarWhite.style.width=`${w}%`;els.blackRateText.textContent=`${displayBlack}%`;els.whiteRateText.textContent=`${displayWhite}%`;
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
   els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);
-  drawPointLabels(s.activePlayer);drawCheckers(s.position);drawDice(s.dice,s.activePlayer);drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
+  const jokerDice=s.phase==="preRoll"&&s.analysis?.type==="jokers"?((s.analysis.joker||[])[0]||(s.analysis.antiJoker||[])[0]||null):null;
+  drawPointLabels(s.activePlayer);drawCheckers(s.position);drawDice(s.dice||jokerDice,s.activePlayer,{jokerGlow:Boolean(jokerDice)});drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
 }
 
 async function fetchManifest(){try{const u=new URL("./matches/manifest.json",location.href);u.searchParams.set("t",Date.now());const r=await fetch(u,{cache:"no-store"});return r.ok?await r.json():{};}catch{return {};}}
