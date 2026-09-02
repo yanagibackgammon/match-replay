@@ -26,6 +26,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Generate match manifest
+        shell: bash
+        run: |
+          mkdir -p matches
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("matches")
+          files = sorted(
+              p.name for p in root.iterdir()
+              if p.is_file() and p.suffix.lower() in {".xg", ".json"} and p.name != "manifest.json"
+          )
+          payload = {
+              "activeFile": "",
+              "files": files,
+          }
+          (root / "manifest.json").write_text(
+              json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(f"Generated manifest with {len(files)} file(s).")
+          PY
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6.0.0
 
