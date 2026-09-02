@@ -9,27 +9,39 @@
 <body>
 <div id="stage-wrap">
   <main id="stage" aria-label="1920 by 1080 stream layout">
-    <section class="winrate-area">
-      <div class="winrate-strip">
-        <div class="bar-name bar-name-left">柳 暢祐</div>
+    <section class="top-area">
+      <div class="top-title" id="tournamentTitle">JBS第31期名人戦 準々決勝　25ptマッチ</div>
 
-        <div class="winrate-main">
-          <div class="winrate-card">
-            <div class="winrate-bar">
-              <div id="winBarBlack" class="winrate-fill black" style="width:50%"></div>
-              <div id="winBarWhite" class="winrate-fill white" style="width:50%"></div>
-              <div id="blackRateText" class="bar-rate bar-rate-left">50.0%</div>
-              <div id="whiteRateText" class="bar-rate bar-rate-right">50.0%</div>
-            </div>
+      <div class="top-strip">
+        <div class="player-card player-left">
+          <div class="player-name">柳 暢祐</div>
+          <div class="player-score-box">
+            <span>SCORE</span>
+            <strong id="blackScore">0</strong>
           </div>
         </div>
 
-        <div class="bar-name bar-name-right">平林 直</div>
+        <div class="eval-wrap">
+          <div class="winrate-bar">
+            <div id="winBarBlack" class="winrate-fill black" style="width:50%"></div>
+            <div id="winBarWhite" class="winrate-fill white" style="width:50%"></div>
+            <div id="blackRateText" class="bar-rate bar-rate-left">50.0%</div>
+            <div id="whiteRateText" class="bar-rate bar-rate-right">50.0%</div>
+          </div>
+        </div>
+
+        <div class="player-card player-right">
+          <div class="player-name">平林 直</div>
+          <div class="player-score-box">
+            <span>SCORE</span>
+            <strong id="whiteScore">0</strong>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="board-area">
-      <div class="board-shell">
+    <section class="main-area">
+      <section class="board-area">
         <svg id="board" viewBox="0 0 702 546" role="img" aria-label="Backgammon board">
           <rect width="702" height="546" fill="#ffffff"/>
           <g id="boardBase" stroke="#000000" stroke-linejoin="round">
@@ -47,10 +59,11 @@
           <g id="dice"></g>
           <g id="cube"></g>
         </svg>
-      </div>
+      </section>
 
-      <aside class="replay-panel">
+      <aside class="info-area">
         <section class="panel current-panel">
+          <div class="panel-heading">CURRENT</div>
           <div class="big-action" id="bigAction">GAME START</div>
           <div class="current-sub">XG SOURCE / AUTO REPLAY PROTOTYPE</div>
         </section>
@@ -61,10 +74,6 @@
         </section>
       </aside>
     </section>
-
-    <footer class="title-area">
-      <div class="title-main" id="tournamentTitle">第31期名人戦 準々決勝</div>
-    </footer>
   </main>
 </div>
 <script src="./app.js"></script>

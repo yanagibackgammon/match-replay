@@ -4,15 +4,15 @@ const diceG = document.getElementById("dice");
 const cubeG = document.getElementById("cube");
 
 const states = [
-  { action:"Opening position", big:"GAME START", dice:null, cube:1, blackRate:50.0, whiteRate:50.0 },
-  { action:"柳 31: 8/5 6/5", big:"BLACK 31", dice:[3,1], cube:1, blackRate:51.8, whiteRate:48.2 },
-  { action:"平林 42: 8/4 6/4", big:"WHITE 42", dice:[4,2], cube:1, blackRate:49.4, whiteRate:50.6 },
-  { action:"柳 65: 13/7 13/8", big:"BLACK 65", dice:[6,5], cube:1, blackRate:55.1, whiteRate:44.9 },
-  { action:"平林 Doubles", big:"DOUBLE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3 },
-  { action:"柳 Takes", big:"TAKE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3 }
+  { blackScore:0, whiteScore:0, action:"Opening position", big:"GAME START", dice:null, cube:1, blackRate:50.0, whiteRate:50.0 },
+  { blackScore:0, whiteScore:0, action:"柳 31: 8/5 6/5", big:"BLACK 31", dice:[3,1], cube:1, blackRate:51.8, whiteRate:48.2 },
+  { blackScore:0, whiteScore:0, action:"平林 42: 8/4 6/4", big:"WHITE 42", dice:[4,2], cube:1, blackRate:49.4, whiteRate:50.6 },
+  { blackScore:0, whiteScore:0, action:"柳 65: 13/7 13/8", big:"BLACK 65", dice:[6,5], cube:1, blackRate:55.1, whiteRate:44.9 },
+  { blackScore:0, whiteScore:0, action:"平林 Doubles", big:"DOUBLE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3 },
+  { blackScore:0, whiteScore:0, action:"柳 Takes", big:"TAKE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3 }
 ];
 
-const start=[0,2,0,0,0,0,-5,0,-3,0,0,0,5,-5,0,0,0,3,0,5,0,0,0,0,-2];
+const start = [0,2,0,0,0,0,-5,0,-3,0,0,0,5,-5,0,0,0,3,0,5,0,0,0,0,-2];
 const positions = [
   start,
   [0,1,0,0,0,1,-5,0,-3,0,0,0,5,-5,0,0,0,3,0,5,0,0,0,0,-2],
@@ -41,16 +41,12 @@ function trianglePoints(){
     const top = document.createElementNS("http://www.w3.org/2000/svg","polygon");
     top.setAttribute("class","point");
     top.setAttribute("fill", topColor);
-    top.setAttribute("stroke","#000000");
-    top.setAttribute("stroke-width","1");
     top.setAttribute("points", `${left},30 ${left+pointW},30 ${cx},251`);
     pointsG.appendChild(top);
 
     const bottom = document.createElementNS("http://www.w3.org/2000/svg","polygon");
     bottom.setAttribute("class","point");
     bottom.setAttribute("fill", bottomColor);
-    bottom.setAttribute("stroke","#000000");
-    bottom.setAttribute("stroke-width","1");
     bottom.setAttribute("points", `${left},516 ${left+pointW},516 ${cx},294`);
     pointsG.appendChild(bottom);
   }
@@ -90,6 +86,7 @@ function drawCheckers(arr){
   for(let p=1; p<=24; p++){
     const v = arr[p] || 0;
     if(!v) continue;
+
     const n = Math.abs(v);
     const coord = pointCoord(p);
     const klass = v > 0 ? "checker-piece-black" : "checker-piece-white";
@@ -144,17 +141,18 @@ function drawDice(vals, action){
 
     (spots[n] || []).forEach(([dx,dy])=>{
       const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
-      c.setAttribute("cx", x+dx);
-      c.setAttribute("cy", y+dy);
+      c.setAttribute("cx", x + dx);
+      c.setAttribute("cy", y + dy);
       c.setAttribute("r", "3.4");
       c.setAttribute("fill", isBlack ? "#ffffff" : "#000000");
       g.appendChild(c);
     });
+
     return g;
   }
 
-  diceG.appendChild(die(286.5,254,vals[0]));
-  diceG.appendChild(die(332.5,254,vals[1]));
+  diceG.appendChild(die(286.5, 254, vals[0]));
+  diceG.appendChild(die(332.5, 254, vals[1]));
 }
 
 function drawCube(v){
@@ -186,12 +184,14 @@ function drawCube(v){
 trianglePoints();
 
 const els = {
-  winBarBlack:document.getElementById("winBarBlack"),
-  winBarWhite:document.getElementById("winBarWhite"),
-  blackRateText:document.getElementById("blackRateText"),
-  whiteRateText:document.getElementById("whiteRateText"),
-  bigAction:document.getElementById("bigAction"),
-  moveList:document.getElementById("moveList")
+  blackScore: document.getElementById("blackScore"),
+  whiteScore: document.getElementById("whiteScore"),
+  winBarBlack: document.getElementById("winBarBlack"),
+  winBarWhite: document.getElementById("winBarWhite"),
+  blackRateText: document.getElementById("blackRateText"),
+  whiteRateText: document.getElementById("whiteRateText"),
+  bigAction: document.getElementById("bigAction"),
+  moveList: document.getElementById("moveList")
 };
 
 let index = 0;
@@ -207,6 +207,8 @@ function renderList(){
 
 function render(){
   const s = states[index];
+  els.blackScore.textContent = s.blackScore;
+  els.whiteScore.textContent = s.whiteScore;
   els.winBarBlack.style.width = `${s.blackRate}%`;
   els.winBarWhite.style.width = `${s.whiteRate}%`;
   els.blackRateText.textContent = `${s.blackRate.toFixed(1)}%`;
