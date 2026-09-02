@@ -1,14 +1,7 @@
-MATCH REPLAY v30
+MATCH REPLAY v31
 
 ■ 変更内容
-- design-presets.json を追加し、配色をプリセット管理
-- 操作画面に「ボードデザイン」選択を追加
-- プリセット選択で以下を一括切替
-  - 選手1 / 選手2のチェッカー色
-  - 選手1 / 選手2の勝率バー色
-  - ボード面、ポイント2色、バー、罫線色
-- 選択中プリセットの簡易カラープレビューを表示
-- GitHub Pages / ローカルのどちらでも同じJSONを参照
-- 同一棋譜を再反映する際の操作画面内の参照ミスも修正
-
-プリセット追加は design-presets.json の presets 配列へ追加してください。
+- 勝率バーの幅変更を0.8秒で滑らかに補間するアニメーションへ変更
+- GitHub Actions の actions/setup-node を v4 から v7 へ更新
+- Actions上のNode.jsは引き続き24を明示指定
+- Node.js 20 deprecated 警告への対応

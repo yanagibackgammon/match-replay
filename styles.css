@@ -205,7 +205,11 @@ html,body{
   border-radius:16px;
 }
 
-.winrate-fill{height:100%}
+.winrate-fill{
+  height:100%;
+  transition:width .8s cubic-bezier(.22,.61,.36,1);
+  will-change:width;
+}
 .winrate-fill.black{background:var(--win-player1)}
 .winrate-fill.white{background:var(--win-player2);border-left:4px solid #111}
 
