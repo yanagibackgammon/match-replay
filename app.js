@@ -319,8 +319,9 @@ function renderAnalysis(a){
   if(!a||a.type==="none"){els.analysisContent.innerHTML="";return;}
   if(a.type==="jokers"){
     const activePlayer=currentState().activePlayer===1?1:-1;
-    const block=(rows,cls)=>`<div class="analysis-dice-block ${cls}">${(rows||[]).map(d=>`<div class="dice-pair-block">${renderDie(d[0],activePlayer)}${renderDie(d[1],activePlayer)}</div>`).join("")}</div>`;
-    els.analysisContent.innerHTML=`<div class="analysis-jokers">${block(a.joker,"plus")}${block(a.antiJoker,"minus")}</div>`;return;
+    const pair=(d,cls)=>`<div class="joker-glow ${cls}"><div class="dice-pair-block">${renderDie(d[0],activePlayer)}${renderDie(d[1],activePlayer)}</div></div>`;
+    const items=[...(a.joker||[]).map(d=>pair(d,"plus")),...(a.antiJoker||[]).map(d=>pair(d,"minus"))];
+    els.analysisContent.innerHTML=`<div class="analysis-jokers">${items.join("")}</div>`;return;
   }
   const selectedIndex=Number.isInteger(a.playedIndex)?a.playedIndex:-1;
   const all=a.candidates||[];
