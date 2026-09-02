@@ -30,7 +30,7 @@ const MIME = {
 
 const defaultMeta = {
   tournamentTitleLine1: "JBS第31期名人戦 準々決勝",
-  tournamentTitleLine2: "",
+  tournamentTitleLine2: "2025-08-30　25ポイントマッチ　勝てばベスト4",
   blackName: "柳 暢祐",
   whiteName: "平林 直",
   blackScore: 0,

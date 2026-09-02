@@ -9,6 +9,7 @@ boardSvg.appendChild(gameOverlayG);
 
 const defaultMeta={
   tournamentTitleLine1:"JBS第31期名人戦 準々決勝",
+  tournamentTitleLine2:"2025-08-30　25ポイントマッチ　勝てばベスト4",
   blackName:"柳 暢祐",whiteName:"平林 直",blackScore:0,whiteScore:0,matchFile:""
 };
 const standardPoints=[0,-2,0,0,0,0,5,0,3,0,0,0,-5,5,0,0,0,-3,0,-5,0,0,0,0,2];
@@ -28,6 +29,7 @@ const pageChannel=(!isLocal()&&"BroadcastChannel" in window)?new BroadcastChanne
 const els={
   stageWrap:document.getElementById("stage-wrap"),stage:document.getElementById("stage"),
   tournamentTitleLine1:document.getElementById("tournamentTitleLine1"),
+  tournamentTitleLine2:document.getElementById("tournamentTitleLine2"),
   blackName:document.getElementById("blackName"),whiteName:document.getElementById("whiteName"),
   blackHistoryName:document.getElementById("blackHistoryName"),whiteHistoryName:document.getElementById("whiteHistoryName"),
   blackScore:document.getElementById("blackScore"),whiteScore:document.getElementById("whiteScore"),
@@ -89,6 +91,7 @@ trianglePoints();
 
 function renderMeta(state){
   els.tournamentTitleLine1.textContent=meta.tournamentTitleLine1;
+  els.tournamentTitleLine2.textContent=meta.tournamentTitleLine2||"";
   els.blackName.textContent=meta.blackName;els.whiteName.textContent=meta.whiteName;els.blackHistoryName.textContent=meta.blackName;els.whiteHistoryName.textContent=meta.whiteName;
   const score=state?.score||[meta.blackScore,meta.whiteScore];els.blackScore.textContent=score[0]??meta.blackScore;els.whiteScore.textContent=score[1]??meta.whiteScore;
 }

@@ -10,6 +10,7 @@ const autoModeBtn = document.getElementById("autoModeBtn");
 const manualModeBtn = document.getElementById("manualModeBtn");
 
 const tournamentLine1Input = document.getElementById("tournamentLine1Input");
+const tournamentLine2Input = document.getElementById("tournamentLine2Input");
 const blackNameInput = document.getElementById("blackNameInput");
 const whiteNameInput = document.getElementById("whiteNameInput");
 const blackScoreInput = document.getElementById("blackScoreInput");
@@ -28,6 +29,7 @@ let lastState = {
   mode:"auto",
   meta:{
     tournamentTitleLine1:"JBS第31期名人戦 準々決勝",
+    tournamentTitleLine2:"2025-08-30　25ポイントマッチ　勝てばベスト4",
     blackName:"柳 暢祐",
     whiteName:"平林 直",
     blackScore:0,
@@ -78,6 +80,7 @@ function renderState(state){
   pauseBtn.disabled=manual;
 
   tournamentLine1Input.value = lastState.meta.tournamentTitleLine1 || lastState.meta.tournamentTitle || "";
+  tournamentLine2Input.value = lastState.meta.tournamentTitleLine2 || "";
   blackNameInput.value = lastState.meta.blackName || "";
   whiteNameInput.value = lastState.meta.whiteName || "";
   blackScoreInput.value = lastState.meta.blackScore ?? 0;
@@ -164,7 +167,7 @@ async function loadPagesInitialState(){
 async function applyMeta(){
   const nextMeta = {
     tournamentTitleLine1: tournamentLine1Input.value.trim(),
-    tournamentTitleLine2: "",
+    tournamentTitleLine2: tournamentLine2Input.value.trim(),
     blackName: blackNameInput.value.trim(),
     whiteName: whiteNameInput.value.trim(),
     blackScore: Number(blackScoreInput.value || 0),
