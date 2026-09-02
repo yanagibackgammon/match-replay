@@ -3,7 +3,8 @@ const path = require('path');
 const zlib = require('zlib');
 
 const RECORD_SIZE = 2560;
-const JOKER_WINRATE_THRESHOLD = 10.0;
+const JOKER_EQUITY_THRESHOLD = 0.300;
+const JOKER_WINRATE_THRESHOLD = JOKER_EQUITY_THRESHOLD; // legacy export name
 
 function int8(buf, off){ return buf.readInt8(off); }
 function uint8(buf, off){ return buf.readUInt8(off); }
@@ -216,6 +217,154 @@ function formatCheckerMove(raw, beforePosition, activePlayer){
     }
   }
   return compact.map(item => `${item.route}${item.hit ? '*' : ''}${item.count > 1 ? `(${item.count})` : ''}`).join(' ');
+}
+
+
+function positionKey(position,activePlayer){
+  const pts=(position?.points||[]).slice(1,25).join(',');
+  return `${activePlayer}|${pts}|${Number(position?.blackBar||0)}|${Number(position?.whiteBar||0)}|${Number(position?.blackOff||0)}|${Number(position?.whiteOff||0)}`;
+}
+
+function countChecker(position,player,point){
+  const v=Number(position?.points?.[point]||0);
+  return player===1?Math.max(0,v):Math.max(0,-v);
+}
+function barCount(position,player){return player===1?Number(position?.blackBar||0):Number(position?.whiteBar||0);}
+function offCount(position,player){return player===1?Number(position?.blackOff||0):Number(position?.whiteOff||0);}
+function isBlocked(position,player,point){
+  const v=Number(position?.points?.[point]||0);
+  return player===1?v<=-2:v>=2;
+}
+function allInHome(position,player){
+  if(barCount(position,player)>0)return false;
+  if(player===1){
+    for(let p=7;p<=24;p++)if(countChecker(position,player,p)>0)return false;
+  }else{
+    for(let p=1;p<=18;p++)if(countChecker(position,player,p)>0)return false;
+  }
+  return true;
+}
+function canBearOffFrom(position,player,point,die){
+  if(!allInHome(position,player))return false;
+  if(player===1){
+    if(point===die)return true;
+    if(point>die)return false;
+    for(let p=point+1;p<=6;p++)if(countChecker(position,player,p)>0)return false;
+    return true;
+  }
+  const distance=25-point;
+  if(distance===die)return true;
+  if(distance>die)return false;
+  for(let p=19;p<point;p++)if(countChecker(position,player,p)>0)return false;
+  return true;
+}
+function applyGeneratedMove(position,player,source,destination){
+  const board=cloneBoardPosition(position),sign=player===1?1:-1;
+  if(source==='bar'){
+    if(player===1)board.blackBar=Math.max(0,board.blackBar-1);else board.whiteBar=Math.max(0,board.whiteBar-1);
+  }else board.points[source]-=sign;
+  if(destination==='off'){
+    if(player===1)board.blackOff+=1;else board.whiteOff+=1;
+    return board;
+  }
+  if(player===1&&board.points[destination]===-1){board.points[destination]=0;board.whiteBar+=1;}
+  else if(player===-1&&board.points[destination]===1){board.points[destination]=0;board.blackBar+=1;}
+  board.points[destination]+=sign;
+  return board;
+}
+function singleDieMoves(position,player,die){
+  const out=[];
+  const bar=barCount(position,player);
+  if(bar>0){
+    const destination=player===1?25-die:die;
+    if(destination>=1&&destination<=24&&!isBlocked(position,player,destination))out.push(applyGeneratedMove(position,player,'bar',destination));
+    return out;
+  }
+  for(let p=1;p<=24;p++){
+    if(countChecker(position,player,p)<=0)continue;
+    const destination=player===1?p-die:p+die;
+    if(destination>=1&&destination<=24){
+      if(!isBlocked(position,player,destination))out.push(applyGeneratedMove(position,player,p,destination));
+    }else if(canBearOffFrom(position,player,p,die))out.push(applyGeneratedMove(position,player,p,'off'));
+  }
+  return out;
+}
+function generatedPositionKey(position){return `${(position.points||[]).slice(1,25).join(',')}|${position.blackBar}|${position.whiteBar}|${position.blackOff}|${position.whiteOff}`;}
+function generateRollPositions(position,player,d1,d2){
+  const orders=d1===d2?[[d1,d1,d1,d1]]:[[d1,d2],[d2,d1]];
+  const terminals=[];
+  for(const dice of orders){
+    const walk=(board,idx,used)=>{
+      if(idx>=dice.length){terminals.push({position:board,used:[...used]});return;}
+      const die=dice[idx],moves=singleDieMoves(board,player,die);
+      if(!moves.length){walk(board,idx+1,used);return;}
+      for(const next of moves)walk(next,idx+1,[...used,die]);
+    };
+    walk(cloneBoardPosition(position),0,[]);
+  }
+  let maxUsed=0;for(const t of terminals)maxUsed=Math.max(maxUsed,t.used.length);
+  let filtered=terminals.filter(t=>t.used.length===maxUsed);
+  if(d1!==d2&&maxUsed===1){
+    const high=Math.max(d1,d2);
+    if(filtered.some(t=>t.used[0]===high))filtered=filtered.filter(t=>t.used[0]===high);
+  }
+  const unique=new Map();
+  for(const t of filtered){const key=generatedPositionKey(t.position);if(!unique.has(key))unique.set(key,t.position);}
+  return unique.size?[...unique.values()]:[cloneBoardPosition(position)];
+}
+function pipCount(position,player){
+  let total=barCount(position,player)*25;
+  for(let p=1;p<=24;p++){
+    const n=countChecker(position,player,p);
+    total+=n*(player===1?p:25-p);
+  }
+  return total;
+}
+function madeHomePoints(position,player){
+  let n=0;
+  if(player===1){for(let p=1;p<=6;p++)if(countChecker(position,player,p)>=2)n++;}
+  else{for(let p=19;p<=24;p++)if(countChecker(position,player,p)>=2)n++;}
+  return n;
+}
+function blotCount(position,player){let n=0;for(let p=1;p<=24;p++)if(countChecker(position,player,p)===1)n++;return n;}
+function staticEquityProxy(position,player){
+  const opp=-player;
+  if(offCount(position,player)>=15)return 3;
+  if(offCount(position,opp)>=15)return -3;
+  const pipAdv=pipCount(position,opp)-pipCount(position,player);
+  const offAdv=offCount(position,player)-offCount(position,opp);
+  const barAdv=barCount(position,opp)-barCount(position,player);
+  const homeAdv=madeHomePoints(position,player)-madeHomePoints(position,opp);
+  const blotAdv=blotCount(position,opp)-blotCount(position,player);
+  return Math.max(-3,Math.min(3,0.008*pipAdv+0.16*offAdv+0.20*barAdv+0.035*homeAdv+0.012*blotAdv));
+}
+const jokerRollCache=new Map();
+function analyzeJokerRolls(position,activePlayer){
+  const key=positionKey(position,activePlayer);
+  if(jokerRollCache.has(key))return jokerRollCache.get(key);
+  const rolls=[];
+  let weighted=0,totalWeight=0;
+  for(let hi=1;hi<=6;hi++)for(let lo=1;lo<=hi;lo++){
+    const positions=generateRollPositions(position,activePlayer,hi,lo);
+    let best=-Infinity;
+    for(const next of positions)best=Math.max(best,staticEquityProxy(next,activePlayer));
+    if(!Number.isFinite(best))best=staticEquityProxy(position,activePlayer);
+    const weight=hi===lo?1:2;
+    rolls.push({dice:[hi,lo],equity:best,weight});weighted+=best*weight;totalWeight+=weight;
+  }
+  const average=totalWeight?weighted/totalWeight:staticEquityProxy(position,activePlayer);
+  for(const r of rolls)r.luck=r.equity-average;
+  const joker=rolls.filter(r=>r.luck>=JOKER_EQUITY_THRESHOLD).sort((a,b)=>b.luck-a.luck).map(r=>r.dice);
+  const antiJoker=rolls.filter(r=>r.luck<=-JOKER_EQUITY_THRESHOLD).sort((a,b)=>a.luck-b.luck).map(r=>r.dice);
+  const result={joker,antiJoker,thresholdEquity:JOKER_EQUITY_THRESHOLD,averageEquityProxy:average,source:'standalone-roll-evaluator'};
+  jokerRollCache.set(key,result);return result;
+}
+function rollKey(dice){if(!Array.isArray(dice)||dice.length<2)return'';const a=Number(dice[0]),b=Number(dice[1]);return `${Math.max(a,b)}-${Math.min(a,b)}`;}
+function classifyRollLuck(analysis,dice){
+  const key=rollKey(dice);if(!key)return null;
+  if((analysis?.joker||[]).some(d=>rollKey(d)===key))return'joker';
+  if((analysis?.antiJoker||[]).some(d=>rollKey(d)===key))return'antiJoker';
+  return null;
 }
 
 function cubeValueFromCode(code){
@@ -543,25 +692,13 @@ function buildTimeline(parsed, sourceFile){
         // A non-obvious No Double is also a PR decision, even though it does not need a separate visual beat.
         addPrDecision(r.activePlayer,r.errCube,cubeOfferCounts(r));
 
-        // Pre-roll state. Peek at the upcoming move to classify the actual roll as joker/anti-joker.
-        const next = recs[i+1];
-        const joker = [];
-        const antiJoker = [];
-        if(next && next.type === 'move' && next.activePlayer === r.activePlayer && next.best.candidates.length){
-          const played = next.best.candidates[next.playedIndex] || next.best.candidates[0];
-          const before = r.analysis.result[3] * 100;
-          const after = played.winRate;
-          if(Number.isFinite(before) && Number.isFinite(after) && before > 0){
-            const delta = after - before;
-            if(delta >= JOKER_WINRATE_THRESHOLD) joker.push(next.dice);
-            if(delta <= -JOKER_WINRATE_THRESHOLD) antiJoker.push(next.dice);
-          }
-        }
+        // Pre-roll state: evaluate all 21 distinct rolls from the current board.
+        // The actually rolled dice are intentionally not used to decide which rolls are highlighted.
+        const rollAnalysis=analyzeJokerRolls(position,r.activePlayer);
         pushState({
           phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position,dice:null,cube,winRate,
-          analysis:{type:'jokers',joker,antiJoker,thresholdWinRatePoints:JOKER_WINRATE_THRESHOLD},
-          historyEvent:null
+          analysis:{type:'jokers',...rollAnalysis},historyEvent:null
         });
         lastCube = cube;
       }
@@ -595,25 +732,28 @@ function buildTimeline(parsed, sourceFile){
       // 3) 選択手を金表示 + チェッカー移動 + 選択手の勝率
       // 4) ロールダイスを消す
       // XGにpre-roll cube recordが無い場合も空のJoker段階を補う。
-      const previous = states[states.length - 1];
+      let previous = states[states.length - 1];
       if(!(previous && previous.phase === 'preRoll' && previous.gameNumber === gameNumber && previous.activePlayer === r.activePlayer)){
+        const rollAnalysis=analyzeJokerRolls(beforePosition,r.activePlayer);
         pushState({
           phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:null,cube,winRate:{black:lastBlackRate,white:100-lastBlackRate},
-          analysis:{type:'jokers',joker:[],antiJoker:[],thresholdWinRatePoints:JOKER_WINRATE_THRESHOLD},
-          historyEvent:null
+          analysis:{type:'jokers',...rollAnalysis},historyEvent:null
         });
+        previous=states[states.length-1];
       }
+      const actualLuck=Number(r.errLuck);
+      const luckKind=Number.isFinite(actualLuck)?(actualLuck>=JOKER_EQUITY_THRESHOLD?'joker':(actualLuck<=-JOKER_EQUITY_THRESHOLD?'antiJoker':null)):classifyRollLuck(previous?.analysis,r.dice);
 
       pushState({
         phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
-        position:beforePosition,dice:r.dice,cube,winRate:bestWinRate,
+        position:beforePosition,dice:r.dice,cube,winRate:bestWinRate,luckKind,
         analysis:{type:'moves',candidates},historyEvent:null
       });
       addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
       pushState({
         phase:'analysis',gameNumber,score:[...score],activePlayer:r.activePlayer,
-        position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,
+        position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,luckKind,
         analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
         historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'}
       });
@@ -649,7 +789,7 @@ function buildTimeline(parsed, sourceFile){
   }
 
   return {
-    schemaVersion:3,
+    schemaVersion:4,
     sourceFile,
     generatedAt:new Date().toISOString(),
     match:{...parsed.match, blackSourcePlayer:parsed.match.player1, whiteSourcePlayer:parsed.match.player2},
@@ -669,4 +809,4 @@ function parseXgFile(filename){
   return parseXgBuffer(fs.readFileSync(filename), path.basename(filename));
 }
 
-module.exports = {parseXgBuffer,parseXgFile,JOKER_WINRATE_THRESHOLD};
+module.exports = {parseXgBuffer,parseXgFile,JOKER_WINRATE_THRESHOLD,JOKER_EQUITY_THRESHOLD};

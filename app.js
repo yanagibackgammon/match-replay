@@ -125,8 +125,11 @@ function drawCheckers(position){
   addBearOffStack(position?.whiteOff||0,"checker-piece-white",true);
   addBearOffStack(position?.blackOff||0,"checker-piece-black",false);
 }
-function drawDice(vals,activePlayer,{jokerGlow=false}={}){
-  diceG.innerHTML="";diceG.classList.toggle("is-joker-glow",Boolean(jokerGlow));if(!vals)return;const spots={1:[[18,18]],2:[[10,10],[26,26]],3:[[10,10],[18,18],[26,26]],4:[[10,10],[26,10],[10,26],[26,26]],5:[[10,10],[26,10],[18,18],[10,26],[26,26]],6:[[10,9],[26,9],[10,18],[26,18],[10,27],[26,27]]};
+function drawDice(vals,activePlayer,{luckKind=null}={}){
+  diceG.innerHTML="";
+  diceG.classList.toggle("is-joker-glow",luckKind==="joker");
+  diceG.classList.toggle("is-antijoker-glow",luckKind==="antiJoker");
+  if(!vals)return;const spots={1:[[18,18]],2:[[10,10],[26,26]],3:[[10,10],[18,18],[26,26]],4:[[10,10],[26,10],[10,26],[26,26]],5:[[10,10],[26,10],[18,18],[10,26],[26,26]],6:[[10,9],[26,9],[10,18],[26,18],[10,27],[26,27]]};
   const player1=activePlayer===1;
   const face=normalizeHex(player1?currentDesign?.checkers?.player1:currentDesign?.checkers?.player2,player1?"#111111":"#FFFFFF");
   const pip=contrastText(face);
@@ -240,7 +243,7 @@ function ensureHistoryHeader(el){
 }
 function renderHistoryHeader(el,prValue,nameText){
   const parts=ensureHistoryHeader(el);
-  if(parts.pr)parts.pr.textContent=`PR ${Number(prValue||0).toFixed(1)}`;
+  if(parts.pr)parts.pr.textContent=`PR ${Number(prValue||0).toFixed(2)}`;
   if(parts.name)parts.name.textContent=nameText||'';
 }
 function renderMeta(state){
@@ -252,10 +255,28 @@ function renderMeta(state){
   renderHistoryHeader(els.blackHistoryName,state?.pr?.black,meta.blackName);
   renderHistoryHeader(els.whiteHistoryName,state?.pr?.white,meta.whiteName);
   const score=state?.score||[meta.blackScore,meta.whiteScore];
-  let blackScore=score[0]??meta.blackScore,whiteScore=score[1]??meta.whiteScore;
-  if(state?.scoreDelta?.winner==='black')blackScore=`+${state.scoreDelta.points}`;
-  if(state?.scoreDelta?.winner==='white')whiteScore=`+${state.scoreDelta.points}`;
-  els.blackScore.textContent=blackScore;els.whiteScore.textContent=whiteScore;
+  const blackGain=state?.scoreDelta?.winner==='black'?Number(state.scoreDelta.points)||0:0;
+  const whiteGain=state?.scoreDelta?.winner==='white'?Number(state.scoreDelta.points)||0:0;
+  function renderScoreValue(el,value,gain){
+    if(!el)return;
+    const gainNow=gain>0;
+    el.textContent=gainNow?`+${gain}`:value;
+    el.classList.toggle('is-score-gain',gainNow);
+    if(gainNow){
+      const key=`${state?.gameNumber||0}-${index}-${gain}`;
+      if(el.dataset.scoreGainKey!==key){
+        el.dataset.scoreGainKey=key;
+        el.classList.remove('score-gain-animate');
+        void el.offsetWidth;
+        el.classList.add('score-gain-animate');
+      }
+    }else{
+      el.dataset.scoreGainKey='';
+      el.classList.remove('score-gain-animate');
+    }
+  }
+  renderScoreValue(els.blackScore,score[0]??meta.blackScore,blackGain);
+  renderScoreValue(els.whiteScore,score[1]??meta.whiteScore,whiteGain);
 }
 function diePips(face){return {1:["p5"],2:["p1","p9"],3:["p1","p5","p9"],4:["p1","p3","p7","p9"],5:["p1","p3","p5","p7","p9"],6:["p1","p3","p4","p6","p7","p9"]}[face]||[];}
 function diePlayerClass(player){return player===1||player==="black"?"player1":"player2";}
@@ -363,10 +384,9 @@ function renderAnalysis(a){
   if(!a||a.type==="none"){els.analysisContent.innerHTML="";return;}
   if(a.type==="jokers"){
     const activePlayer=currentState().activePlayer===1?1:-1;
-    const pair=d=>`<div class="joker-glow"><div class="dice-pair-block">${renderDie(d[0],activePlayer)}${renderDie(d[1],activePlayer)}</div></div>`;
-    // Anti-Jokerは相手から見ればJokerなので、演出色はすべて緑に統一。
-    const items=[...(a.joker||[]).map(pair),...(a.antiJoker||[]).map(pair)];
-    els.analysisContent.innerHTML=`<div class="analysis-jokers">${items.join("")}</div>`;return;
+    const pair=(d,kind)=>`<div class="joker-glow ${kind}"><div class="dice-pair-block">${renderDie(d[0],activePlayer)}${renderDie(d[1],activePlayer)}</div></div>`;
+    const items=[...(a.joker||[]).map(d=>pair(d,"plus")),...(a.antiJoker||[]).map(d=>pair(d,"minus"))];
+    els.analysisContent.innerHTML=`<div class="analysis-jokers${items.length>6?" is-many":""}">${items.join("")}</div>`;return;
   }
   const selectedIndex=Number.isInteger(a.playedIndex)?a.playedIndex:-1;
   const all=a.candidates||[];
@@ -392,8 +412,7 @@ function render(){
   els.winBarBlack.style.width=`${b}%`;els.winBarWhite.style.width=`${w}%`;els.blackRateText.textContent=`${displayBlack}%`;els.whiteRateText.textContent=`${displayWhite}%`;
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
   els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);
-  const jokerDice=s.phase==="preRoll"&&s.analysis?.type==="jokers"?((s.analysis.joker||[])[0]||(s.analysis.antiJoker||[])[0]||null):null;
-  drawPointLabels(s.activePlayer);drawCheckers(s.position);drawDice(s.dice||jokerDice,s.activePlayer,{jokerGlow:Boolean(jokerDice)});drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
+  drawPointLabels(s.activePlayer);drawCheckers(s.position);drawDice(s.dice,s.activePlayer,{luckKind:s.luckKind||null});drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
 }
 
 async function fetchManifest(){try{const u=new URL("./matches/manifest.json",location.href);u.searchParams.set("t",Date.now());const r=await fetch(u,{cache:"no-store"});return r.ok?await r.json():{};}catch{return {};}}
