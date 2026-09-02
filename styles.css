@@ -282,16 +282,18 @@ html,body{
   width:840px;
   height:280px;
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-rows:54px 216px;
+  padding:8px 14px 2px;
+  box-sizing:border-box;
   overflow:hidden;
   border-bottom:1px solid var(--line);
 }
 
-.history-column{
-  padding:12px 14px;
-  overflow:hidden;
+.history-name-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  min-width:0;
 }
-.history-column + .history-column{border-left:1px solid var(--line)}
 
 .history-player-name{
   height:32px;
@@ -300,10 +302,11 @@ html,body{
   justify-content:center;
   font-size:24px;
   font-weight:900;
-  margin-bottom:10px;
   white-space:nowrap;
   position:relative;
+  min-width:0;
 }
+.history-player-name + .history-player-name{border-left:1px solid var(--line)}
 .history-player-name::after{
   content:"";
   position:absolute;
@@ -316,22 +319,55 @@ html,body{
 }
 .history-player-name.active-turn::after{background:#d00000}
 
-.history-list-column{
+.history-list{
   height:216px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
   overflow:hidden;
 }
 
-.history-row{
+.history-timeline-row{
+  flex:0 0 48px;
   height:48px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  min-width:0;
+}
+
+.history-cell{
+  min-width:0;
   display:grid;
   grid-template-columns:108px 1fr;
   align-items:center;
   gap:12px;
+  padding:0 0;
   font-size:24px;
   font-weight:900;
   line-height:1;
+  overflow:hidden;
 }
-.history-row + .history-row{margin-top:8px}
+.history-cell + .history-cell{
+  border-left:1px solid var(--line);
+  padding-left:14px;
+}
+.history-cell:first-child{padding-right:14px}
+
+.history-game-row{
+  grid-template-columns:1fr;
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+}
+.history-game-label{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:48px;
+  font-size:25px;
+  font-weight:900;
+  letter-spacing:.04em;
+}
 
 .history-move{
   white-space:nowrap;
@@ -497,7 +533,7 @@ html,body{
 .checker-text{font-size:19px;font-weight:900;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
 
 /* v16: XG error coloring in history */
-.history-row.error-green .history-move{color:#0d8b50}
-.history-row.error-red .history-move{color:#c43b3b}
+.history-cell.error-green .history-move{color:#0d8b50}
+.history-cell.error-red .history-move{color:#c43b3b}
 
 #boardBase{stroke:var(--board-line)!important}

@@ -47,7 +47,7 @@ const els={
   blackScore:document.getElementById("blackScore"),whiteScore:document.getElementById("whiteScore"),
   winBarBlack:document.getElementById("winBarBlack"),winBarWhite:document.getElementById("winBarWhite"),
   blackRateText:document.getElementById("blackRateText"),whiteRateText:document.getElementById("whiteRateText"),
-  blackHistoryList:document.getElementById("blackHistoryList"),whiteHistoryList:document.getElementById("whiteHistoryList"),
+  historyList:document.getElementById("historyList"),
   analysisContent:document.getElementById("analysisContent"),
   adImage1:document.getElementById("adImage1"),adImage2:document.getElementById("adImage2")
 };
@@ -223,11 +223,53 @@ function diePlayerClass(player){return player===1||player==="black"?"player1":"p
 function renderDie(face,player){return `<span class="die ${diePlayerClass(player)}">${diePips(face).map(c=>`<span class="die-pip ${c}"></span>`).join("")}</span>`;}
 function renderPair(pair,player){return pair&&pair.length===2?`<div class="dice-pair-inline">${renderDie(pair[0],player)}${renderDie(pair[1],player)}</div>`:'<div class="dice-pair-inline"></div>';}
 function historyClass(error){if(error<=-0.080)return"error-red";if(error<=-0.020)return"error-green";return"";}
-function renderHistoryColumn(player){
-  const events=matchData.states.slice(0,index+1).map(s=>s.historyEvent).filter(e=>e&&e.player===player).slice(-4);
-  return events.map(e=>`<div class="history-row ${historyClass(e.error)}">${renderPair(e.dice,player)}<span class="history-move">${e.move||""}</span></div>`).join("");
+function historyMoveLabel(move){return move==="Dance"?"Cannot Move":(move||"");}
+function historyCell(event,player){
+  if(!event)return '<div class="history-cell"></div>';
+  return `<div class="history-cell ${historyClass(event.error)}">${renderPair(event.dice,player)}<span class="history-move">${historyMoveLabel(event.move)}</span></div>`;
 }
-function renderHistory(){els.blackHistoryList.innerHTML=renderHistoryColumn("black");els.whiteHistoryList.innerHTML=renderHistoryColumn("white");}
+function collectHistoryRows(){
+  const rows=[];
+  let openMoveRow=null;
+  for(const state of matchData.states.slice(0,index+1)){
+    if(!state)continue;
+    if(state.phase==="gameStart"){
+      rows.push({kind:"game",gameNumber:Number(state.gameNumber)||1});
+      openMoveRow=null;
+      continue;
+    }
+    const grouped=Array.isArray(state.historyEvents)?state.historyEvents.filter(Boolean):[];
+    if(grouped.length){
+      const row={kind:"actions",black:null,white:null};
+      for(const event of grouped){
+        if(event.player==="black"||event.player==="white")row[event.player]=event;
+      }
+      rows.push(row);
+      openMoveRow=null;
+      continue;
+    }
+    const event=state.historyEvent;
+    if(!event||(event.player!=="black"&&event.player!=="white"))continue;
+    if(event.kind==="cube"){
+      const row={kind:"actions",black:null,white:null};
+      row[event.player]=event;rows.push(row);openMoveRow=null;continue;
+    }
+    if(!openMoveRow||openMoveRow[event.player]){
+      openMoveRow={kind:"actions",black:null,white:null};
+      rows.push(openMoveRow);
+    }
+    openMoveRow[event.player]=event;
+    if(openMoveRow.black&&openMoveRow.white)openMoveRow=null;
+  }
+  return rows.slice(-4);
+}
+function renderHistory(){
+  const rows=collectHistoryRows();
+  els.historyList.innerHTML=rows.map(row=>{
+    if(row.kind==="game")return `<div class="history-timeline-row history-game-row"><div class="history-game-label">Game ${row.gameNumber}</div></div>`;
+    return `<div class="history-timeline-row">${historyCell(row.black,"black")}${historyCell(row.white,"white")}</div>`;
+  }).join("");
+}
 function renderAnalysis(a){
   if(!a||a.type==="none"){els.analysisContent.innerHTML="";return;}
   if(a.type==="jokers"){
@@ -243,7 +285,7 @@ function renderAnalysis(a){
     const entry={candidate:all[selectedIndex],index:selectedIndex};
     if(visible.length<6)visible.push(entry);else visible[visible.length-1]=entry;
   }
-  const rows=visible.map(({candidate:c,index:i})=>`<div class="analysis-row${i===selectedIndex?" is-selected":""}"><span class="analysis-move">${c.move||""}</span><span class="analysis-eq">${Number(c.error??0).toFixed(3)}</span></div>`).join("");
+  const rows=visible.map(({candidate:c,index:i})=>`<div class="analysis-row${i===selectedIndex?" is-selected":""}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq">${Number(c.error??0).toFixed(3)}</span></div>`).join("");
   els.analysisContent.innerHTML=`<div class="analysis-moves">${rows}</div>`;
 }
 function currentState(){return matchData.states[Math.max(0,Math.min(index,matchData.states.length-1))]||emptyState;}

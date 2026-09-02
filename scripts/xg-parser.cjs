@@ -178,7 +178,7 @@ function applyCheckerMove(beforePosition, activePlayer, raw){
 
 function formatCheckerMove(raw, beforePosition, activePlayer){
   const applied = applyCheckerMove(beforePosition, activePlayer, raw);
-  if(!applied.segments.length) return 'Dance';
+  if(!applied.segments.length) return 'Cannot Move';
 
   const rendered = applied.segments.map(seg => {
     const fromText = seg.from === 24 ? 'bar' : String(seg.from + 1);
@@ -332,7 +332,7 @@ function parseMove(rec, version){
   const isDance = !applied.segments.length;
   for(const candidate of best.candidates){
     if(isDance && samePosition(candidate.pos, positionEnd)){
-      candidate.move = 'Dance';
+      candidate.move = 'Cannot Move';
     }else{
       candidate.move = formatCheckerMove(candidate.moveRaw, beforePosition, activePlayer);
     }
@@ -438,7 +438,6 @@ function buildTimeline(parsed, sourceFile){
       const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode,r.activePlayer)};
 
       if(r.doubleAction === 1){
-        const action = r.take === 1 ? 'Double / Take' : (r.take === 0 ? 'Double / Pass' : 'Double');
         const candidates = [
           {move:'Double / Take', equity:r.analysis.equityDoubleTake},
           {move:'No Double', equity:r.analysis.equityNoDouble},
@@ -446,11 +445,18 @@ function buildTimeline(parsed, sourceFile){
         ].sort((a,b)=>b.equity-a.equity);
         const bestEq = candidates[0]?.equity ?? 0;
         for(const c of candidates) c.error = c.equity - bestEq;
+        const doubler=r.activePlayer===1?'black':'white';
+        const responder=doubler==='black'?'white':'black';
+        const historyEvents=[
+          {player:doubler,dice:null,move:'Double',error:r.errCube,kind:'cube'}
+        ];
+        if(r.take===1) historyEvents.push({player:responder,dice:null,move:'Take',error:r.errTake,kind:'cubeResponse'});
+        else if(r.take===0) historyEvents.push({player:responder,dice:null,move:'Pass',error:r.errTake,kind:'cubeResponse'});
         states.push({
           phase:'cube',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position,dice:null,cube,winRate,
           analysis:{type:'moves',candidates},
-          historyEvent:{player:r.activePlayer===1?'black':'white',dice:null,move:action,error:r.errCube,kind:'cube'}
+          historyEvent:null,historyEvents
         });
       }else{
         // Pre-roll state. Peek at the upcoming move to classify the actual roll as joker/anti-joker.
@@ -495,7 +501,7 @@ function buildTimeline(parsed, sourceFile){
         position:applyCheckerMove(beforePosition,r.activePlayer,c.moveRaw).position
       }));
       // 選択手の表示盤面は候補側の推定値ではなく、棋譜に実際に適用したムーブ後盤面を使う。
-      // Dance / hit / bar / off を含め、次の move ステップと必ず一致させる。
+      // Cannot Move / hit / bar / off を含め、次の move ステップと必ず一致させる。
       const selectedPosition = afterPosition;
       const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode,r.activePlayer)};
 
