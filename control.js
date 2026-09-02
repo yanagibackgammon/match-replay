@@ -12,6 +12,7 @@ const manualModeBtn = document.getElementById("manualModeBtn");
 const tournamentLine1Input = document.getElementById("tournamentLine1Input");
 const tournamentLine2Input = document.getElementById("tournamentLine2Input");
 const themeColorInput = document.getElementById("themeColorInput");
+const themeColorPreview = document.getElementById("themeColorPreview");
 const designPresetSelect = document.getElementById("designPresetSelect");
 const designPresetPreview = document.getElementById("designPresetPreview");
 const blackNameInput = document.getElementById("blackNameInput");
@@ -81,6 +82,7 @@ function syncMetaEditorsFromState(){
   syncEditorValue(tournamentLine1Input,"tournamentTitleLine1",lastState.meta.tournamentTitleLine1 || lastState.meta.tournamentTitle || "");
   syncEditorValue(tournamentLine2Input,"tournamentTitleLine2",lastState.meta.tournamentTitleLine2 || "");
   syncEditorValue(themeColorInput,"themeColor",lastState.meta.themeColor || "#6B670D");
+  renderThemeColorPreview();
   syncEditorValue(blackNameInput,"blackName",lastState.meta.blackName || "");
   syncEditorValue(whiteNameInput,"whiteName",lastState.meta.whiteName || "");
 
@@ -125,6 +127,12 @@ function ensureOption(value){
     option.textContent = value;
     matchFileSelect.appendChild(option);
   }
+}
+
+function renderThemeColorPreview(){
+  if(!themeColorPreview) return;
+  const value=String(themeColorInput?.value||"#6B670D").trim();
+  themeColorPreview.style.background=/^#[0-9a-fA-F]{6}$/.test(value)?value:"#6B670D";
 }
 
 function renderDesignPreview(){
@@ -394,8 +402,10 @@ timeline.addEventListener("input", () => sendCommand("seek", Number(timeline.val
 applyMetaBtn.addEventListener("click", applyMeta);
 refreshMatchesBtn.addEventListener("click", refreshMatches);
 designPresetSelect.addEventListener("change", renderDesignPreview);
+themeColorInput.addEventListener("input", renderThemeColorPreview);
 
 renderState(lastState);
+renderThemeColorPreview();
 loadDesignPresets();
 refreshMatches();
 loadPagesInitialState();

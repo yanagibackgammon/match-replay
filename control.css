@@ -6,14 +6,14 @@ html,body{
   color:#111;
   font-family:Inter,"Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
 }
-body{padding:28px}
+body{padding:20px 28px 28px}
 .control-shell{width:min(1080px,100%);margin:0 auto}
 .control-header{
-  display:flex;align-items:end;justify-content:space-between;
-  padding-bottom:18px;border-bottom:3px solid #111;
+  display:flex;align-items:center;justify-content:space-between;
+  min-height:48px;padding-bottom:10px;border-bottom:3px solid #111;
 }
-.control-header p{margin:0 0 5px;font-size:13px;font-weight:900;letter-spacing:.2em}
-.control-header h1{margin:0;font-size:38px}
+.control-header h1{margin:0;font-size:30px;line-height:1;font-weight:900;letter-spacing:.03em;white-space:nowrap}
+.control-header h1 span{font-size:22px;letter-spacing:.02em}
 .connection{padding:9px 14px;border:2px solid #111;border-radius:0;font-size:13px;font-weight:900;letter-spacing:.1em}
 .connection.online{background:#111;color:#fff}.connection.offline{background:#fff}
 
@@ -84,3 +84,10 @@ button:disabled{opacity:.35;cursor:not-allowed}
   border:1px solid #111;
 }
 .design-preset-preview span{display:block;min-width:0}
+
+.theme-color-preview{
+  margin-top:9px;
+  height:18px;
+  border:1px solid #111;
+  background:#6B670D;
+}

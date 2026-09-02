@@ -191,8 +191,8 @@ function applyDesignPreset(id){
   if(directBg&&directBg.tagName.toLowerCase()==="rect") directBg.setAttribute("fill",normalizeHex(next.board?.surface,"#FFFFFF"));
   const baseRects=[...document.querySelectorAll("#boardBase rect")];
   if(baseRects[0]) baseRects[0].setAttribute("fill",normalizeHex(next.board?.surface,"#FFFFFF"));
-  if(baseRects[1]) baseRects[1].setAttribute("fill",normalizeHex(next.board?.bar,"#111111"));
-  if(baseRects[2]) baseRects[2].setAttribute("fill",normalizeHex(next.board?.bar,"#111111"));
+  if(baseRects[1]) baseRects[1].setAttribute("fill",normalizeHex(next.board?.line,"#000000"));
+  if(baseRects[2]) baseRects[2].setAttribute("fill",normalizeHex(next.board?.line,"#000000"));
   trianglePoints();
 }
 async function loadDesignPresets(){
@@ -224,6 +224,7 @@ function diePlayerClass(player){return player===1||player==="black"?"player1":"p
 function renderDie(face,player){return `<span class="die ${diePlayerClass(player)}">${diePips(face).map(c=>`<span class="die-pip ${c}"></span>`).join("")}</span>`;}
 function renderPair(pair,player){return pair&&pair.length===2?`<div class="dice-pair-inline">${renderDie(pair[0],player)}${renderDie(pair[1],player)}</div>`:'<div class="dice-pair-inline"></div>';}
 function historyClass(error){if(error<=-0.080)return"error-red";if(error<=-0.020)return"error-green";return"";}
+function candidateErrorClass(error){const value=Number(error);if(value<=-0.080)return"error-purple";if(value<=-0.020)return"error-red";return"";}
 function historyMoveLabel(move){return move==="Dance"?"Cannot Move":(move||"");}
 function historyCell(event,player){
   if(!event)return '<div class="history-cell"></div>';
@@ -295,14 +296,14 @@ function collectHistoryRows(){
     }
     openMoveRow[event.player]=event;
   }
-  return rows.slice(-5);
+  return rows.slice(-4);
 }
 function renderHistory(){
   const rows=collectHistoryRows();
   // v36で履歴DOM構造を変更したため、Pages/OBSのキャッシュでHTMLとJSの
   // 世代が一時的にずれても描画全体を止めないよう新旧DOMの両方に対応する。
   if(els.historyList){
-    const padded=[...Array(Math.max(0,5-rows.length)).fill(null),...rows].slice(-5);
+    const padded=[...Array(Math.max(0,4-rows.length)).fill(null),...rows].slice(-4);
     els.historyList.innerHTML=padded.map(row=>{
       if(!row)return `<div class="history-timeline-row history-empty-row">${historyCell(null,"black")}${historyCell(null,"white")}</div>`;
       if(row.kind==="game")return `<div class="history-timeline-row history-game-row"><div class="history-game-label">Game ${row.gameNumber}</div></div>`;
@@ -331,7 +332,7 @@ function renderAnalysis(a){
     const entry={candidate:all[selectedIndex],index:selectedIndex};
     if(visible.length<5)visible.push(entry);else visible[4]=entry;
   }
-  const rows=visible.map(({candidate:c,index:i})=>`<div class="analysis-row${i===selectedIndex?" is-selected":""}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq">${Number(c.error??0).toFixed(3)}</span></div>`);
+  const rows=visible.map(({candidate:c,index:i})=>`<div class="analysis-row${i===selectedIndex?" is-selected":""}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${candidateErrorClass(c.error)}">${Number(c.error??0).toFixed(3)}</span></div>`);
   while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span></div>');
   els.analysisContent.innerHTML=`<div class="analysis-moves">${rows.slice(0,5).join("")}</div>`;
 }

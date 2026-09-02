@@ -4,15 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Match Replay Control</title>
-<link rel="stylesheet" href="./control.css">
+<link rel="stylesheet" href="./control.css?v=42">
 </head>
 <body>
 <main class="control-shell">
   <header class="control-header">
-    <div>
-      <p>MATCH REPLAY</p>
-      <h1>操作画面</h1>
-    </div>
+    <h1>MATCH REPLAY <span>操作画面</span></h1>
     <div id="connection" class="connection offline">DISCONNECTED</div>
   </header>
 
@@ -84,6 +81,7 @@
       <label>
         <span>テーマカラー</span>
         <input id="themeColorInput" type="text" value="#6B670D" placeholder="#6B670D" maxlength="7" spellcheck="false">
+        <div id="themeColorPreview" class="theme-color-preview" aria-label="テーマカラーのプレビュー"></div>
       </label>
       <label>
         <span>ボードデザイン</span>
@@ -112,6 +110,6 @@
     <code>/matches/</code>
   </section>
 </main>
-<script src="./control.js?v=39"></script>
+<script src="./control.js?v=42"></script>
 </body>
 </html>
