@@ -8,7 +8,7 @@ html,body{
   margin:0;
   width:100%;
   height:100%;
-  background:#fff;
+  background:#eef7ee;
   color:#111;
   font-family:Inter,"Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
   overflow:hidden;
@@ -24,7 +24,7 @@ html,body{
 #stage{
   width:1920px;
   height:1080px;
-  background:#fff;
+  background:#eef7ee;
   transform-origin:top left;
   position:relative;
 }
@@ -32,7 +32,7 @@ html,body{
   width:1920px;
   height:300px;
   border-bottom:1px solid var(--line);
-  background:#fff;
+  background:#eef7ee;
   display:flex;
   align-items:center;
 }
