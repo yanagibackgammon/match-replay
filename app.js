@@ -3,16 +3,92 @@ const checkersG = document.getElementById("checkers");
 const diceG = document.getElementById("dice");
 const cubeG = document.getElementById("cube");
 
+const defaultMeta = {
+  tournamentTitle: "JBS第31期名人戦 準々決勝　25ptマッチ",
+  blackName: "柳 暢祐",
+  whiteName: "平林 直",
+  blackScore: 0,
+  whiteScore: 0,
+  matchFile: ""
+};
+
 const states = [
-  { blackScore:0, whiteScore:0, action:"Opening position", big:"GAME START", dice:null, cube:1, blackRate:50.0, whiteRate:50.0 },
-  { blackScore:0, whiteScore:0, action:"柳 31: 8/5 6/5", big:"BLACK 31", dice:[3,1], cube:1, blackRate:51.8, whiteRate:48.2 },
-  { blackScore:0, whiteScore:0, action:"平林 42: 8/4 6/4", big:"WHITE 42", dice:[4,2], cube:1, blackRate:49.4, whiteRate:50.6 },
-  { blackScore:0, whiteScore:0, action:"柳 65: 13/7 13/8", big:"BLACK 65", dice:[6,5], cube:1, blackRate:55.1, whiteRate:44.9 },
-  { blackScore:0, whiteScore:0, action:"平林 Doubles", big:"DOUBLE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3 },
-  { blackScore:0, whiteScore:0, action:"柳 Takes", big:"TAKE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3 }
+  {
+    action:"Opening position", big:"GAME START", dice:null, cube:1, blackRate:50.0, whiteRate:50.0,
+    jokersPlus:[["66", +0.182], ["55", +0.141], ["44", +0.106]],
+    jokersMinus:[["21", -0.126], ["31", -0.119], ["11", -0.085]],
+    analysis:[
+      {move:"24/21 13/11", eq:"+0.021"},
+      {move:"24/23 13/10", eq:"+0.000"},
+      {move:"8/5 6/4", eq:"-0.018"},
+      {move:"13/11 13/10", eq:"-0.036"},
+      {move:"24/22 24/23", eq:"-0.061"}
+    ]
+  },
+  {
+    player:"black", moveText:"8/5 6/5", error:0.000,
+    action:"柳 31: 8/5 6/5", big:"BLACK 31", dice:[3,1], cube:1, blackRate:51.8, whiteRate:48.2,
+    jokersPlus:[["66", +0.154], ["65", +0.123], ["44", +0.090]],
+    jokersMinus:[["21", -0.134], ["32", -0.111], ["11", -0.082]],
+    analysis:[
+      {move:"24/21 13/12", eq:"+0.000"},
+      {move:"8/5 6/5", eq:"+0.000"},
+      {move:"13/10 13/12", eq:"-0.012"},
+      {move:"24/23 13/10", eq:"-0.031"},
+      {move:"6/2", eq:"-0.079"}
+    ]
+  },
+  {
+    player:"white", moveText:"8/4 6/4", error:-0.020,
+    action:"平林 42: 8/4 6/4", big:"WHITE 42", dice:[4,2], cube:1, blackRate:49.4, whiteRate:50.6,
+    jokersPlus:[["66", +0.166], ["55", +0.118], ["53", +0.093]],
+    jokersMinus:[["21", -0.141], ["11", -0.096], ["31", -0.088]],
+    analysis:[
+      {move:"24/20 13/11", eq:"+0.000"},
+      {move:"8/4 6/4", eq:"-0.020"},
+      {move:"13/9 24/22", eq:"-0.028"},
+      {move:"24/18", eq:"-0.072"},
+      {move:"6/2 6/4", eq:"-0.103"}
+    ]
+  },
+  {
+    player:"black", moveText:"13/7 13/8", error:-0.080,
+    action:"柳 65: 13/7 13/8", big:"BLACK 65", dice:[6,5], cube:1, blackRate:55.1, whiteRate:44.9,
+    jokersPlus:[["55", +0.204], ["66", +0.176], ["44", +0.102]],
+    jokersMinus:[["21", -0.149], ["11", -0.126], ["31", -0.084]],
+    analysis:[
+      {move:"24/18 13/8", eq:"+0.000"},
+      {move:"13/7 13/8", eq:"-0.080"},
+      {move:"24/13", eq:"-0.092"},
+      {move:"8/2 6/1", eq:"-0.116"},
+      {move:"13/2", eq:"-0.158"}
+    ]
+  },
+  {
+    player:"white", moveText:"D/T?", error:0.000,
+    action:"平林 Doubles", big:"DOUBLE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3,
+    jokersPlus:[["66", +0.191], ["65", +0.162], ["44", +0.108]],
+    jokersMinus:[["11", -0.173], ["21", -0.141], ["31", -0.099]],
+    analysis:[
+      {move:"Double", eq:"+0.000"},
+      {move:"No double", eq:"-0.063"},
+      {move:"Pass (for opponent)", eq:"-0.437"}
+    ]
+  },
+  {
+    player:"black", moveText:"Take", error:0.000,
+    action:"柳 Takes", big:"TAKE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3,
+    jokersPlus:[["66", +0.191], ["65", +0.162], ["44", +0.108]],
+    jokersMinus:[["11", -0.173], ["21", -0.141], ["31", -0.099]],
+    analysis:[
+      {move:"Take", eq:"+0.000"},
+      {move:"Pass", eq:"-1.000"}
+    ]
+  }
 ];
 
-const start = [0,2,0,0,0,0,-5,0,-3,0,0,0,5,-5,0,0,0,3,0,5,0,0,0,0,-2];
+// Demo board positions
+const start=[0,2,0,0,0,0,-5,0,-3,0,0,0,5,-5,0,0,0,3,0,5,0,0,0,0,-2];
 const positions = [
   start,
   [0,1,0,0,0,1,-5,0,-3,0,0,0,5,-5,0,0,0,3,0,5,0,0,0,0,-2],
@@ -183,48 +259,104 @@ function drawCube(v){
 
 trianglePoints();
 
+let index = 0;
+let meta = {...defaultMeta};
+
 const els = {
+  tournamentTitle: document.getElementById("tournamentTitle"),
+  blackName: document.getElementById("blackName"),
+  whiteName: document.getElementById("whiteName"),
   blackScore: document.getElementById("blackScore"),
   whiteScore: document.getElementById("whiteScore"),
   winBarBlack: document.getElementById("winBarBlack"),
   winBarWhite: document.getElementById("winBarWhite"),
   blackRateText: document.getElementById("blackRateText"),
   whiteRateText: document.getElementById("whiteRateText"),
-  bigAction: document.getElementById("bigAction"),
-  moveList: document.getElementById("moveList")
+  jokerPlus: document.getElementById("jokerPlus"),
+  jokerMinus: document.getElementById("jokerMinus"),
+  historyList: document.getElementById("historyList"),
+  analysisList: document.getElementById("analysisList")
 };
 
-let index = 0;
-
-function renderList(){
-  els.moveList.innerHTML = states.map((s, i) =>
-    `<div class="move-row ${i === index ? "active" : ""}">
-      <span class="n">${String(i + 1).padStart(2, "0")}</span>
-      <span>${s.action}</span>
-    </div>`
-  ).join("");
+function renderMeta(){
+  els.tournamentTitle.textContent = meta.tournamentTitle;
+  els.blackName.textContent = meta.blackName;
+  els.whiteName.textContent = meta.whiteName;
+  els.blackScore.textContent = meta.blackScore;
+  els.whiteScore.textContent = meta.whiteScore;
 }
 
-function render(){
+function renderJokers(state){
+  const renderRows = (target, rows, sign) => {
+    target.innerHTML = rows.map(([roll, delta]) => `
+      <div class="joker-row">
+        <span class="arrow">${sign === "plus" ? "▲" : "▼"}</span>
+        <span>${roll}</span>
+        <span>${delta > 0 ? "+" : ""}${delta.toFixed(3)}</span>
+      </div>
+    `).join("");
+  };
+  renderRows(els.jokerPlus, state.jokersPlus || [], "plus");
+  renderRows(els.jokerMinus, state.jokersMinus || [], "minus");
+}
+
+function errorClass(error){
+  if(error <= -0.080) return "red";
+  if(error <= -0.020) return "green";
+  return "";
+}
+
+function renderHistory(){
+  const rows = states
+    .slice(1, index + 1)
+    .map((s) => {
+      const err = typeof s.error === "number" ? s.error.toFixed(3) : "";
+      const signErr = s.error > 0 ? `+${err}` : err;
+      return `
+        <div class="history-row">
+          <span class="checker-dot ${s.player === "white" ? "white" : "black"}"></span>
+          <span class="history-move">${s.moveText || ""}</span>
+          <span class="history-error ${errorClass(s.error)}">${err ? signErr : ""}</span>
+        </div>
+      `;
+    }).join("");
+  els.historyList.innerHTML = rows || "";
+}
+
+function renderAnalysis(state){
+  els.analysisList.innerHTML = (state.analysis || []).map((row, i) => `
+    <div class="analysis-row">
+      <span class="analysis-rank">${i + 1}</span>
+      <span class="analysis-move">${row.move}</span>
+      <span class="analysis-eq">${row.eq}</span>
+    </div>
+  `).join("");
+}
+
+function renderState(){
   const s = states[index];
-  els.blackScore.textContent = s.blackScore;
-  els.whiteScore.textContent = s.whiteScore;
   els.winBarBlack.style.width = `${s.blackRate}%`;
   els.winBarWhite.style.width = `${s.whiteRate}%`;
   els.blackRateText.textContent = `${s.blackRate.toFixed(1)}%`;
   els.whiteRateText.textContent = `${s.whiteRate.toFixed(1)}%`;
-  els.bigAction.textContent = s.big;
+
   drawCheckers(positions[index]);
   drawDice(s.dice, s.action);
   drawCube(s.cube);
-  renderList();
+  renderJokers(s);
+  renderHistory();
+  renderAnalysis(s);
 }
 
 function applyRemoteState(message){
   if(typeof message.index === "number"){
     index = Math.max(0, Math.min(states.length - 1, message.index));
-    render();
   }
+  if(message.meta && typeof message.meta === "object"){
+    meta = {...meta, ...message.meta};
+  }
+  renderMeta();
+  renderState();
 }
 
 function connectWebSocket(){
@@ -257,11 +389,14 @@ function connectWebSocket(){
 }
 
 function scaleStage(){
-  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  const sx = innerWidth < 1920 ? innerWidth / 1920 : 1;
+  const sy = innerHeight < 1080 ? innerHeight / 1080 : 1;
+  const s = Math.min(sx, sy);
   document.getElementById("stage").style.transform = `scale(${s})`;
 }
 
 addEventListener("resize", scaleStage);
 scaleStage();
-render();
+renderMeta();
+renderState();
 connectWebSocket();

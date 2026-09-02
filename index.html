@@ -10,15 +10,15 @@
 <div id="stage-wrap">
   <main id="stage" aria-label="1920 by 1080 stream layout">
     <section class="top-area">
-      <div class="top-title" id="tournamentTitle">JBS第31期名人戦 準々決勝　25ptマッチ</div>
+      <div class="headline-row">
+        <div class="headline-name left" id="blackName">柳 暢祐</div>
+        <div class="headline-title" id="tournamentTitle">JBS第31期名人戦 準々決勝　25ptマッチ</div>
+        <div class="headline-name right" id="whiteName">平林 直</div>
+      </div>
 
-      <div class="top-strip">
-        <div class="player-card player-left">
-          <div class="player-name">柳 暢祐</div>
-          <div class="player-score-box">
-            <span>SCORE</span>
-            <strong id="blackScore">0</strong>
-          </div>
+      <div class="scorebar-row">
+        <div class="score-card">
+          <div class="score-value" id="blackScore">0</div>
         </div>
 
         <div class="eval-wrap">
@@ -30,12 +30,8 @@
           </div>
         </div>
 
-        <div class="player-card player-right">
-          <div class="player-name">平林 直</div>
-          <div class="player-score-box">
-            <span>SCORE</span>
-            <strong id="whiteScore">0</strong>
-          </div>
+        <div class="score-card">
+          <div class="score-value" id="whiteScore">0</div>
         </div>
       </div>
     </section>
@@ -62,15 +58,19 @@
       </section>
 
       <aside class="info-area">
-        <section class="panel current-panel">
-          <div class="panel-heading">CURRENT</div>
-          <div class="big-action" id="bigAction">GAME START</div>
-          <div class="current-sub">XG SOURCE / AUTO REPLAY PROTOTYPE</div>
+        <section class="info-top">
+          <div class="joker-box" id="jokerBox">
+            <div class="joker-group plus" id="jokerPlus"></div>
+            <div class="joker-group minus" id="jokerMinus"></div>
+          </div>
+
+          <div class="history-box">
+            <div class="history-list" id="historyList"></div>
+          </div>
         </section>
 
-        <section class="panel move-panel">
-          <div class="panel-heading">MOVE LIST</div>
-          <div id="moveList" class="move-list"></div>
+        <section class="analysis-box">
+          <div class="analysis-list" id="analysisList"></div>
         </section>
       </aside>
     </section>

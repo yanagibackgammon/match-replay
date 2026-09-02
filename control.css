@@ -8,7 +8,7 @@ html,body{
 }
 body{padding:28px}
 .control-shell{
-  width:min(920px,100%);
+  width:min(1080px,100%);
   margin:0 auto;
 }
 .control-header{
@@ -45,7 +45,8 @@ body{padding:28px}
 .status-card,
 .seek-card,
 .speed-card,
-.info-card{
+.info-card,
+.meta-card{
   margin-top:20px;
   padding:20px;
   border:2px solid #111;
@@ -107,6 +108,36 @@ button.active{
   display:grid;
   grid-template-columns:repeat(3,1fr);
   gap:10px;
+}
+.meta-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px 18px;
+}
+.meta-grid label span{
+  display:block;
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:.12em;
+  margin-bottom:8px;
+}
+.meta-grid input,
+.meta-grid select{
+  width:100%;
+  min-height:44px;
+  padding:0 12px;
+  border:2px solid #111;
+  background:#fff;
+  font-size:16px;
+  font:inherit;
+}
+.meta-actions{
+  display:flex;
+  gap:12px;
+  margin-top:18px;
+}
+.meta-actions button{
+  min-width:180px;
 }
 .info-card p{
   margin:0 0 8px;

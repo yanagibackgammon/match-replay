@@ -48,11 +48,49 @@
     </div>
   </section>
 
+  <section class="meta-card">
+    <div class="meta-grid">
+      <label>
+        <span>大会名</span>
+        <input id="tournamentInput" type="text" value="">
+      </label>
+      <label>
+        <span>黒プレイヤー名</span>
+        <input id="blackNameInput" type="text" value="">
+      </label>
+      <label>
+        <span>白プレイヤー名</span>
+        <input id="whiteNameInput" type="text" value="">
+      </label>
+      <label>
+        <span>黒スコア</span>
+        <input id="blackScoreInput" type="number" value="0">
+      </label>
+      <label>
+        <span>白スコア</span>
+        <input id="whiteScoreInput" type="number" value="0">
+      </label>
+      <label>
+        <span>棋譜ファイル</span>
+        <select id="matchFileSelect">
+          <option value="">(未選択)</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="meta-actions">
+      <button id="refreshMatchesBtn">棋譜一覧更新</button>
+      <button id="applyMetaBtn" class="primary">表示へ反映</button>
+    </div>
+  </section>
+
   <section class="info-card">
     <p>OBS Browser Source</p>
     <code>http://localhost:3000/</code>
     <p>この操作画面</p>
     <code>http://localhost:3000/control.html</code>
+    <p>GitHub / ローカルで棋譜を置くフォルダ</p>
+    <code>/matches/</code>
   </section>
 </main>
 <script src="./control.js"></script>

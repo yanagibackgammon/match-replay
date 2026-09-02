@@ -8,12 +8,29 @@ const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const speedButtons = [...document.querySelectorAll("[data-speed]")];
 
+const tournamentInput = document.getElementById("tournamentInput");
+const blackNameInput = document.getElementById("blackNameInput");
+const whiteNameInput = document.getElementById("whiteNameInput");
+const blackScoreInput = document.getElementById("blackScoreInput");
+const whiteScoreInput = document.getElementById("whiteScoreInput");
+const matchFileSelect = document.getElementById("matchFileSelect");
+const applyMetaBtn = document.getElementById("applyMetaBtn");
+const refreshMatchesBtn = document.getElementById("refreshMatchesBtn");
+
 let socket = null;
 let lastState = {
   index:0,
   totalSteps:6,
   playing:false,
-  speed:1500
+  speed:1500,
+  meta:{
+    tournamentTitle:"JBS第31期名人戦 準々決勝　25ptマッチ",
+    blackName:"柳 暢祐",
+    whiteName:"平林 直",
+    blackScore:0,
+    whiteScore:0,
+    matchFile:""
+  }
 };
 
 function sendCommand(command, value){
@@ -25,8 +42,21 @@ function sendCommand(command, value){
   }));
 }
 
+function ensureOption(value){
+  if(!value) return;
+  const exists = [...matchFileSelect.options].some(opt => opt.value === value);
+  if(!exists){
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    matchFileSelect.appendChild(option);
+  }
+}
+
 function renderState(state){
   lastState = {...lastState, ...state};
+  lastState.meta = {...(lastState.meta || {}), ...((state && state.meta) || {})};
+
   const total = Math.max(1, lastState.totalSteps || 1);
   timeline.max = total - 1;
   timeline.value = Math.min(lastState.index || 0, total - 1);
@@ -35,6 +65,44 @@ function renderState(state){
 
   speedButtons.forEach(button => {
     button.classList.toggle("active", Number(button.dataset.speed) === Number(lastState.speed));
+  });
+
+  tournamentInput.value = lastState.meta.tournamentTitle || "";
+  blackNameInput.value = lastState.meta.blackName || "";
+  whiteNameInput.value = lastState.meta.whiteName || "";
+  blackScoreInput.value = lastState.meta.blackScore ?? 0;
+  whiteScoreInput.value = lastState.meta.whiteScore ?? 0;
+  ensureOption(lastState.meta.matchFile || "");
+  matchFileSelect.value = lastState.meta.matchFile || "";
+}
+
+async function refreshMatches(){
+  try{
+    const res = await fetch("/api/matches", {cache:"no-store"});
+    const data = await res.json();
+    const current = matchFileSelect.value;
+    matchFileSelect.innerHTML = '<option value="">(未選択)</option>';
+    (data.files || []).forEach(file => {
+      const option = document.createElement("option");
+      option.value = file;
+      option.textContent = file;
+      matchFileSelect.appendChild(option);
+    });
+    if(current) ensureOption(current);
+    matchFileSelect.value = current || (lastState.meta.matchFile || "");
+  }catch(error){
+    console.warn("Failed to load matches", error);
+  }
+}
+
+function applyMeta(){
+  sendCommand("setMeta", {
+    tournamentTitle: tournamentInput.value.trim(),
+    blackName: blackNameInput.value.trim(),
+    whiteName: whiteNameInput.value.trim(),
+    blackScore: Number(blackScoreInput.value || 0),
+    whiteScore: Number(whiteScoreInput.value || 0),
+    matchFile: matchFileSelect.value
   });
 }
 
@@ -81,5 +149,10 @@ speedButtons.forEach(button => {
   });
 });
 
+applyMetaBtn.addEventListener("click", applyMeta);
+refreshMatchesBtn.addEventListener("click", refreshMatches);
+matchFileSelect.addEventListener("change", applyMeta);
+
 renderState(lastState);
+refreshMatches();
 connect();
