@@ -31,7 +31,7 @@ let appliedDesignPresetId="";
 let index=0,meta={...defaultMeta},matchData={states:[emptyState]},loadedMatchFile="",socket=null;
 let adFiles=[],adIndex=0,adTimer=null;
 let pagesTimer=null;
-const PLAYBACK_SPEED=2000;
+const PLAYBACK_SPEED=3000;
 let pagesState={index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED,mode:"auto"};
 const isLocal=()=>location.hostname==="localhost"||location.hostname==="127.0.0.1";
 const pageChannel=(!isLocal()&&"BroadcastChannel" in window)?new BroadcastChannel("match-replay-control"):null;
@@ -231,14 +231,30 @@ function historyCell(event,player){
 }
 function collectHistoryRows(){
   const rows=[];
+  let leadPlayer=null;
   let openMoveRow=null;
   for(const state of matchData.states.slice(0,index+1)){
     if(!state)continue;
     if(state.phase==="gameStart"){
       rows.push({kind:"game",gameNumber:Number(state.gameNumber)||1});
+      leadPlayer=null;
       openMoveRow=null;
       continue;
     }
+
+    // 各ゲームで最初に手番を迎えた側を先行とする。
+    // 先行のpreRoll（手番開始）が来た時点で、ムーブ表示前でも次の行を先に作る。
+    if(state.phase==="preRoll"){
+      const turnPlayer=state.activePlayer===1?"black":(state.activePlayer===-1?"white":null);
+      if(turnPlayer){
+        if(!leadPlayer) leadPlayer=turnPlayer;
+        if(turnPlayer===leadPlayer){
+          openMoveRow={kind:"actions",black:null,white:null};
+          rows.push(openMoveRow);
+        }
+      }
+    }
+
     const grouped=Array.isArray(state.historyEvents)?state.historyEvents.filter(Boolean):[];
     if(grouped.length){
       const row={kind:"actions",black:null,white:null};
@@ -249,18 +265,35 @@ function collectHistoryRows(){
       openMoveRow=null;
       continue;
     }
+
     const event=state.historyEvent;
     if(!event||(event.player!=="black"&&event.player!=="white"))continue;
     if(event.kind==="cube"){
       const row={kind:"actions",black:null,white:null};
-      row[event.player]=event;rows.push(row);openMoveRow=null;continue;
+      row[event.player]=event;
+      rows.push(row);
+      openMoveRow=null;
+      continue;
     }
-    if(!openMoveRow||openMoveRow[event.player]){
+    if(!leadPlayer) leadPlayer=event.player;
+
+    if(event.player===leadPlayer){
+      // 通常はpreRollで既に作成済みの行へ書き込む。
+      // 古い生成JSONなどpreRollが無い場合のみここで新規行を作る。
+      if(!openMoveRow || openMoveRow[event.player]){
+        openMoveRow={kind:"actions",black:null,white:null};
+        rows.push(openMoveRow);
+      }
+      openMoveRow[event.player]=event;
+      continue;
+    }
+
+    // 後攻は、先行が開始した同じ行の空欄へ入れる。
+    if(!openMoveRow || openMoveRow[event.player]){
       openMoveRow={kind:"actions",black:null,white:null};
       rows.push(openMoveRow);
     }
     openMoveRow[event.player]=event;
-    if(openMoveRow.black&&openMoveRow.white)openMoveRow=null;
   }
   return rows.slice(-4);
 }
@@ -289,11 +322,11 @@ function renderAnalysis(a){
   }
   const selectedIndex=Number.isInteger(a.playedIndex)?a.playedIndex:-1;
   const all=a.candidates||[];
-  let visible=all.slice(0,6).map((c,i)=>({candidate:c,index:i}));
-  // 選択手が上位6候補の外でも必ず画面内に残す。
-  if(selectedIndex>=6 && all[selectedIndex]){
+  let visible=all.slice(0,5).map((c,i)=>({candidate:c,index:i}));
+  // 選択手が6位以下の場合は、5行目を実際の選択手に置き換える。
+  if(selectedIndex>=5 && all[selectedIndex]){
     const entry={candidate:all[selectedIndex],index:selectedIndex};
-    if(visible.length<6)visible.push(entry);else visible[visible.length-1]=entry;
+    if(visible.length<5)visible.push(entry);else visible[4]=entry;
   }
   const rows=visible.map(({candidate:c,index:i})=>`<div class="analysis-row${i===selectedIndex?" is-selected":""}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq">${Number(c.error??0).toFixed(3)}</span></div>`).join("");
   els.analysisContent.innerHTML=`<div class="analysis-moves">${rows}</div>`;
@@ -301,7 +334,8 @@ function renderAnalysis(a){
 function currentState(){return matchData.states[Math.max(0,Math.min(index,matchData.states.length-1))]||emptyState;}
 function render(){
   const s=currentState(),b=Number(s.winRate?.black??50),w=Number(s.winRate?.white??(100-b));renderMeta(s);
-  els.winBarBlack.style.width=`${b}%`;els.winBarWhite.style.width=`${w}%`;els.blackRateText.textContent=`${b.toFixed(1)}%`;els.whiteRateText.textContent=`${w.toFixed(1)}%`;
+  const displayBlack=Math.round(b),displayWhite=100-displayBlack;
+  els.winBarBlack.style.width=`${b}%`;els.winBarWhite.style.width=`${w}%`;els.blackRateText.textContent=`${displayBlack}%`;els.whiteRateText.textContent=`${displayWhite}%`;
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
   els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);
   drawPointLabels(s.activePlayer);drawCheckers(s.position);drawDice(s.dice,s.activePlayer);drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);

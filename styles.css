@@ -355,8 +355,10 @@ html,body{
 
 .history-game-row{
   grid-template-columns:1fr;
-  border-top:1px solid var(--line);
-  border-bottom:1px solid var(--line);
+  background:var(--theme-color);
+  color:#fff;
+  border-top:1px solid var(--theme-color);
+  border-bottom:1px solid var(--theme-color);
 }
 .history-game-label{
   display:flex;
@@ -367,6 +369,8 @@ html,body{
   font-size:25px;
   font-weight:900;
   letter-spacing:.04em;
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.28);
 }
 
 .history-move{
@@ -472,8 +476,8 @@ html,body{
   grid-template-columns:1fr 110px;
   align-items:center;
   gap:12px;
-  font-size:22px;
-  font-weight:800;
+  font-size:24px;
+  font-weight:900;
   line-height:1;
   border-bottom:1px solid #ece7dc;
 }
@@ -487,6 +491,11 @@ html,body{
   font-variant-numeric:tabular-nums;
   color:#444;
 }
+.analysis-row.is-selected{
+  background:var(--gold);
+  color:#fff;
+}
+.analysis-row.is-selected .analysis-eq{color:#fff}
 
 .ad-area{
   width:840px;

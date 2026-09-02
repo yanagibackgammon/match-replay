@@ -206,11 +206,11 @@ function cubeValueFromCode(code){
   return 2 ** Math.abs(code);
 }
 
-function cubeOwnerFromCode(code, activePlayer){
+function cubeOwnerFromCode(code){
   if(!code) return 0;
-  const ownerIsActive = code > 0;
-  const owner = ownerIsActive ? activePlayer : -activePlayer;
-  return owner === 1 ? 'black' : 'white';
+  // XG stores cube ownership absolutely: positive = Player 1 / black,
+  // negative = Player 2 / white. It must never flip just because the turn changes.
+  return code > 0 ? 'black' : 'white';
 }
 
 function readPosition(buf, off){
@@ -435,7 +435,7 @@ function buildTimeline(parsed, sourceFile){
       const activeRate = r.analysis && r.analysis.result ? r.analysis.result[3] * 100 : null;
       let winRate = stateWinRate(r.activePlayer, activeRate, lastBlackRate);
       if(r.analysis.result.every(v => v === 0)) winRate = {black:lastBlackRate,white:100-lastBlackRate};
-      const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode,r.activePlayer)};
+      const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode)};
 
       if(r.doubleAction === 1){
         const candidates = [
@@ -488,11 +488,12 @@ function buildTimeline(parsed, sourceFile){
 
     if(r.type === 'move'){
       const played = r.best.candidates[r.playedIndex] || r.best.candidates[0] || null;
-      const activeRate = played ? played.winRate : null;
-      const winRate = stateWinRate(r.activePlayer,activeRate,lastBlackRate);
+      const best = r.best.candidates[0] || played || null;
+      const selectedWinRate = stateWinRate(r.activePlayer,played ? played.winRate : null,lastBlackRate);
+      const bestWinRate = stateWinRate(r.activePlayer,best ? best.winRate : null,lastBlackRate);
       const beforePosition = r.beforePosition || normalizeStoredPosition(r.positionI);
       const afterPosition = r.afterPosition || applyCheckerMove(beforePosition,r.activePlayer,r.moveRaw).position;
-      const candidates = r.best.candidates.slice(0,10).map(c => ({
+      const candidates = r.best.candidates.map(c => ({
         move:c.move,
         equity:c.equity,
         error:c.equity - (r.best.candidates[0]?.equity ?? c.equity),
@@ -500,14 +501,16 @@ function buildTimeline(parsed, sourceFile){
         // 候補手ごとのムーブ後盤面もJSONへ保持し、配信側だけで完結させる。
         position:applyCheckerMove(beforePosition,r.activePlayer,c.moveRaw).position
       }));
-      // 選択手の表示盤面は候補側の推定値ではなく、棋譜に実際に適用したムーブ後盤面を使う。
-      // Cannot Move / hit / bar / off を含め、次の move ステップと必ず一致させる。
+      // 選択手では、候補側の推定盤面ではなく棋譜に実際に適用した盤面を表示する。
       const selectedPosition = afterPosition;
-      const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode,r.activePlayer)};
+      const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode)};
 
-      // Every checker play is presented as four fixed broadcast beats:
-      // joker -> roll -> analysis -> move. If the XG stream did not contain
-      // a pre-roll cube record, add an empty joker beat so the cadence stays fixed.
+      // 1手を4段階で表示する。
+      // 1) 手番交代 + Joker / Anti-Joker
+      // 2) ロール + 候補手 + 最善手の勝率（盤面はムーブ前）
+      // 3) 選択手を金表示 + チェッカー移動 + 選択手の勝率
+      // 4) ロールダイスを消す
+      // XGにpre-roll cube recordが無い場合も空のJoker段階を補う。
       const previous = states[states.length - 1];
       if(!(previous && previous.phase === 'preRoll' && previous.gameNumber === gameNumber && previous.activePlayer === r.activePlayer)){
         states.push({
@@ -520,24 +523,23 @@ function buildTimeline(parsed, sourceFile){
 
       states.push({
         phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
-        position:beforePosition,dice:r.dice,cube,winRate,
-        analysis:{type:'none'},historyEvent:null
+        position:beforePosition,dice:r.dice,cube,winRate:bestWinRate,
+        analysis:{type:'moves',candidates},historyEvent:null
       });
       states.push({
         phase:'analysis',gameNumber,score:[...score],activePlayer:r.activePlayer,
-        // 実際に選択された候補手のムーブ後盤面を表示する。
-        position:selectedPosition,dice:r.dice,cube,winRate,
-        analysis:{type:'moves',candidates,playedIndex:r.playedIndex},historyEvent:null
+        position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,
+        analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
+        historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'}
       });
       states.push({
         phase:'move',gameNumber,score:[...score],activePlayer:r.activePlayer,
-        position:afterPosition,dice:r.dice,cube,winRate,
-        analysis:{type:'none'},
-        historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'}
+        position:afterPosition,dice:null,cube,winRate:selectedWinRate,
+        analysis:{type:'none'},historyEvent:null
       });
       lastPosition = afterPosition;
       lastCube = cube;
-      lastBlackRate = winRate.black;
+      lastBlackRate = selectedWinRate.black;
       continue;
     }
 

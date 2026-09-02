@@ -28,7 +28,7 @@ let lastState = {
   index:0,
   totalSteps:1,
   playing:false,
-  speed:2000,
+  speed:3000,
   mode:"auto",
   gameStarts:[],
   meta:{
@@ -177,7 +177,7 @@ function renderGameMarkers(){
 }
 
 function renderState(state){
-  lastState = {...lastState, ...state, speed:2000};
+  lastState = {...lastState, ...state, speed:3000};
   lastState.meta = {...(lastState.meta || {}), ...((state && state.meta) || {})};
 
   const total = Math.max(1, lastState.totalSteps || 1);
@@ -323,7 +323,7 @@ async function applyMeta(){
       if(nextMeta.matchFile!==oldFile) lastState.index=0;
       else lastState.index=Math.min(lastState.index,lastState.totalSteps-1);
       const revision=writePagesMeta(lastState.meta);
-      localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:2000,mode:lastState.mode||"auto"}));
+      localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:3000,mode:lastState.mode||"auto"}));
       if(pageChannel)pageChannel.postMessage({type:"meta",meta:lastState.meta,revision});
       renderState(lastState);
     }
