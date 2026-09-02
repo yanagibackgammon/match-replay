@@ -6,6 +6,7 @@ const { WebSocketServer, WebSocket } = require("ws");
 const PORT = Number(process.env.PORT || 3000);
 const ROOT = __dirname;
 const MATCH_DIR = path.join(ROOT, "matches");
+const ADS_DIR = path.join(ROOT, "ads");
 const CONFIG_PATH = path.join(ROOT, "stream-config.json");
 
 const MIME = {
@@ -17,6 +18,8 @@ const MIME = {
   ".png":"image/png",
   ".jpg":"image/jpeg",
   ".jpeg":"image/jpeg",
+  ".webp":"image/webp",
+  ".gif":"image/gif",
   ".txt":"text/plain; charset=utf-8",
   ".xg":"application/octet-stream"
 };
@@ -32,6 +35,7 @@ const defaultMeta = {
 
 function ensureDirs(){
   if(!fs.existsSync(MATCH_DIR)) fs.mkdirSync(MATCH_DIR, {recursive:true});
+  if(!fs.existsSync(ADS_DIR)) fs.mkdirSync(ADS_DIR, {recursive:true});
 }
 
 function loadConfig(){
@@ -52,17 +56,25 @@ function saveConfig(meta){
   }
 }
 
-function listMatchFiles(){
+function listFiles(dir, regex){
   ensureDirs();
   try{
-    return fs.readdirSync(MATCH_DIR, {withFileTypes:true})
+    return fs.readdirSync(dir, {withFileTypes:true})
       .filter(entry => entry.isFile())
       .map(entry => entry.name)
-      .filter(name => /\.(xg|json)$/i.test(name))
+      .filter(name => regex.test(name))
       .sort((a, b) => a.localeCompare(b, "ja"));
   }catch{
     return [];
   }
+}
+
+function listMatchFiles(){
+  return listFiles(MATCH_DIR, /\.(xg|json)$/i);
+}
+
+function listAdFiles(){
+  return listFiles(ADS_DIR, /\.(png|jpg|jpeg|webp|gif)$/i);
 }
 
 function safePath(urlPath){
@@ -96,9 +108,8 @@ function json(res, payload){
 const server = http.createServer((req, res) => {
   const requestPath = decodeURIComponent((req.url || "/").split("?")[0]);
 
-  if(requestPath === "/api/matches"){
-    return json(res, {files:listMatchFiles()});
-  }
+  if(requestPath === "/api/matches") return json(res, {files:listMatchFiles()});
+  if(requestPath === "/api/ads") return json(res, {files:listAdFiles()});
 
   const filePath = safePath(req.url);
   if(!filePath){
@@ -128,23 +139,17 @@ const wss = new WebSocketServer({server, path:"/ws"});
 function broadcastState(){
   const payload = JSON.stringify({type:"state", ...state});
   for(const client of wss.clients){
-    if(client.readyState === WebSocket.OPEN){
-      client.send(payload);
-    }
+    if(client.readyState === WebSocket.OPEN) client.send(payload);
   }
 }
 
 function stopTimer(){
-  if(timer){
-    clearInterval(timer);
-    timer = null;
-  }
+  if(timer){ clearInterval(timer); timer = null; }
 }
 
 function startTimer(){
   stopTimer();
   if(!state.playing) return;
-
   timer = setInterval(() => {
     const lastIndex = Math.max(0, state.totalSteps - 1);
     if(state.index >= lastIndex){
@@ -219,7 +224,6 @@ wss.on("connection", socket => {
   socket.on("message", data => {
     try{
       const message = JSON.parse(data.toString());
-
       if(message.type === "hello" && message.role === "display"){
         const totalSteps = Number(message.totalSteps);
         if(Number.isFinite(totalSteps) && totalSteps > 0){
@@ -229,10 +233,7 @@ wss.on("connection", socket => {
         }
         return;
       }
-
-      if(message.type === "command"){
-        handleCommand(message);
-      }
+      if(message.type === "command") handleCommand(message);
     }catch(error){
       console.error("Invalid message:", error);
     }

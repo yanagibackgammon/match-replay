@@ -12,28 +12,19 @@ const defaultMeta = {
   matchFile: ""
 };
 
-const diceChars = {
-  1:"⚀", 2:"⚁", 3:"⚂", 4:"⚃", 5:"⚄", 6:"⚅"
-};
+const diceChars = {1:"⚀",2:"⚁",3:"⚂",4:"⚃",5:"⚄",6:"⚅"};
+const JOKER_WINRATE_THRESHOLD = 5.0;
 
 const states = [
   {
-    action:"Opening position", big:"GAME START", dice:null, cube:1, blackRate:50.0, whiteRate:50.0,
-    jokersPlus:[[6,6], [5,5], [4,4]],
-    jokersMinus:[[2,1], [3,1], [1,1]],
-    analysis:[
-      {move:"24/21 13/11", eq:"+0.021"},
-      {move:"24/23 13/10", eq:"+0.000"},
-      {move:"8/5 6/4", eq:"-0.018"},
-      {move:"13/11 13/10", eq:"-0.036"},
-      {move:"24/22 24/23", eq:"-0.061"}
-    ]
+    mode:"jokers", action:"Opening position", big:"GAME START", dice:null, cube:1, blackRate:50.0, whiteRate:50.0,
+    jokersPlus:[{dice:[6,6], deltaW:9.2},{dice:[5,5], deltaW:7.5},{dice:[4,4], deltaW:5.4}],
+    jokersMinus:[{dice:[2,1], deltaW:-8.8},{dice:[3,1], deltaW:-6.2},{dice:[1,1], deltaW:-5.1}],
+    analysis:[]
   },
   {
-    player:"black", moveText:"8/5 6/5", error:0.000,
+    mode:"moves", player:"black", moveText:"8/5 6/5", error:0.000,
     action:"柳 31: 8/5 6/5", big:"BLACK 31", dice:[3,1], cube:1, blackRate:51.8, whiteRate:48.2,
-    jokersPlus:[[6,6], [6,5], [4,4]],
-    jokersMinus:[[2,1], [3,2], [1,1]],
     analysis:[
       {move:"24/21 13/12", eq:"+0.000"},
       {move:"8/5 6/5", eq:"+0.000"},
@@ -43,10 +34,8 @@ const states = [
     ]
   },
   {
-    player:"white", moveText:"8/4 6/4", error:-0.020,
+    mode:"moves", player:"white", moveText:"8/4 6/4", error:-0.020,
     action:"平林 42: 8/4 6/4", big:"WHITE 42", dice:[4,2], cube:1, blackRate:49.4, whiteRate:50.6,
-    jokersPlus:[[6,6], [5,5], [5,3]],
-    jokersMinus:[[2,1], [1,1], [3,1]],
     analysis:[
       {move:"24/20 13/11", eq:"+0.000"},
       {move:"8/4 6/4", eq:"-0.020"},
@@ -56,10 +45,8 @@ const states = [
     ]
   },
   {
-    player:"black", moveText:"13/7 13/8", error:-0.080,
+    mode:"moves", player:"black", moveText:"13/7 13/8", error:-0.080,
     action:"柳 65: 13/7 13/8", big:"BLACK 65", dice:[6,5], cube:1, blackRate:55.1, whiteRate:44.9,
-    jokersPlus:[[5,5], [6,6], [4,4]],
-    jokersMinus:[[2,1], [1,1], [3,1]],
     analysis:[
       {move:"24/18 13/8", eq:"+0.000"},
       {move:"13/7 13/8", eq:"-0.080"},
@@ -69,10 +56,8 @@ const states = [
     ]
   },
   {
-    player:"white", moveText:"Double", error:0.000,
+    mode:"moves", player:"white", moveText:"Double", error:0.000,
     action:"平林 Doubles", big:"DOUBLE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3,
-    jokersPlus:[[6,6], [6,5], [4,4]],
-    jokersMinus:[[1,1], [2,1], [3,1]],
     analysis:[
       {move:"Double", eq:"+0.000"},
       {move:"No double", eq:"-0.063"},
@@ -80,10 +65,8 @@ const states = [
     ]
   },
   {
-    player:"black", moveText:"Take", error:0.000,
+    mode:"moves", player:"black", moveText:"Take", error:0.000,
     action:"柳 Takes", big:"TAKE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3,
-    jokersPlus:[[6,6], [6,5], [4,4]],
-    jokersMinus:[[1,1], [2,1], [3,1]],
     analysis:[
       {move:"Take", eq:"+0.000"},
       {move:"Pass", eq:"-1.000"}
@@ -165,7 +148,6 @@ function drawCheckers(arr){
   for(let p=1; p<=24; p++){
     const v = arr[p] || 0;
     if(!v) continue;
-
     const n = Math.abs(v);
     const coord = pointCoord(p);
     const klass = v > 0 ? "checker-piece-black" : "checker-piece-white";
@@ -206,7 +188,6 @@ function drawDice(vals, action){
   function die(x, y, n){
     const g = document.createElementNS("http://www.w3.org/2000/svg","g");
     const isBlack = player === "black";
-
     const r = document.createElementNS("http://www.w3.org/2000/svg","rect");
     r.setAttribute("x", x);
     r.setAttribute("y", y);
@@ -226,7 +207,6 @@ function drawDice(vals, action){
       c.setAttribute("fill", isBlack ? "#ffffff" : "#000000");
       g.appendChild(c);
     });
-
     return g;
   }
 
@@ -237,7 +217,6 @@ function drawDice(vals, action){
 function drawCube(v){
   cubeG.innerHTML = "";
   if(v <= 1) return;
-
   const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
   rect.setAttribute("x","332.5");
   rect.setAttribute("y","35");
@@ -264,6 +243,9 @@ trianglePoints();
 
 let index = 0;
 let meta = {...defaultMeta};
+let adFiles = [];
+let adIndex = 0;
+let adTimer = null;
 
 const els = {
   stageWrap: document.getElementById("stage-wrap"),
@@ -271,73 +253,99 @@ const els = {
   tournamentTitle: document.getElementById("tournamentTitle"),
   blackName: document.getElementById("blackName"),
   whiteName: document.getElementById("whiteName"),
+  blackHistoryName: document.getElementById("blackHistoryName"),
+  whiteHistoryName: document.getElementById("whiteHistoryName"),
   blackScore: document.getElementById("blackScore"),
   whiteScore: document.getElementById("whiteScore"),
   winBarBlack: document.getElementById("winBarBlack"),
   winBarWhite: document.getElementById("winBarWhite"),
   blackRateText: document.getElementById("blackRateText"),
   whiteRateText: document.getElementById("whiteRateText"),
-  jokerPlus: document.getElementById("jokerPlus"),
-  jokerMinus: document.getElementById("jokerMinus"),
-  historyList: document.getElementById("historyList"),
-  analysisList: document.getElementById("analysisList")
+  blackHistoryList: document.getElementById("blackHistoryList"),
+  whiteHistoryList: document.getElementById("whiteHistoryList"),
+  analysisContent: document.getElementById("analysisContent"),
+  adImage: document.getElementById("adImage"),
+  adPlaceholder: document.getElementById("adPlaceholder")
 };
 
 function renderMeta(){
   els.tournamentTitle.textContent = meta.tournamentTitle;
   els.blackName.textContent = meta.blackName;
   els.whiteName.textContent = meta.whiteName;
+  els.blackHistoryName.textContent = meta.blackName;
+  els.whiteHistoryName.textContent = meta.whiteName;
   els.blackScore.textContent = meta.blackScore;
   els.whiteScore.textContent = meta.whiteScore;
 }
 
-function renderDiceIcon(face){
+function renderDie(face){
   return `<span class="die">${diceChars[face] || ""}</span>`;
 }
 
-function renderJokers(state){
-  const renderPairs = (target, pairs) => {
-    target.innerHTML = (pairs || []).map(pair => `
-      <div class="dice-pair">
-        ${renderDiceIcon(pair[0])}
-        ${renderDiceIcon(pair[1])}
-      </div>
-    `).join("");
-  };
-  renderPairs(els.jokerPlus, state.jokersPlus);
-  renderPairs(els.jokerMinus, state.jokersMinus);
+function renderDicePairInline(pair){
+  if(!pair || pair.length < 2){
+    return '<div class="dice-pair-inline"><span class="die">■</span></div>';
+  }
+  return `<div class="dice-pair-inline">${renderDie(pair[0])}${renderDie(pair[1])}</div>`;
 }
 
-function errorClass(error){
-  if(error <= -0.080) return "red";
-  if(error <= -0.020) return "green";
-  return "";
+function renderHistoryColumn(player){
+  const rows = states
+    .slice(1, index + 1)
+    .filter(s => s.player === player)
+    .slice(-6)
+    .reverse()
+    .map(s => `
+      <div class="history-row">
+        ${renderDicePairInline(s.dice)}
+        <span class="history-move">${s.moveText || ""}</span>
+      </div>
+    `).join("");
+  return rows;
 }
 
 function renderHistory(){
-  const rows = states
-    .slice(1, index + 1)
-    .map((s) => {
-      const err = typeof s.error === "number" ? s.error.toFixed(3) : "";
-      const signErr = s.error > 0 ? `+${err}` : err;
-      return `
-        <div class="history-row">
-          <span class="checker-dot ${s.player === "white" ? "white" : "black"}"></span>
-          <span class="history-move">${s.moveText || ""}</span>
-          <span class="history-error ${errorClass(s.error)}">${err ? signErr : ""}</span>
+  els.blackHistoryList.innerHTML = renderHistoryColumn("black");
+  els.whiteHistoryList.innerHTML = renderHistoryColumn("white");
+}
+
+function renderJokers(state){
+  const plus = (state.jokersPlus || []).filter(r => r.deltaW >= JOKER_WINRATE_THRESHOLD);
+  const minus = (state.jokersMinus || []).filter(r => Math.abs(r.deltaW) >= JOKER_WINRATE_THRESHOLD);
+
+  const renderBlock = (rows, cls) => `
+    <div class="analysis-dice-block ${cls}">
+      ${rows.map(row => `<div class="dice-pair-block">${renderDie(row.dice[0])}${renderDie(row.dice[1])}</div>`).join("")}
+    </div>
+  `;
+
+  els.analysisContent.innerHTML = `
+    <div class="analysis-jokers">
+      ${renderBlock(plus, "plus")}
+      ${renderBlock(minus, "minus")}
+    </div>
+  `;
+}
+
+function renderMoves(state){
+  els.analysisContent.innerHTML = `
+    <div class="analysis-moves">
+      ${(state.analysis || []).map(row => `
+        <div class="analysis-row">
+          <span class="analysis-move">${row.move}</span>
+          <span class="analysis-eq">${row.eq}</span>
         </div>
-      `;
-    }).join("");
-  els.historyList.innerHTML = rows || "";
+      `).join("")}
+    </div>
+  `;
 }
 
 function renderAnalysis(state){
-  els.analysisList.innerHTML = (state.analysis || []).map((row) => `
-    <div class="analysis-row">
-      <span class="analysis-move">${row.move}</span>
-      <span class="analysis-eq">${row.eq}</span>
-    </div>
-  `).join("");
+  if(state.mode === "jokers"){
+    renderJokers(state);
+  }else{
+    renderMoves(state);
+  }
 }
 
 function renderState(){
@@ -346,11 +354,9 @@ function renderState(){
   els.winBarWhite.style.width = `${s.whiteRate}%`;
   els.blackRateText.textContent = `${s.blackRate.toFixed(1)}%`;
   els.whiteRateText.textContent = `${s.whiteRate.toFixed(1)}%`;
-
   drawCheckers(positions[index]);
   drawDice(s.dice, s.action);
   drawCube(s.cube);
-  renderJokers(s);
   renderHistory();
   renderAnalysis(s);
 }
@@ -366,25 +372,60 @@ function applyRemoteState(message){
   renderState();
 }
 
+async function loadAds(){
+  try{
+    const res = await fetch('/api/ads', {cache:'no-store'});
+    const data = await res.json();
+    adFiles = Array.isArray(data.files) ? data.files : [];
+  }catch(error){
+    console.warn('Failed to load ads', error);
+    adFiles = [];
+  }
+}
+
+function showAd(file){
+  if(!file){
+    els.adImage.hidden = true;
+    els.adImage.removeAttribute('src');
+    els.adPlaceholder.textContent = '';
+    return;
+  }
+  els.adImage.src = `./ads/${encodeURIComponent(file)}`;
+  els.adImage.hidden = false;
+  els.adPlaceholder.textContent = '';
+}
+
+async function cycleAds(){
+  await loadAds();
+  if(!adFiles.length){
+    els.adImage.hidden = true;
+    els.adImage.removeAttribute('src');
+    els.adPlaceholder.textContent = '';
+    return;
+  }
+  showAd(adFiles[adIndex % adFiles.length]);
+  adIndex += 1;
+}
+
+function startAdRotation(){
+  if(adTimer) clearInterval(adTimer);
+  cycleAds();
+  adTimer = setInterval(cycleAds, 30000);
+}
+
 function connectWebSocket(){
   if(!location.host) return;
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   const socket = new WebSocket(`${protocol}//${location.host}/ws`);
 
   socket.addEventListener("open", () => {
-    socket.send(JSON.stringify({
-      type:"hello",
-      role:"display",
-      totalSteps:states.length
-    }));
+    socket.send(JSON.stringify({type:"hello", role:"display", totalSteps:states.length}));
   });
 
   socket.addEventListener("message", event => {
     try{
       const message = JSON.parse(event.data);
-      if(message.type === "state"){
-        applyRemoteState(message);
-      }
+      if(message.type === "state") applyRemoteState(message);
     }catch(error){
       console.warn("Invalid WebSocket message", error);
     }
@@ -407,4 +448,5 @@ addEventListener("resize", scaleStage);
 scaleStage();
 renderMeta();
 renderState();
+startAdRotation();
 connectWebSocket();
