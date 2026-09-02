@@ -12,11 +12,15 @@ const defaultMeta = {
   matchFile: ""
 };
 
+const diceChars = {
+  1:"⚀", 2:"⚁", 3:"⚂", 4:"⚃", 5:"⚄", 6:"⚅"
+};
+
 const states = [
   {
     action:"Opening position", big:"GAME START", dice:null, cube:1, blackRate:50.0, whiteRate:50.0,
-    jokersPlus:[["66", +0.182], ["55", +0.141], ["44", +0.106]],
-    jokersMinus:[["21", -0.126], ["31", -0.119], ["11", -0.085]],
+    jokersPlus:[[6,6], [5,5], [4,4]],
+    jokersMinus:[[2,1], [3,1], [1,1]],
     analysis:[
       {move:"24/21 13/11", eq:"+0.021"},
       {move:"24/23 13/10", eq:"+0.000"},
@@ -28,8 +32,8 @@ const states = [
   {
     player:"black", moveText:"8/5 6/5", error:0.000,
     action:"柳 31: 8/5 6/5", big:"BLACK 31", dice:[3,1], cube:1, blackRate:51.8, whiteRate:48.2,
-    jokersPlus:[["66", +0.154], ["65", +0.123], ["44", +0.090]],
-    jokersMinus:[["21", -0.134], ["32", -0.111], ["11", -0.082]],
+    jokersPlus:[[6,6], [6,5], [4,4]],
+    jokersMinus:[[2,1], [3,2], [1,1]],
     analysis:[
       {move:"24/21 13/12", eq:"+0.000"},
       {move:"8/5 6/5", eq:"+0.000"},
@@ -41,8 +45,8 @@ const states = [
   {
     player:"white", moveText:"8/4 6/4", error:-0.020,
     action:"平林 42: 8/4 6/4", big:"WHITE 42", dice:[4,2], cube:1, blackRate:49.4, whiteRate:50.6,
-    jokersPlus:[["66", +0.166], ["55", +0.118], ["53", +0.093]],
-    jokersMinus:[["21", -0.141], ["11", -0.096], ["31", -0.088]],
+    jokersPlus:[[6,6], [5,5], [5,3]],
+    jokersMinus:[[2,1], [1,1], [3,1]],
     analysis:[
       {move:"24/20 13/11", eq:"+0.000"},
       {move:"8/4 6/4", eq:"-0.020"},
@@ -54,8 +58,8 @@ const states = [
   {
     player:"black", moveText:"13/7 13/8", error:-0.080,
     action:"柳 65: 13/7 13/8", big:"BLACK 65", dice:[6,5], cube:1, blackRate:55.1, whiteRate:44.9,
-    jokersPlus:[["55", +0.204], ["66", +0.176], ["44", +0.102]],
-    jokersMinus:[["21", -0.149], ["11", -0.126], ["31", -0.084]],
+    jokersPlus:[[5,5], [6,6], [4,4]],
+    jokersMinus:[[2,1], [1,1], [3,1]],
     analysis:[
       {move:"24/18 13/8", eq:"+0.000"},
       {move:"13/7 13/8", eq:"-0.080"},
@@ -65,10 +69,10 @@ const states = [
     ]
   },
   {
-    player:"white", moveText:"D/T?", error:0.000,
+    player:"white", moveText:"Double", error:0.000,
     action:"平林 Doubles", big:"DOUBLE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3,
-    jokersPlus:[["66", +0.191], ["65", +0.162], ["44", +0.108]],
-    jokersMinus:[["11", -0.173], ["21", -0.141], ["31", -0.099]],
+    jokersPlus:[[6,6], [6,5], [4,4]],
+    jokersMinus:[[1,1], [2,1], [3,1]],
     analysis:[
       {move:"Double", eq:"+0.000"},
       {move:"No double", eq:"-0.063"},
@@ -78,8 +82,8 @@ const states = [
   {
     player:"black", moveText:"Take", error:0.000,
     action:"柳 Takes", big:"TAKE", dice:null, cube:2, blackRate:43.7, whiteRate:56.3,
-    jokersPlus:[["66", +0.191], ["65", +0.162], ["44", +0.108]],
-    jokersMinus:[["11", -0.173], ["21", -0.141], ["31", -0.099]],
+    jokersPlus:[[6,6], [6,5], [4,4]],
+    jokersMinus:[[1,1], [2,1], [3,1]],
     analysis:[
       {move:"Take", eq:"+0.000"},
       {move:"Pass", eq:"-1.000"}
@@ -87,7 +91,6 @@ const states = [
   }
 ];
 
-// Demo board positions
 const start=[0,2,0,0,0,0,-5,0,-3,0,0,0,5,-5,0,0,0,3,0,5,0,0,0,0,-2];
 const positions = [
   start,
@@ -263,6 +266,8 @@ let index = 0;
 let meta = {...defaultMeta};
 
 const els = {
+  stageWrap: document.getElementById("stage-wrap"),
+  stage: document.getElementById("stage"),
   tournamentTitle: document.getElementById("tournamentTitle"),
   blackName: document.getElementById("blackName"),
   whiteName: document.getElementById("whiteName"),
@@ -286,18 +291,21 @@ function renderMeta(){
   els.whiteScore.textContent = meta.whiteScore;
 }
 
+function renderDiceIcon(face){
+  return `<span class="die">${diceChars[face] || ""}</span>`;
+}
+
 function renderJokers(state){
-  const renderRows = (target, rows, sign) => {
-    target.innerHTML = rows.map(([roll, delta]) => `
-      <div class="joker-row">
-        <span class="arrow">${sign === "plus" ? "▲" : "▼"}</span>
-        <span>${roll}</span>
-        <span>${delta > 0 ? "+" : ""}${delta.toFixed(3)}</span>
+  const renderPairs = (target, pairs) => {
+    target.innerHTML = (pairs || []).map(pair => `
+      <div class="dice-pair">
+        ${renderDiceIcon(pair[0])}
+        ${renderDiceIcon(pair[1])}
       </div>
     `).join("");
   };
-  renderRows(els.jokerPlus, state.jokersPlus || [], "plus");
-  renderRows(els.jokerMinus, state.jokersMinus || [], "minus");
+  renderPairs(els.jokerPlus, state.jokersPlus);
+  renderPairs(els.jokerMinus, state.jokersMinus);
 }
 
 function errorClass(error){
@@ -324,9 +332,8 @@ function renderHistory(){
 }
 
 function renderAnalysis(state){
-  els.analysisList.innerHTML = (state.analysis || []).map((row, i) => `
+  els.analysisList.innerHTML = (state.analysis || []).map((row) => `
     <div class="analysis-row">
-      <span class="analysis-rank">${i + 1}</span>
       <span class="analysis-move">${row.move}</span>
       <span class="analysis-eq">${row.eq}</span>
     </div>
@@ -389,10 +396,11 @@ function connectWebSocket(){
 }
 
 function scaleStage(){
-  const sx = innerWidth < 1920 ? innerWidth / 1920 : 1;
-  const sy = innerHeight < 1080 ? innerHeight / 1080 : 1;
-  const s = Math.min(sx, sy);
-  document.getElementById("stage").style.transform = `scale(${s})`;
+  const viewportW = document.documentElement.clientWidth || window.innerWidth || 1920;
+  const scale = viewportW / 1920;
+  const scaledHeight = Math.ceil(1080 * scale);
+  els.stage.style.transform = `scale(${scale})`;
+  els.stageWrap.style.height = `${scaledHeight}px`;
 }
 
 addEventListener("resize", scaleStage);

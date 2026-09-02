@@ -17,20 +17,20 @@
 html,body{
   margin:0;
   width:100%;
-  height:100%;
+  min-height:100%;
   background:transparent;
   color:var(--text);
   font-family:Inter,"Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
-  overflow:hidden;
+  overflow-x:hidden;
+  overflow-y:auto;
 }
 
 #stage-wrap{
   width:100vw;
-  height:100vh;
-  overflow:hidden;
-  display:flex;
-  align-items:flex-start;
-  justify-content:flex-start;
+  min-height:100vh;
+  overflow-x:hidden;
+  overflow-y:visible;
+  display:block;
   background:transparent;
 }
 
@@ -58,28 +58,28 @@ html,body{
   width:1920px;
   height:84px;
   display:grid;
-  grid-template-columns:320px 1fr 320px;
+  grid-template-columns:220px 1fr 220px;
   align-items:end;
+  gap:22px;
   padding:0 30px 12px;
   overflow:hidden;
 }
 
 .headline-name{
-  font-size:36px;
+  font-size:34px;
   font-weight:900;
   line-height:1;
   white-space:nowrap;
+  text-align:center;
 }
-.headline-name.left{text-align:left}
-.headline-name.right{text-align:right}
 
 .headline-title{
   text-align:center;
-  font-family:Georgia,"Times New Roman",serif;
-  font-size:40px;
-  font-weight:700;
-  line-height:1;
-  letter-spacing:.02em;
+  font-family:"Noto Sans JP",Inter,"Yu Gothic",Meiryo,sans-serif;
+  font-size:44px;
+  font-weight:900;
+  line-height:1.1;
+  letter-spacing:.01em;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
@@ -107,7 +107,7 @@ html,body{
 }
 
 .score-value{
-  font-size:74px;
+  font-size:82px;
   font-weight:900;
   line-height:1;
 }
@@ -166,7 +166,6 @@ html,body{
   overflow:hidden;
 }
 
-/* Left Bottom: Board */
 .board-area{
   width:1080px;
   height:840px;
@@ -186,7 +185,6 @@ html,body{
   flex:0 0 auto;
 }
 
-/* Right Bottom: Info */
 .info-area{
   width:840px;
   height:840px;
@@ -219,28 +217,38 @@ html,body{
 
 .joker-group{
   border-radius:16px;
-  padding:12px 14px;
+  padding:10px 12px;
   overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
 }
 .joker-group.plus{background:var(--green-bg)}
 .joker-group.minus{background:var(--red-bg)}
 
-.joker-row{
-  display:grid;
-  grid-template-columns:18px 52px 1fr;
+.dice-pair{
+  display:flex;
   align-items:center;
-  gap:10px;
-  height:28px;
-  font-size:18px;
-  font-weight:900;
+  gap:6px;
+  flex:0 0 auto;
+}
+
+.die{
+  width:34px;
+  height:34px;
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#fff;
+  border:2px solid currentColor;
+  font-size:20px;
   line-height:1;
+  font-weight:900;
 }
-.joker-group.plus .joker-row{color:var(--green)}
-.joker-group.minus .joker-row{color:var(--red)}
-.joker-row .arrow{
-  text-align:center;
-  font-size:16px;
-}
+.joker-group.plus .die{color:var(--green)}
+.joker-group.minus .die{color:var(--red)}
 
 .history-box{
   width:560px;
@@ -253,13 +261,13 @@ html,body{
   width:560px;
   height:260px;
   overflow:hidden;
-  padding:10px 16px;
+  padding:8px 12px;
 }
 
 .history-row{
   height:24px;
   display:grid;
-  grid-template-columns:22px 1fr 76px;
+  grid-template-columns:22px 1fr 84px;
   align-items:center;
   gap:10px;
   font-size:18px;
@@ -306,18 +314,13 @@ html,body{
 .analysis-row{
   height:42px;
   display:grid;
-  grid-template-columns:40px 1fr 110px;
+  grid-template-columns:1fr 110px;
   align-items:center;
   gap:12px;
   font-size:22px;
   font-weight:800;
   line-height:1;
   border-bottom:1px solid #ece7dc;
-}
-.analysis-rank{
-  color:#999;
-  text-align:center;
-  font-weight:900;
 }
 .analysis-move{
   white-space:nowrap;
@@ -330,7 +333,6 @@ html,body{
   color:#444;
 }
 
-/* Board drawing */
 .point{
   stroke:#000;
   stroke-width:1;
