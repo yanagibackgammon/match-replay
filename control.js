@@ -6,7 +6,6 @@ const playBtn = document.getElementById("playBtn");
 const pauseBtn = document.getElementById("pauseBtn");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
-const speedButtons = [...document.querySelectorAll("[data-speed]")];
 
 const tournamentLine1Input = document.getElementById("tournamentLine1Input");
 const blackNameInput = document.getElementById("blackNameInput");
@@ -60,7 +59,7 @@ function ensureOption(value){
 }
 
 function renderState(state){
-  lastState = {...lastState, ...state};
+  lastState = {...lastState, ...state, speed:1500};
   lastState.meta = {...(lastState.meta || {}), ...((state && state.meta) || {})};
 
   const total = Math.max(1, lastState.totalSteps || 1);
@@ -68,10 +67,6 @@ function renderState(state){
   timeline.value = Math.min(lastState.index || 0, total - 1);
   stepText.textContent = `${Number(timeline.value) + 1} / ${total}`;
   playState.textContent = lastState.playing ? "PLAYING" : "PAUSE";
-
-  speedButtons.forEach(button => {
-    button.classList.toggle("active", Number(button.dataset.speed) === Number(lastState.speed));
-  });
 
   tournamentLine1Input.value = lastState.meta.tournamentTitleLine1 || lastState.meta.tournamentTitle || "";
   blackNameInput.value = lastState.meta.blackName || "";
@@ -195,7 +190,7 @@ async function applyMeta(){
       if(nextMeta.matchFile!==oldFile) lastState.index=0;
       else lastState.index=Math.min(lastState.index,totalSteps-1);
       localStorage.setItem("matchReplayMeta",JSON.stringify(lastState.meta));
-      localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:lastState.speed}));
+      localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:1500}));
       if(pageChannel)pageChannel.postMessage({type:"meta",meta:lastState.meta});
       renderState(lastState);
     }
@@ -228,6 +223,7 @@ function connect(){
     connectionEl.textContent = "CONNECTED";
     connectionEl.className = "connection online";
     socket.send(JSON.stringify({type:"hello", role:"control"}));
+    socket.send(JSON.stringify({type:"command", command:"speed", value:1500}));
   });
 
   socket.addEventListener("message", event => {
@@ -260,7 +256,6 @@ pauseBtn.addEventListener("click", () => sendCommand("pause"));
 prevBtn.addEventListener("click", () => sendCommand("prev"));
 nextBtn.addEventListener("click", () => sendCommand("next"));
 timeline.addEventListener("input", () => sendCommand("seek", Number(timeline.value)));
-speedButtons.forEach(button => button.addEventListener("click", () => sendCommand("speed", Number(button.dataset.speed))));
 applyMetaBtn.addEventListener("click", applyMeta);
 refreshMatchesBtn.addEventListener("click", refreshMatches);
 

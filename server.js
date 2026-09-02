@@ -5,6 +5,7 @@ const { WebSocketServer, WebSocket } = require("ws");
 const { parseXgFile } = require("./scripts/xg-parser.cjs");
 
 const PORT = Number(process.env.PORT || 3000);
+const PLAYBACK_SPEED = 1500;
 const ROOT = __dirname;
 const MATCH_DIR = path.join(ROOT, "matches");
 const ADS_DIR = path.join(ROOT, "ads");
@@ -29,7 +30,7 @@ const MIME = {
 
 const defaultMeta = {
   tournamentTitleLine1: "JBS第31期名人戦 準々決勝",
-  tournamentTitleLine2: "2025/08/30　25ポイントマッチ　勝てばベスト4",
+  tournamentTitleLine2: "",
   blackName: "柳 暢祐",
   whiteName: "平林 直",
   blackScore: 0,
@@ -110,7 +111,7 @@ function safePath(urlPath){
 }
 
 ensureDirs();
-let state = {index:0,totalSteps:1,playing:false,speed:1500,meta:loadConfig(),matchError:""};
+let state = {index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED,meta:loadConfig(),matchError:""};
 let timer = null;
 
 function syncSelectedMatch(resetIndex=false){
@@ -205,7 +206,7 @@ function startTimer(){
     const last=Math.max(0,state.totalSteps-1);
     if(state.index>=last){state.index=last;state.playing=false;stopTimer();broadcastState();return;}
     state.index+=1;broadcastState();
-  },state.speed);
+  },PLAYBACK_SPEED);
 }
 function setIndex(v){state.index=Math.max(0,Math.min(Math.max(0,state.totalSteps-1),Number(v)||0));}
 
@@ -230,12 +231,12 @@ function applyMetaPatch(patch){
 
 function handleCommand(m){
   switch(m.command){
-    case"play":state.playing=true;startTimer();break;
+    case"play":state.speed=PLAYBACK_SPEED;state.playing=true;startTimer();break;
     case"pause":state.playing=false;stopTimer();break;
     case"prev":state.playing=false;stopTimer();setIndex(state.index-1);break;
     case"next":state.playing=false;stopTimer();setIndex(state.index+1);break;
     case"seek":state.playing=false;stopTimer();setIndex(m.value);break;
-    case"speed":state.speed=Math.max(200,Number(m.value)||1500);if(state.playing)startTimer();break;
+    case"speed":state.speed=PLAYBACK_SPEED;if(state.playing)startTimer();break;
     case"setMeta":applyMetaPatch(m.value||{});break;
   }
   broadcastState();

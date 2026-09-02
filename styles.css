@@ -57,14 +57,14 @@ html,body{
   grid-template-columns:250px 1fr 250px;
   align-items:center;
   gap:22px;
-  padding:8px 30px 0;
+  padding:0 30px;
   overflow:hidden;
 }
 
 .headline-name{
-  font-size:34px;
+  font-size:46px;
   font-weight:900;
-  line-height:1.1;
+  line-height:1;
   white-space:nowrap;
   text-align:center;
 }
@@ -72,6 +72,7 @@ html,body{
 .headline-name.right{text-align:right}
 
 .headline-title-block{
+  height:100%;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -84,9 +85,9 @@ html,body{
   width:100%;
   text-align:center;
   font-family:"Noto Sans JP",Inter,"Yu Gothic",Meiryo,sans-serif;
-  font-size:42px;
+  font-size:46px;
   font-weight:900;
-  line-height:1.08;
+  line-height:1;
   letter-spacing:.01em;
   white-space:nowrap;
   overflow:hidden;

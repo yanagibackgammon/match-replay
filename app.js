@@ -16,7 +16,8 @@ const emptyState={
 let index=0,meta={...defaultMeta},matchData={states:[emptyState]},loadedMatchFile="",socket=null;
 let adFiles=[],adIndex=0,adTimer=null;
 let pagesTimer=null;
-let pagesState={index:0,totalSteps:1,playing:false,speed:1500};
+const PLAYBACK_SPEED=1500;
+let pagesState={index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED};
 const isLocal=()=>location.hostname==="localhost"||location.hostname==="127.0.0.1";
 const pageChannel=(!isLocal()&&"BroadcastChannel" in window)?new BroadcastChannel("match-replay-control"):null;
 
@@ -63,7 +64,9 @@ function drawCheckers(position){
 function drawDice(vals,activePlayer){
   diceG.innerHTML="";if(!vals)return;const spots={1:[[18,18]],2:[[10,10],[26,26]],3:[[10,10],[18,18],[26,26]],4:[[10,10],[26,10],[10,26],[26,26]],5:[[10,10],[26,10],[18,18],[10,26],[26,26]],6:[[10,9],[26,9],[10,18],[26,18],[10,27],[26,27]]};
   function die(x,y,n){const g=document.createElementNS("http://www.w3.org/2000/svg","g"),black=activePlayer===1,r=document.createElementNS("http://www.w3.org/2000/svg","rect");r.setAttribute("x",x);r.setAttribute("y",y);r.setAttribute("width",36);r.setAttribute("height",36);r.setAttribute("rx",4);r.setAttribute("fill",black?"#000":"#fff");r.setAttribute("stroke","#000");g.appendChild(r);(spots[n]||[]).forEach(([dx,dy])=>{const c=document.createElementNS("http://www.w3.org/2000/svg","circle");c.setAttribute("cx",x+dx);c.setAttribute("cy",y+dy);c.setAttribute("r","3.4");c.setAttribute("fill",black?"#fff":"#000");g.appendChild(c);});return g;}
-  diceG.appendChild(die(286.5,254,vals[0]));diceG.appendChild(die(332.5,254,vals[1]));
+  // Player 1 (black) is shown in the center of the right half; Player 2 (white) in the center of the left half.
+  const xs=activePlayer===1?[468.5,514.5]:[151.5,197.5];
+  diceG.appendChild(die(xs[0],254,vals[0]));diceG.appendChild(die(xs[1],254,vals[1]));
 }
 function drawCube(v){cubeG.innerHTML="";if(!v||v<=1)return;const r=document.createElementNS("http://www.w3.org/2000/svg","rect");r.setAttribute("x","332.5");r.setAttribute("y","35");r.setAttribute("width","36");r.setAttribute("height","36");r.setAttribute("rx","3");r.setAttribute("fill","#fff");r.setAttribute("stroke","#000");cubeG.appendChild(r);const t=document.createElementNS("http://www.w3.org/2000/svg","text");t.setAttribute("x","350.5");t.setAttribute("y","60");t.setAttribute("text-anchor","middle");t.setAttribute("font-size","23");t.textContent=v;cubeG.appendChild(t);}
 trianglePoints();
@@ -177,16 +180,16 @@ function startPagesTimer(){
       pagesState.index=last;pagesState.playing=false;stopPagesTimer();publishPagesState();return;
     }
     pagesState.index+=1;index=pagesState.index;render();publishPagesState();
-  },pagesState.speed);
+  },PLAYBACK_SPEED);
 }
 function handlePagesCommand(command,value){
+  pagesState.speed=PLAYBACK_SPEED;
   switch(command){
     case "play": pagesState.playing=true;startPagesTimer();break;
     case "pause": pagesState.playing=false;stopPagesTimer();break;
     case "prev": pagesState.playing=false;stopPagesTimer();pagesState.index=Math.max(0,pagesState.index-1);break;
     case "next": pagesState.playing=false;stopPagesTimer();pagesState.index=Math.min(Math.max(0,pagesState.totalSteps-1),pagesState.index+1);break;
     case "seek": pagesState.playing=false;stopPagesTimer();pagesState.index=Math.max(0,Math.min(Math.max(0,pagesState.totalSteps-1),Number(value)||0));break;
-    case "speed": pagesState.speed=Math.max(200,Number(value)||1500);if(pagesState.playing)startPagesTimer();break;
   }
   index=pagesState.index;render();publishPagesState();
 }
@@ -195,7 +198,8 @@ async function loadInitialPagesMeta(){
   if(isLocal())return;
   try{const r=await fetch(new URL("./stream-config.json",location.href),{cache:"no-store"});if(r.ok)meta={...meta,...await r.json()};}catch{}
   try{const s=localStorage.getItem("matchReplayMeta");if(s)meta={...meta,...JSON.parse(s)};}catch{}
-  try{const s=localStorage.getItem("matchReplayPlaybackState");if(s){const p=JSON.parse(s);pagesState={...pagesState,...p};index=Number(p.index)||0;}}catch{}
+  try{const s=localStorage.getItem("matchReplayPlaybackState");if(s){const p=JSON.parse(s);pagesState={...pagesState,...p,speed:PLAYBACK_SPEED};index=Number(p.index)||0;}}catch{}
+  pagesState.speed=PLAYBACK_SPEED;
   await loadMatch(meta.matchFile,{force:true});
   pagesState.index=Math.max(0,Math.min(index,pagesState.totalSteps-1));
   index=pagesState.index;
