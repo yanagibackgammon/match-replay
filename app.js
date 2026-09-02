@@ -43,46 +43,69 @@ const positions = [
 
 function trianglePoints(){
   pointsG.innerHTML = "";
-  const startX = 54;
-  const pointW = 108;
-  const barGap = 64;
-  const topY = 48;
-  const bottomY = 652;
-  const tipTop = 322;
-  const tipBottom = 378;
+  const labelsG = document.getElementById("pointLabels");
+  labelsG.innerHTML = "";
+
+  const centersLeft = [81.75,126.25,170.75,215.25,259.75,304.25];
+  const centersRight = [397.75,442.25,486.75,531.25,575.75,620.25];
+  const centers = [...centersLeft, ...centersRight];
+  const pointW = 44.5;
 
   for(let i=0;i<12;i++){
-    const left = i < 6 ? startX + i * pointW : startX + 6 * pointW + barGap + (i - 6) * pointW;
-    const topColor = i % 2 === 0 ? "#111" : "#B7924B";
-    const bottomColor = i % 2 === 0 ? "#B7924B" : "#111";
+    const cx = centers[i];
+    const left = cx - pointW/2;
+    const topColor = i % 2 === 0 ? "#ffffff" : "#cfcfcf";
+    const bottomColor = i % 2 === 0 ? "#cfcfcf" : "#ffffff";
 
     const top = document.createElementNS("http://www.w3.org/2000/svg","polygon");
     top.setAttribute("class","point");
     top.setAttribute("fill", topColor);
-    top.setAttribute("points", `${left},${topY} ${left + pointW},${topY} ${left + pointW/2},${tipTop}`);
+    top.setAttribute("stroke","#000000");
+    top.setAttribute("stroke-width","1");
+    top.setAttribute("points", `${left},30 ${left+pointW},30 ${cx},251`);
     pointsG.appendChild(top);
 
     const bottom = document.createElementNS("http://www.w3.org/2000/svg","polygon");
     bottom.setAttribute("class","point");
     bottom.setAttribute("fill", bottomColor);
-    bottom.setAttribute("points", `${left},${bottomY} ${left + pointW},${bottomY} ${left + pointW/2},${tipBottom}`);
+    bottom.setAttribute("stroke","#000000");
+    bottom.setAttribute("stroke-width","1");
+    bottom.setAttribute("points", `${left},516 ${left+pointW},516 ${cx},294`);
     pointsG.appendChild(bottom);
   }
+
+  const topNums = [13,14,15,16,17,18,19,20,21,22,23,24];
+  const bottomNums = [12,11,10,9,8,7,6,5,4,3,2,1];
+
+  centers.forEach((cx,i)=>{
+    const topText = document.createElementNS("http://www.w3.org/2000/svg","text");
+    topText.setAttribute("x",cx);
+    topText.setAttribute("y","18");
+    topText.setAttribute("class","point-label");
+    topText.textContent = topNums[i];
+    labelsG.appendChild(topText);
+
+    const bottomText = document.createElementNS("http://www.w3.org/2000/svg","text");
+    bottomText.setAttribute("x",cx);
+    bottomText.setAttribute("y","540");
+    bottomText.setAttribute("class","point-label");
+    bottomText.textContent = bottomNums[i];
+    labelsG.appendChild(bottomText);
+  });
 }
 
 function pointCoord(p){
-  const pointW = 108;
-  const barGap = 64;
-  const startX = 54;
+  const centers = [81.75,126.25,170.75,215.25,259.75,304.25,397.75,442.25,486.75,531.25,575.75,620.25];
 
+  // Position Drill SVG:
+  // top = 13..24 from left to right
+  // bottom = 12..1 from left to right
   if(p <= 12){
     const idx = 12 - p;
-    const x = idx < 6 ? startX + idx * pointW + pointW / 2 : startX + 6 * pointW + barGap + (idx - 6) * pointW + pointW / 2;
-    return {x, y:618, dir:-1};
+    return {x:centers[idx], y:493, dir:-1};
   }else{
     const idx = p - 13;
-    const x = idx < 6 ? startX + idx * pointW + pointW / 2 : startX + 6 * pointW + barGap + (idx - 6) * pointW + pointW / 2;
-    return {x, y:82, dir:1};
+    return {x:centers[idx], y:53, dir:1};
   }
 }
 
@@ -91,6 +114,7 @@ function drawCheckers(arr){
   for(let p=1; p<=24; p++){
     const v = arr[p] || 0;
     if(!v) continue;
+
     const n = Math.abs(v);
     const coord = pointCoord(p);
     const klass = v > 0 ? "checker-piece-black" : "checker-piece-white";
@@ -99,8 +123,8 @@ function drawCheckers(arr){
     for(let i=0; i<maxShow; i++){
       const circle = document.createElementNS("http://www.w3.org/2000/svg","circle");
       circle.setAttribute("cx", coord.x);
-      circle.setAttribute("cy", coord.y + coord.dir * i * 50);
-      circle.setAttribute("r", 27);
+      circle.setAttribute("cy", coord.y + coord.dir * i * 43);
+      circle.setAttribute("r", "21.1");
       circle.setAttribute("class", klass);
       checkersG.appendChild(circle);
     }
@@ -108,70 +132,82 @@ function drawCheckers(arr){
     if(n > 5){
       const text = document.createElementNS("http://www.w3.org/2000/svg","text");
       text.setAttribute("x", coord.x);
-      text.setAttribute("y", coord.y + coord.dir * 4 * 50);
+      text.setAttribute("y", coord.y + coord.dir * 4 * 43 + 6);
       text.setAttribute("class", "checker-text");
-      text.setAttribute("fill", v > 0 ? "#fff" : "#111");
+      text.setAttribute("fill", v > 0 ? "#fff" : "#000");
       text.textContent = n;
       checkersG.appendChild(text);
     }
   }
 }
 
-function die(x, y, n){
+function die(x, y, n, player){
   const g = document.createElementNS("http://www.w3.org/2000/svg","g");
+  const isBlack = player === "black";
+
   const r = document.createElementNS("http://www.w3.org/2000/svg","rect");
   r.setAttribute("x", x);
   r.setAttribute("y", y);
-  r.setAttribute("width", 72);
-  r.setAttribute("height", 72);
-  r.setAttribute("rx", 10);
-  r.setAttribute("class", "die");
+  r.setAttribute("width", 36);
+  r.setAttribute("height", 36);
+  r.setAttribute("rx", 4);
+  r.setAttribute("fill", isBlack ? "#000000" : "#ffffff");
+  r.setAttribute("stroke", "#000000");
+  r.setAttribute("stroke-width", isBlack ? "0" : "1.2");
   g.appendChild(r);
 
   const spots = {
-    1:[[36,36]],
-    2:[[20,20],[52,52]],
-    3:[[20,20],[36,36],[52,52]],
-    4:[[20,20],[52,20],[20,52],[52,52]],
-    5:[[20,20],[52,20],[36,36],[20,52],[52,52]],
-    6:[[20,18],[52,18],[20,36],[52,36],[20,54],[52,54]]
+    1:[[18,18]],
+    2:[[10,10],[26,26]],
+    3:[[10,10],[18,18],[26,26]],
+    4:[[10,10],[26,10],[10,26],[26,26]],
+    5:[[10,10],[26,10],[18,18],[10,26],[26,26]],
+    6:[[10,9],[26,9],[10,18],[26,18],[10,27],[26,27]]
   }[n] || [];
 
-  spots.forEach(([dx, dy]) => {
+  spots.forEach(([dx,dy])=>{
     const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
-    c.setAttribute("cx", x + dx);
-    c.setAttribute("cy", y + dy);
-    c.setAttribute("r", 6);
-    c.setAttribute("class", "pip");
+    c.setAttribute("cx", x+dx);
+    c.setAttribute("cy", y+dy);
+    c.setAttribute("r", "3.4");
+    c.setAttribute("fill", isBlack ? "#ffffff" : "#000000");
     g.appendChild(c);
   });
 
   return g;
 }
 
-function drawDice(vals){
+function drawDice(vals, action){
   diceG.innerHTML = "";
   if(!vals) return;
-  diceG.appendChild(die(600, 314, vals[0]));
-  diceG.appendChild(die(828, 314, vals[1]));
+
+  const player = action.startsWith("柳") ? "black" : "white";
+  diceG.appendChild(die(286.5,254,vals[0],player));
+  diceG.appendChild(die(332.5,254,vals[1],player));
 }
 
 function drawCube(v){
   cubeG.innerHTML = "";
   if(v <= 1) return;
+
   const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
-  rect.setAttribute("x", 721);
-  rect.setAttribute("y", 116);
-  rect.setAttribute("width", 58);
-  rect.setAttribute("height", 58);
-  rect.setAttribute("rx", 5);
-  rect.setAttribute("class", "cube-box");
+  rect.setAttribute("x","332.5");
+  rect.setAttribute("y","35");
+  rect.setAttribute("width","36");
+  rect.setAttribute("height","36");
+  rect.setAttribute("rx","3");
+  rect.setAttribute("fill","#ffffff");
+  rect.setAttribute("stroke","#000000");
+  rect.setAttribute("stroke-width","1.5");
   cubeG.appendChild(rect);
 
   const text = document.createElementNS("http://www.w3.org/2000/svg","text");
-  text.setAttribute("x", 750);
-  text.setAttribute("y", 145);
-  text.setAttribute("class", "cube-num");
+  text.setAttribute("x","350.5");
+  text.setAttribute("y","60");
+  text.setAttribute("text-anchor","middle");
+  text.setAttribute("fill","#000000");
+  text.setAttribute("font-family","Arial, Helvetica, sans-serif");
+  text.setAttribute("font-size","23");
   text.textContent = v;
   cubeG.appendChild(text);
 }
@@ -237,7 +273,7 @@ function render(){
   els.timeline.value = index;
   els.stepLabel.textContent = `${index + 1} / ${states.length}`;
   drawCheckers(positions[index]);
-  drawDice(s.dice);
+  drawDice(s.dice, s.action);
   drawCube(s.cube);
   renderList();
 }
