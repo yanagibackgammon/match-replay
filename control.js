@@ -404,6 +404,40 @@ refreshMatchesBtn.addEventListener("click", refreshMatches);
 designPresetSelect.addEventListener("change", renderDesignPreview);
 themeColorInput.addEventListener("input", renderThemeColorPreview);
 
+
+
+function installButtonFeedback(){
+  document.querySelectorAll("button").forEach(button=>{
+    button.addEventListener("pointerdown",event=>{
+      if(button.disabled) return;
+      button.classList.add("is-pressing");
+
+      const rect=button.getBoundingClientRect();
+      const ripple=document.createElement("span");
+      ripple.className="button-ripple";
+      ripple.style.left=`${event.clientX-rect.left}px`;
+      ripple.style.top=`${event.clientY-rect.top}px`;
+      button.appendChild(ripple);
+      ripple.addEventListener("animationend",()=>ripple.remove(),{once:true});
+    });
+
+    const release=()=>button.classList.remove("is-pressing");
+    button.addEventListener("pointerup",release);
+    button.addEventListener("pointercancel",release);
+    button.addEventListener("pointerleave",release);
+
+    button.addEventListener("click",event=>{
+      if(button.disabled || event.detail!==0) return;
+      const ripple=document.createElement("span");
+      ripple.className="button-ripple";
+      ripple.style.left="50%";
+      ripple.style.top="50%";
+      button.appendChild(ripple);
+      ripple.addEventListener("animationend",()=>ripple.remove(),{once:true});
+    });
+  });
+}
+installButtonFeedback();
 renderState(lastState);
 renderThemeColorPreview();
 loadDesignPresets();

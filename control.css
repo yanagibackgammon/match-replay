@@ -123,3 +123,55 @@ button:disabled{opacity:.35;cursor:not-allowed}
   .status-summary .status-divider{margin-left:10px}
   .playback-buttons{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+/* v49 button hover / press feedback */
+button{
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+  transition:transform .12s ease,box-shadow .12s ease,filter .12s ease,background-color .12s ease;
+}
+button:not(:disabled):hover{
+  cursor:pointer;
+  transform:translateY(-2px);
+  box-shadow:0 5px 0 rgba(17,17,17,.16);
+  filter:brightness(1.035);
+}
+button:not(:disabled):active,
+button.is-pressing{
+  transform:translateY(1px) scale(.985);
+  box-shadow:0 1px 0 rgba(17,17,17,.14);
+  filter:brightness(.96);
+}
+button:focus-visible{
+  outline:3px solid #b7924b;
+  outline-offset:3px;
+}
+button:disabled:hover{
+  transform:none;
+  box-shadow:none;
+  filter:none;
+}
+.button-ripple{
+  position:absolute;
+  z-index:-1;
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  pointer-events:none;
+  background:currentColor;
+  opacity:.18;
+  transform:translate(-50%,-50%) scale(0);
+  animation:button-ripple .46s ease-out forwards;
+}
+button.primary .button-ripple,
+button.active .button-ripple{opacity:.25}
+@keyframes button-ripple{
+  0%{transform:translate(-50%,-50%) scale(0);opacity:.24}
+  70%{opacity:.12}
+  100%{transform:translate(-50%,-50%) scale(18);opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  button{transition:none}
+  .button-ripple{display:none}
+}
