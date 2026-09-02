@@ -367,29 +367,34 @@ html,body{
   padding:12px 14px;
 }
 
-.ad-frame{
+.ad-grid{
   width:100%;
   height:100%;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  align-items:center;
+  overflow:hidden;
+}
+
+.ad-frame{
+  width:100%;
+  aspect-ratio:16 / 9;
+  max-height:100%;
   border:1px solid var(--line);
   background:#f9f9f9;
   display:flex;
   align-items:center;
   justify-content:center;
   overflow:hidden;
-  position:relative;
 }
 
-#adImage{
+#adImage1,
+#adImage2{
   width:100%;
   height:100%;
   object-fit:contain;
   display:block;
-}
-
-.ad-placeholder{
-  color:#999;
-  font-size:20px;
-  font-weight:700;
 }
 
 .point{stroke:#000;stroke-width:1;stroke-linejoin:round}

@@ -22,7 +22,7 @@ let socket = null;
 const pageChannel = (!isLocalRuntime() && "BroadcastChannel" in window) ? new BroadcastChannel("match-replay-control") : null;
 let lastState = {
   index:0,
-  totalSteps:6,
+  totalSteps:1,
   playing:false,
   speed:1500,
   meta:{
@@ -130,6 +130,36 @@ async function refreshMatches(){
   matchFileSelect.value = current || lastState.meta.matchFile || "";
 }
 
+async function fetchPagesManifest(){
+  try{
+    const u=new URL("./matches/manifest.json",location.href);u.searchParams.set("t",Date.now());
+    const r=await fetch(u,{cache:"no-store"});
+    return r.ok?await r.json():{};
+  }catch{return {};}
+}
+
+async function getPagesMatchTotal(file){
+  if(!file) return 1;
+  const manifest=await fetchPagesManifest();
+  const rel=manifest.generated?.[file]||(/\.xg$/i.test(file)?`generated/${file}.json`:file);
+  const u=new URL(`./matches/${rel}`,location.href);u.searchParams.set("t",Date.now());
+  const r=await fetch(u,{cache:"no-store"});
+  if(!r.ok) throw new Error(`棋譜データを取得できません (HTTP ${r.status})`);
+  const data=await r.json();
+  if(!Array.isArray(data.states)||!data.states.length) throw new Error("棋譜データに再生ステートがありません");
+  return data.states.length;
+}
+
+async function loadPagesInitialState(){
+  if(isLocalRuntime()) return;
+  try{const r=await fetch(new URL("./stream-config.json",location.href),{cache:"no-store"});if(r.ok)lastState.meta={...lastState.meta,...await r.json()};}catch{}
+  try{const s=localStorage.getItem("matchReplayMeta");if(s)lastState.meta={...lastState.meta,...JSON.parse(s)};}catch{}
+  try{const s=localStorage.getItem("matchReplayPlaybackState");if(s)lastState={...lastState,...JSON.parse(s),meta:lastState.meta};}catch{}
+  try{lastState.totalSteps=await getPagesMatchTotal(lastState.meta.matchFile);lastState.index=Math.min(Number(lastState.index)||0,lastState.totalSteps-1);}catch(error){console.warn(error);lastState.totalSteps=1;lastState.index=0;}
+  renderState(lastState);
+  if(pageChannel)pageChannel.postMessage({type:"state-request"});
+}
+
 async function applyMeta(){
   const nextMeta = {
     tournamentTitleLine1: tournamentLine1Input.value.trim(),
@@ -160,11 +190,17 @@ async function applyMeta(){
       }
       if(data.state) renderState(data.state);
     }else{
-      // GitHub Pagesでは同一originの表示画面へBroadcastChannel/localStorageで反映。
-      lastState.meta = {...lastState.meta, ...nextMeta};
-      localStorage.setItem("matchReplayMeta", JSON.stringify(lastState.meta));
-      if(pageChannel) pageChannel.postMessage({type:"meta", meta:lastState.meta});
-      renderState({meta:lastState.meta});
+      // GitHub Pagesでは実棋譜JSONを先に確認し、総ステップ数も更新する。
+      const oldFile=lastState.meta.matchFile;
+      const totalSteps=await getPagesMatchTotal(nextMeta.matchFile);
+      lastState.meta={...lastState.meta,...nextMeta};
+      lastState.totalSteps=totalSteps;
+      if(nextMeta.matchFile!==oldFile) lastState.index=0;
+      else lastState.index=Math.min(lastState.index,totalSteps-1);
+      localStorage.setItem("matchReplayMeta",JSON.stringify(lastState.meta));
+      localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:lastState.speed}));
+      if(pageChannel)pageChannel.postMessage({type:"meta",meta:lastState.meta});
+      renderState(lastState);
     }
 
     applyMetaBtn.textContent = "反映済み";
@@ -213,6 +249,15 @@ function connect(){
   });
 }
 
+if(pageChannel){
+  pageChannel.addEventListener("message",event=>{
+    const message=event.data||{};
+    if(message.type==="state"){
+      renderState(message);
+    }
+  });
+}
+
 playBtn.addEventListener("click", () => sendCommand("play"));
 pauseBtn.addEventListener("click", () => sendCommand("pause"));
 prevBtn.addEventListener("click", () => sendCommand("prev"));
@@ -224,4 +269,5 @@ refreshMatchesBtn.addEventListener("click", refreshMatches);
 
 renderState(lastState);
 refreshMatches();
+loadPagesInitialState();
 connect();

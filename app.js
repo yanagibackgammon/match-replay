@@ -16,6 +16,8 @@ const emptyState={
 
 let index=0,meta={...defaultMeta},matchData={states:[emptyState]},loadedMatchFile="",socket=null;
 let adFiles=[],adIndex=0,adTimer=null;
+let pagesTimer=null;
+let pagesState={index:0,totalSteps:1,playing:false,speed:1500};
 const isLocal=()=>location.hostname==="localhost"||location.hostname==="127.0.0.1";
 const pageChannel=(!isLocal()&&"BroadcastChannel" in window)?new BroadcastChannel("match-replay-control"):null;
 
@@ -28,7 +30,8 @@ const els={
   winBarBlack:document.getElementById("winBarBlack"),winBarWhite:document.getElementById("winBarWhite"),
   blackRateText:document.getElementById("blackRateText"),whiteRateText:document.getElementById("whiteRateText"),
   blackHistoryList:document.getElementById("blackHistoryList"),whiteHistoryList:document.getElementById("whiteHistoryList"),
-  analysisContent:document.getElementById("analysisContent"),adImage:document.getElementById("adImage"),adPlaceholder:document.getElementById("adPlaceholder")
+  analysisContent:document.getElementById("analysisContent"),
+  adImage1:document.getElementById("adImage1"),adImage2:document.getElementById("adImage2")
 };
 
 function trianglePoints(){
@@ -97,32 +100,107 @@ function render(){
 }
 
 async function fetchManifest(){try{const u=new URL("./matches/manifest.json",location.href);u.searchParams.set("t",Date.now());const r=await fetch(u,{cache:"no-store"});return r.ok?await r.json():{};}catch{return {};}}
-async function loadMatch(file){
-  if(!file){loadedMatchFile="";matchData={states:[emptyState]};index=0;render();return;}
-  if(file===loadedMatchFile&&matchData.states.length>1)return;
+async function loadMatch(file,{force=false,resetIndex=false}={}){
+  if(!file){
+    loadedMatchFile="";
+    matchData={states:[emptyState]};
+    index=0;
+    if(!isLocal()){
+      pagesState.index=0;
+      pagesState.totalSteps=1;
+      publishPagesState();
+    }
+    render();
+    return true;
+  }
+  if(!force && file===loadedMatchFile && matchData.states.length>1) return true;
   try{
     let url;
-    if(isLocal()) url=`/api/match?file=${encodeURIComponent(file)}`;
+    if(isLocal()) url=`/api/match?file=${encodeURIComponent(file)}&t=${Date.now()}`;
     else{
-      const m=await fetchManifest();const rel=m.generated?.[file]||(/\.xg$/i.test(file)?`generated/${file}.json`:file);
-      url=new URL(`./matches/${rel}`,location.href).toString();
+      const m=await fetchManifest();
+      const rel=m.generated?.[file]||(/\.xg$/i.test(file)?`generated/${file}.json`:file);
+      url=new URL(`./matches/${rel}`,location.href);
+      url.searchParams.set("t",Date.now());
+      url=url.toString();
     }
-    const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error(`HTTP ${r.status}`);const data=await r.json();if(!Array.isArray(data.states)||!data.states.length)throw new Error("No replay states");
-    matchData=data;loadedMatchFile=file;index=Math.min(index,data.states.length-1);render();
-  }catch(error){console.error("Failed to load match",error);loadedMatchFile="";matchData={states:[emptyState]};index=0;render();}
+    const r=await fetch(url,{cache:"no-store"});
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data=await r.json();
+    if(!Array.isArray(data.states)||!data.states.length) throw new Error("No replay states");
+    matchData=data;
+    loadedMatchFile=file;
+    if(resetIndex) index=0;
+    index=Math.max(0,Math.min(index,data.states.length-1));
+    if(!isLocal()){
+      pagesState.totalSteps=data.states.length;
+      pagesState.index=index;
+      publishPagesState();
+    }
+    render();
+    return true;
+  }catch(error){
+    console.error("Failed to load match",error);
+    loadedMatchFile="";
+    matchData={states:[emptyState]};
+    index=0;
+    if(!isLocal()){
+      pagesState.index=0;
+      pagesState.totalSteps=1;
+      pagesState.playing=false;
+      publishPagesState({matchError:String(error.message||error)});
+    }
+    render();
+    return false;
+  }
 }
 async function applyStateMessage(message){
-  if(typeof message.index==="number")index=message.index;
-  const old=meta.matchFile;if(message.meta)meta={...meta,...message.meta};
-  if(meta.matchFile!==old||meta.matchFile!==loadedMatchFile)await loadMatch(meta.matchFile);
+  if(typeof message.index==="number") index=message.index;
+  const old=meta.matchFile;
+  if(message.meta) meta={...meta,...message.meta};
+  if(meta.matchFile!==old||meta.matchFile!==loadedMatchFile) await loadMatch(meta.matchFile,{force:true,resetIndex:meta.matchFile!==old});
   render();
+}
+
+function publishPagesState(extra={}){
+  if(isLocal()) return;
+  const payload={type:"state",...pagesState,meta:{...meta},...extra};
+  try{localStorage.setItem("matchReplayPlaybackState",JSON.stringify(payload));}catch{}
+  if(pageChannel) pageChannel.postMessage(payload);
+}
+function stopPagesTimer(){if(pagesTimer){clearInterval(pagesTimer);pagesTimer=null;}}
+function startPagesTimer(){
+  stopPagesTimer();
+  if(!pagesState.playing) return;
+  pagesTimer=setInterval(()=>{
+    const last=Math.max(0,pagesState.totalSteps-1);
+    if(pagesState.index>=last){
+      pagesState.index=last;pagesState.playing=false;stopPagesTimer();publishPagesState();return;
+    }
+    pagesState.index+=1;index=pagesState.index;render();publishPagesState();
+  },pagesState.speed);
+}
+function handlePagesCommand(command,value){
+  switch(command){
+    case "play": pagesState.playing=true;startPagesTimer();break;
+    case "pause": pagesState.playing=false;stopPagesTimer();break;
+    case "prev": pagesState.playing=false;stopPagesTimer();pagesState.index=Math.max(0,pagesState.index-1);break;
+    case "next": pagesState.playing=false;stopPagesTimer();pagesState.index=Math.min(Math.max(0,pagesState.totalSteps-1),pagesState.index+1);break;
+    case "seek": pagesState.playing=false;stopPagesTimer();pagesState.index=Math.max(0,Math.min(Math.max(0,pagesState.totalSteps-1),Number(value)||0));break;
+    case "speed": pagesState.speed=Math.max(200,Number(value)||1500);if(pagesState.playing)startPagesTimer();break;
+  }
+  index=pagesState.index;render();publishPagesState();
 }
 
 async function loadInitialPagesMeta(){
   if(isLocal())return;
   try{const r=await fetch(new URL("./stream-config.json",location.href),{cache:"no-store"});if(r.ok)meta={...meta,...await r.json()};}catch{}
   try{const s=localStorage.getItem("matchReplayMeta");if(s)meta={...meta,...JSON.parse(s)};}catch{}
-  await loadMatch(meta.matchFile);render();
+  try{const s=localStorage.getItem("matchReplayPlaybackState");if(s){const p=JSON.parse(s);pagesState={...pagesState,...p};index=Number(p.index)||0;}}catch{}
+  await loadMatch(meta.matchFile,{force:true});
+  pagesState.index=Math.max(0,Math.min(index,pagesState.totalSteps-1));
+  index=pagesState.index;
+  render();publishPagesState();
 }
 function connectWebSocket(){
   if(!isLocal())return;const protocol=location.protocol==="https:"?"wss:":"ws:";socket=new WebSocket(`${protocol}//${location.host}/ws`);
@@ -130,14 +208,36 @@ function connectWebSocket(){
   socket.addEventListener("message",async e=>{try{const m=JSON.parse(e.data);if(m.type==="state")await applyStateMessage(m);}catch(err){console.warn(err);}});
   socket.addEventListener("close",()=>setTimeout(connectWebSocket,1500));
 }
-if(pageChannel)pageChannel.addEventListener("message",async e=>{if(e.data?.type==="meta"){meta={...meta,...e.data.meta};await loadMatch(meta.matchFile);render();}});
-addEventListener("storage",async e=>{if(!isLocal()&&e.key==="matchReplayMeta"&&e.newValue){try{meta={...meta,...JSON.parse(e.newValue)};await loadMatch(meta.matchFile);render();}catch{}}});
+if(pageChannel)pageChannel.addEventListener("message",async e=>{
+  const m=e.data||{};
+  if(m.type==="meta"){
+    const old=meta.matchFile;meta={...meta,...m.meta};
+    await loadMatch(meta.matchFile,{force:true,resetIndex:meta.matchFile!==old});
+    if(meta.matchFile!==old){pagesState.index=0;index=0;}
+    render();publishPagesState();
+  }else if(m.type==="command"){
+    handlePagesCommand(m.command,m.value);
+  }else if(m.type==="state-request"){
+    publishPagesState();
+  }
+});
+addEventListener("storage",async e=>{if(!isLocal()&&e.key==="matchReplayMeta"&&e.newValue){try{const old=meta.matchFile;meta={...meta,...JSON.parse(e.newValue)};await loadMatch(meta.matchFile,{force:true,resetIndex:meta.matchFile!==old});render();publishPagesState();}catch{}}});
 
 async function loadAds(){
-  try{let r;if(isLocal())r=await fetch("/api/ads",{cache:"no-store"});else r=await fetch(new URL("./ads/manifest.json",location.href),{cache:"no-store"});const d=await r.json();adFiles=Array.isArray(d.files)?d.files:[];}catch{adFiles=[];}
+  try{let r;if(isLocal())r=await fetch("/api/ads",{cache:"no-store"});else{const u=new URL("./ads/manifest.json",location.href);u.searchParams.set("t",Date.now());r=await fetch(u,{cache:"no-store"});}const d=await r.json();adFiles=Array.isArray(d.files)?d.files:[];}catch{adFiles=[];}
 }
-function showAd(f){if(!f){els.adImage.hidden=true;els.adImage.removeAttribute("src");return;}els.adImage.src=`./ads/${encodeURIComponent(f)}`;els.adImage.hidden=false;}
-async function cycleAds(){await loadAds();if(!adFiles.length){showAd(null);return;}showAd(adFiles[adIndex%adFiles.length]);adIndex++;}
+function setAdImage(el,file){
+  if(!file){el.hidden=true;el.removeAttribute("src");return;}
+  el.src=`./ads/${encodeURIComponent(file)}`;el.hidden=false;
+}
+async function cycleAds(){
+  await loadAds();
+  if(!adFiles.length){setAdImage(els.adImage1,null);setAdImage(els.adImage2,null);return;}
+  const first=adFiles[adIndex%adFiles.length];
+  const second=adFiles.length>1?adFiles[(adIndex+1)%adFiles.length]:null;
+  setAdImage(els.adImage1,first);setAdImage(els.adImage2,second);
+  adIndex=(adIndex+2)%adFiles.length;
+}
 function startAdRotation(){if(adTimer)clearInterval(adTimer);cycleAds();adTimer=setInterval(cycleAds,30000);}
 function scaleStage(){const vw=document.documentElement.clientWidth||innerWidth||1920,s=vw/1920;els.stage.style.transform=`scale(${s})`;els.stageWrap.style.height=`${Math.ceil(1080*s)}px`;}
 addEventListener("resize",scaleStage);scaleStage();render();startAdRotation();loadInitialPagesMeta();connectWebSocket();

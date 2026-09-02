@@ -1,12 +1,22 @@
-MATCH REPLAY v17
+MATCH REPLAY v18
 
-■ 修正内容
-- 「表示へ反映」をWebSocketだけに依存しない方式へ変更
-- ローカルでは POST /api/meta で確実に設定を反映
-- サーバー反映後、配信画面へWebSocketで即時同期
-- ボタン表示を「反映中…」「反映済み」「反映エラー」に変更
-- 棋譜選択時の自動反映を廃止し、「表示へ反映」ボタン押下時に反映する方式へ統一
-- GitHub Pagesでは従来どおり localStorage + BroadcastChannel で反映
+■ 修正
+- 「表示へ反映」後も 1 / 6 のままになる問題を修正
+- ローカルでは同じ棋譜を再選択しても必ず再解析
+- ローカル解析に失敗した場合は「反映済み」にせず反映エラーを返す
+- GitHub Pagesでは選択棋譜の generated JSON を読み、実ステップ数を操作画面へ反映
+- GitHub Pagesの再生/停止/前へ/次へ/シーク/速度変更を表示画面と双方向同期
+- 操作画面の初期 totalSteps を仮の6から1へ変更
 
-■ 注意
-server.js を更新しているため、差分適用後は start-match-replay.bat を一度終了して再起動してください。
+■ 広告
+- 広告エリアを横2枚表示へ変更
+- 1920x1080の16:9画像を2枚同時に縮小表示
+- 30秒ごとに次の2枚へ切り替え
+
+■ 差分ファイル
+- index.html
+- styles.css
+- app.js
+- control.js
+- server.js
+- README.txt

@@ -167,6 +167,7 @@ const server=http.createServer(async (req,res)=>{
     try{
       const patch=await readJsonBody(req);
       applyMetaPatch(patch||{});
+      if(state.matchError) return json(res,{ok:false,error:state.matchError,state:{type:"state",...state}},400);
       broadcastState();
       return json(res,{ok:true,state:{type:"state",...state}});
     }catch(error){
@@ -221,7 +222,10 @@ function applyMetaPatch(patch){
     matchFile:String(patch.matchFile ?? state.meta.matchFile ?? "").trim()
   };
   saveConfig(state.meta);
-  if(state.meta.matchFile!==oldFile){state.playing=false;stopTimer();syncSelectedMatch(true);}
+  const changed=state.meta.matchFile!==oldFile;
+  if(changed){state.playing=false;stopTimer();}
+  // 同じ棋譜を再選択した場合も、ファイル追加・更新後に再解析できるよう必ず同期する。
+  syncSelectedMatch(changed);
 }
 
 function handleCommand(m){
