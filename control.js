@@ -12,6 +12,8 @@ const manualModeBtn = document.getElementById("manualModeBtn");
 const tournamentLine1Input = document.getElementById("tournamentLine1Input");
 const tournamentLine2Input = document.getElementById("tournamentLine2Input");
 const themeColorInput = document.getElementById("themeColorInput");
+const designPresetSelect = document.getElementById("designPresetSelect");
+const designPresetPreview = document.getElementById("designPresetPreview");
 const blackNameInput = document.getElementById("blackNameInput");
 const whiteNameInput = document.getElementById("whiteNameInput");
 const matchFileSelect = document.getElementById("matchFileSelect");
@@ -37,9 +39,12 @@ let lastState = {
     blackScore:0,
     whiteScore:0,
     matchFile:"",
-    themeColor:"#6B670D"
+    themeColor:"#6B670D",
+    designPreset:"classic"
   }
 };
+
+let designPresets=[];
 
 function isLocalRuntime(){
   return location.hostname === "localhost" || location.hostname === "127.0.0.1";
@@ -64,6 +69,42 @@ function ensureOption(value){
     option.textContent = value;
     matchFileSelect.appendChild(option);
   }
+}
+
+function renderDesignPreview(){
+  const preset=designPresets.find(p=>p.id===designPresetSelect.value)||designPresets[0];
+  if(!preset){designPresetPreview.innerHTML="";return;}
+  const colors=[
+    preset.checkers?.player1,preset.checkers?.player2,
+    preset.winRate?.player1,preset.winRate?.player2,
+    preset.board?.pointLight,preset.board?.pointDark
+  ].filter(Boolean);
+  designPresetPreview.innerHTML=colors.map(color=>`<span style="background:${color}"></span>`).join("");
+}
+function renderDesignOptions(){
+  const current=lastState.meta.designPreset||designPresetSelect.value||"classic";
+  designPresetSelect.innerHTML="";
+  designPresets.forEach(preset=>{
+    const option=document.createElement("option");option.value=preset.id;option.textContent=preset.name||preset.id;designPresetSelect.appendChild(option);
+  });
+  if(!designPresets.some(p=>p.id===current)){
+    const option=document.createElement("option");option.value=current;option.textContent=current;designPresetSelect.appendChild(option);
+  }
+  designPresetSelect.value=current;
+  renderDesignPreview();
+}
+async function loadDesignPresets(){
+  try{
+    const u=new URL("./design-presets.json",location.href);u.searchParams.set("t",Date.now());
+    const r=await fetch(u,{cache:"no-store"});
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data=await r.json();
+    designPresets=Array.isArray(data.presets)?data.presets:[];
+  }catch(error){
+    console.warn("Failed to load design presets",error);
+    designPresets=[{id:"classic",name:"クラシック（黒・白）",checkers:{player1:"#111111",player2:"#FFFFFF"},winRate:{player1:"#111111",player2:"#FFFFFF"},board:{pointLight:"#FFFFFF",pointDark:"#CFCFCF"}}];
+  }
+  renderDesignOptions();
 }
 
 
@@ -100,6 +141,13 @@ function renderState(state){
   tournamentLine1Input.value = lastState.meta.tournamentTitleLine1 || lastState.meta.tournamentTitle || "";
   tournamentLine2Input.value = lastState.meta.tournamentTitleLine2 || "";
   themeColorInput.value = lastState.meta.themeColor || "#6B670D";
+  if(designPresetSelect){
+    const presetId=lastState.meta.designPreset||"classic";
+    if(![...designPresetSelect.options].some(opt=>opt.value===presetId)){
+      const option=document.createElement("option");option.value=presetId;option.textContent=presetId;designPresetSelect.appendChild(option);
+    }
+    designPresetSelect.value=presetId;renderDesignPreview();
+  }
   blackNameInput.value = lastState.meta.blackName || "";
   whiteNameInput.value = lastState.meta.whiteName || "";
   ensureOption(lastState.meta.matchFile || "");
@@ -190,6 +238,7 @@ async function applyMeta(){
     tournamentTitleLine1: tournamentLine1Input.value.trim(),
     tournamentTitleLine2: tournamentLine2Input.value.trim(),
     themeColor: themeColorInput.value.trim() || "#6B670D",
+    designPreset: designPresetSelect.value || "classic",
     blackName: blackNameInput.value.trim(),
     whiteName: whiteNameInput.value.trim(),
     matchFile: matchFileSelect.value
@@ -221,7 +270,7 @@ async function applyMeta(){
       lastState.totalSteps=info.totalSteps;
       lastState.gameStarts=info.gameStarts;
       if(nextMeta.matchFile!==oldFile) lastState.index=0;
-      else lastState.index=Math.min(lastState.index,totalSteps-1);
+      else lastState.index=Math.min(lastState.index,lastState.totalSteps-1);
       localStorage.setItem("matchReplayMeta",JSON.stringify(lastState.meta));
       localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:1000,mode:lastState.mode||"auto"}));
       if(pageChannel)pageChannel.postMessage({type:"meta",meta:lastState.meta});
@@ -292,8 +341,10 @@ nextBtn.addEventListener("click", () => sendCommand("next"));
 timeline.addEventListener("input", () => sendCommand("seek", Number(timeline.value)));
 applyMetaBtn.addEventListener("click", applyMeta);
 refreshMatchesBtn.addEventListener("click", refreshMatches);
+designPresetSelect.addEventListener("change", renderDesignPreview);
 
 renderState(lastState);
+loadDesignPresets();
 refreshMatches();
 loadPagesInitialState();
 connect();

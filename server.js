@@ -36,7 +36,8 @@ const defaultMeta = {
   blackScore: 0,
   whiteScore: 0,
   matchFile: "",
-  themeColor: "#6B670D"
+  themeColor: "#6B670D",
+  designPreset: "classic"
 };
 
 function ensureDirs(){
@@ -224,6 +225,7 @@ function applyMetaPatch(patch){
     tournamentTitleLine1:String(patch.tournamentTitleLine1 ?? state.meta.tournamentTitleLine1 ?? "").trim(),
     tournamentTitleLine2:String(patch.tournamentTitleLine2 ?? state.meta.tournamentTitleLine2 ?? "").trim(),
     themeColor:/^#[0-9a-fA-F]{6}$/.test(String(patch.themeColor ?? state.meta.themeColor ?? "")) ? String(patch.themeColor ?? state.meta.themeColor) : "#6B670D",
+    designPreset:String(patch.designPreset ?? state.meta.designPreset ?? "classic").trim() || "classic",
     blackName:String(patch.blackName ?? state.meta.blackName ?? "").trim(),
     whiteName:String(patch.whiteName ?? state.meta.whiteName ?? "").trim(),
     blackScore:Number.isFinite(Number(patch.blackScore))?Number(patch.blackScore):state.meta.blackScore,

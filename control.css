@@ -25,7 +25,7 @@ body{padding:28px}
   display:block;font-size:13px;font-weight:900;letter-spacing:.12em;
 }
 .match-file-field span,.meta-grid label span{margin-bottom:8px}
-.match-file-field select,.meta-grid input{
+.match-file-field select,.meta-grid input,.meta-grid select{
   width:100%;min-height:48px;padding:0 12px;border:2px solid #111;border-radius:0;background:#fff;font:inherit;font-size:16px;
 }
 .match-actions{display:grid;grid-template-columns:160px 160px;gap:10px}
@@ -75,3 +75,12 @@ button:disabled{opacity:.35;cursor:not-allowed}
   .mode-head{grid-template-columns:1fr}
   .transport{grid-template-columns:1fr 1fr}
 }
+
+.design-preset-preview{
+  margin-top:9px;
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  height:18px;
+  border:1px solid #111;
+}
+.design-preset-preview span{display:block;min-width:0}

@@ -10,13 +10,23 @@ boardSvg.appendChild(gameOverlayG);
 const defaultMeta={
   tournamentTitleLine1:"JBS第31期名人戦 準々決勝",
   tournamentTitleLine2:"2025-08-30　25ポイントマッチ　勝てばベスト4",
-  blackName:"柳 暢祐",whiteName:"平林 直",blackScore:0,whiteScore:0,matchFile:"",themeColor:"#6B670D"
+  blackName:"柳 暢祐",whiteName:"平林 直",blackScore:0,whiteScore:0,matchFile:"",themeColor:"#6B670D",designPreset:"classic"
 };
 const standardPoints=[0,-2,0,0,0,0,5,0,3,0,0,0,-5,5,0,0,0,-3,0,-5,0,0,0,0,2];
 const emptyState={
   phase:"empty",score:[0,0],activePlayer:0,position:{points:standardPoints,blackBar:0,whiteBar:0},
   dice:null,cube:{value:1,owner:0},winRate:{black:50,white:50},analysis:{type:"none"},historyEvent:null
 };
+
+const FALLBACK_DESIGN={
+  id:"classic",name:"クラシック（黒・白）",
+  checkers:{player1:"#111111",player2:"#FFFFFF"},
+  winRate:{player1:"#111111",player2:"#FFFFFF"},
+  board:{surface:"#FFFFFF",pointLight:"#FFFFFF",pointDark:"#CFCFCF",bar:"#111111",line:"#000000"}
+};
+let designPresets=[FALLBACK_DESIGN];
+let currentDesign=FALLBACK_DESIGN;
+let appliedDesignPresetId="";
 
 let index=0,meta={...defaultMeta},matchData={states:[emptyState]},loadedMatchFile="",socket=null;
 let adFiles=[],adIndex=0,adTimer=null;
@@ -58,7 +68,9 @@ function trianglePoints(){
   const centers=pointLabelCenters,w=44.5;
   for(let i=0;i<12;i++){
     const cx=centers[i],left=cx-w/2;
-    for(const [top,color] of [[true,i%2===0?"#fff":"#cfcfcf"],[false,i%2===0?"#cfcfcf":"#fff"]]){
+    const light=currentDesign?.board?.pointLight||"#FFFFFF";
+    const dark=currentDesign?.board?.pointDark||"#CFCFCF";
+    for(const [top,color] of [[true,i%2===0?light:dark],[false,i%2===0?dark:light]]){
       const p=document.createElementNS("http://www.w3.org/2000/svg","polygon");p.setAttribute("class","point");p.setAttribute("fill",color);
       p.setAttribute("points",top?`${left},30 ${left+w},30 ${cx},251`:`${left},516 ${left+w},516 ${cx},294`);pointsG.appendChild(p);
     }
@@ -69,7 +81,8 @@ function pointCoord(p){const c=[81.75,126.25,170.75,215.25,259.75,304.25,397.75,
 function addStack(x,y,dir,n,klass){
   if(!n)return;const max=Math.min(n,5);
   for(let i=0;i<max;i++){const c=document.createElementNS("http://www.w3.org/2000/svg","circle");c.setAttribute("cx",x);c.setAttribute("cy",y+dir*i*43);c.setAttribute("r","21.1");c.setAttribute("class",klass);checkersG.appendChild(c);}
-  if(n>5){const t=document.createElementNS("http://www.w3.org/2000/svg","text");t.setAttribute("x",x);t.setAttribute("y",y+dir*4*43+6);t.setAttribute("class","checker-text");t.setAttribute("fill",klass.includes("black")?"#fff":"#000");t.textContent=n;checkersG.appendChild(t);}
+  if(n>5){const t=document.createElementNS("http://www.w3.org/2000/svg","text");t.setAttribute("x",x);t.setAttribute("y",y+dir*4*43+6);t.setAttribute("class","checker-text");const checkerFill=klass.includes("black")?(currentDesign?.checkers?.player1||"#111111"):(currentDesign?.checkers?.player2||"#FFFFFF");
+    t.setAttribute("fill",contrastText(checkerFill));t.textContent=n;checkersG.appendChild(t);}
 }
 function addBarStack(centerY,n,klass){
   const count=Math.max(0,Number(n)||0);
@@ -133,8 +146,62 @@ function normalizeThemeColor(value){
   return /^#[0-9a-fA-F]{6}$/.test(text)?text:"#6B670D";
 }
 
+function normalizeHex(value,fallback){
+  const text=String(value||"").trim();
+  return /^#[0-9a-fA-F]{6}$/.test(text)?text:fallback;
+}
+function contrastText(hex){
+  const color=normalizeHex(hex,"#FFFFFF").slice(1);
+  const r=parseInt(color.slice(0,2),16),g=parseInt(color.slice(2,4),16),b=parseInt(color.slice(4,6),16);
+  const lum=(r*299+g*587+b*114)/1000;
+  return lum>=150?"#111111":"#FFFFFF";
+}
+function findDesignPreset(id){
+  return designPresets.find(p=>p&&p.id===id)||designPresets[0]||FALLBACK_DESIGN;
+}
+function applyDesignPreset(id){
+  const next=findDesignPreset(id||"classic");
+  currentDesign=next;
+  if(appliedDesignPresetId===next.id) return;
+  appliedDesignPresetId=next.id;
+  const root=document.documentElement;
+  root.style.setProperty("--checker-player1",normalizeHex(next.checkers?.player1,"#111111"));
+  root.style.setProperty("--checker-player2",normalizeHex(next.checkers?.player2,"#FFFFFF"));
+  root.style.setProperty("--win-player1",normalizeHex(next.winRate?.player1,"#111111"));
+  root.style.setProperty("--win-player2",normalizeHex(next.winRate?.player2,"#FFFFFF"));
+  root.style.setProperty("--board-surface",normalizeHex(next.board?.surface,"#FFFFFF"));
+  root.style.setProperty("--point-light",normalizeHex(next.board?.pointLight,"#FFFFFF"));
+  root.style.setProperty("--point-dark",normalizeHex(next.board?.pointDark,"#CFCFCF"));
+  root.style.setProperty("--board-bar",normalizeHex(next.board?.bar,"#111111"));
+  root.style.setProperty("--board-line",normalizeHex(next.board?.line,"#000000"));
+
+  const directBg=boardSvg.firstElementChild;
+  if(directBg&&directBg.tagName.toLowerCase()==="rect") directBg.setAttribute("fill",normalizeHex(next.board?.surface,"#FFFFFF"));
+  const baseRects=[...document.querySelectorAll("#boardBase rect")];
+  if(baseRects[0]) baseRects[0].setAttribute("fill",normalizeHex(next.board?.surface,"#FFFFFF"));
+  if(baseRects[1]) baseRects[1].setAttribute("fill",normalizeHex(next.board?.bar,"#111111"));
+  if(baseRects[2]) baseRects[2].setAttribute("fill",normalizeHex(next.board?.bar,"#111111"));
+  trianglePoints();
+}
+async function loadDesignPresets(){
+  try{
+    const u=new URL("./design-presets.json",location.href);u.searchParams.set("t",Date.now());
+    const r=await fetch(u,{cache:"no-store"});
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data=await r.json();
+    if(Array.isArray(data.presets)&&data.presets.length) designPresets=data.presets;
+  }catch(error){
+    console.warn("Failed to load design presets; using fallback.",error);
+    designPresets=[FALLBACK_DESIGN];
+  }
+  appliedDesignPresetId="";
+  applyDesignPreset(meta.designPreset||"classic");
+  render();
+}
+
 function renderMeta(state){
   document.documentElement.style.setProperty("--theme-color",normalizeThemeColor(meta.themeColor));
+  applyDesignPreset(meta.designPreset||"classic");
   els.tournamentTitleLine1.textContent=meta.tournamentTitleLine1;
   els.tournamentTitleLine2.textContent=meta.tournamentTitleLine2||"";
   els.blackName.textContent=meta.blackName;els.whiteName.textContent=meta.whiteName;els.blackHistoryName.textContent=meta.blackName;els.whiteHistoryName.textContent=meta.whiteName;
@@ -323,4 +390,4 @@ async function cycleAds(){
 }
 function startAdRotation(){if(adTimer)clearInterval(adTimer);cycleAds();adTimer=setInterval(cycleAds,60000);}
 function scaleStage(){const vw=document.documentElement.clientWidth||innerWidth||1920,s=vw/1920;els.stage.style.transform=`scale(${s})`;els.stageWrap.style.height=`${Math.ceil(1080*s)}px`;}
-addEventListener("resize",scaleStage);scaleStage();render();startAdRotation();loadInitialPagesMeta();connectWebSocket();
+addEventListener("resize",scaleStage);scaleStage();render();loadDesignPresets();startAdRotation();loadInitialPagesMeta();connectWebSocket();

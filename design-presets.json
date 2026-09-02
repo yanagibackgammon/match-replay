@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "presets": [
+    {
+      "id": "classic",
+      "name": "クラシック（黒・白）",
+      "checkers": {
+        "player1": "#111111",
+        "player2": "#FFFFFF"
+      },
+      "winRate": {
+        "player1": "#111111",
+        "player2": "#FFFFFF"
+      },
+      "board": {
+        "surface": "#FFFFFF",
+        "pointLight": "#FFFFFF",
+        "pointDark": "#CFCFCF",
+        "bar": "#111111",
+        "line": "#000000"
+      }
+    },
+    {
+      "id": "walnut",
+      "name": "ウォルナット",
+      "checkers": {
+        "player1": "#2A211B",
+        "player2": "#F4E4C7"
+      },
+      "winRate": {
+        "player1": "#3B2A20",
+        "player2": "#E9D2AA"
+      },
+      "board": {
+        "surface": "#B98555",
+        "pointLight": "#E8C690",
+        "pointDark": "#7D452D",
+        "bar": "#4A2D20",
+        "line": "#2A1A12"
+      }
+    },
+    {
+      "id": "navy",
+      "name": "ネイビー",
+      "checkers": {
+        "player1": "#10283F",
+        "player2": "#F7F9FB"
+      },
+      "winRate": {
+        "player1": "#173A59",
+        "player2": "#D9E7F2"
+      },
+      "board": {
+        "surface": "#D7E1E9",
+        "pointLight": "#F7FAFC",
+        "pointDark": "#6789A6",
+        "bar": "#18344A",
+        "line": "#102536"
+      }
+    },
+    {
+      "id": "green",
+      "name": "クラシックグリーン",
+      "checkers": {
+        "player1": "#17382C",
+        "player2": "#F7F0DE"
+      },
+      "winRate": {
+        "player1": "#1E513D",
+        "player2": "#E8DDBF"
+      },
+      "board": {
+        "surface": "#CDBB91",
+        "pointLight": "#F2E6C6",
+        "pointDark": "#3E705B",
+        "bar": "#284F3D",
+        "line": "#173327"
+      }
+    },
+    {
+      "id": "burgundy",
+      "name": "バーガンディ",
+      "checkers": {
+        "player1": "#5A1822",
+        "player2": "#F4E8D9"
+      },
+      "winRate": {
+        "player1": "#741E2D",
+        "player2": "#E6D4BA"
+      },
+      "board": {
+        "surface": "#C7A87D",
+        "pointLight": "#F0DFC1",
+        "pointDark": "#7E3440",
+        "bar": "#4C2026",
+        "line": "#321419"
+      }
+    }
+  ]
+}
