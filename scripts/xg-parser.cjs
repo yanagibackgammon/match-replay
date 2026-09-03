@@ -790,14 +790,19 @@ function buildTimeline(parsed, sourceFile){
       const luckKind=isOpeningMove?null:(Number.isFinite(actualLuck)?(actualLuck>=JOKER_EQUITY_THRESHOLD?'joker':(actualLuck<=-JOKER_EQUITY_THRESHOLD?'antiJoker':null)):classifyRollLuck(previous?.analysis,r.dice));
       const rollSwing=Math.abs(Number(bestWinRate.black)-Number(lastBlackRate));
       const isBigComeback=Number.isFinite(rollSwing) && rollSwing>=50;
+      const isNiceRoll=Number.isFinite(rollSwing) && rollSwing>=30 && rollSwing<50;
+      const rollNotice=isBigComeback?'comeback':(isNiceRoll?'nice':null);
 
       if(isBigComeback){
+        const introAnalysis=isOpeningMove
+          ? {type:'jokers',joker:[],antiJoker:[],openingRoll:true}
+          : (previous?.analysis?.type==='jokers' ? previous.analysis : {type:'jokers',...analyzeJokerRolls(beforePosition,r.activePlayer)});
         pushState({
           phase:'bigComebackIntro',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:null,cube,
           winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},luckKind:null,diceMuted,
-          analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'jokers',...rollAnalysis},historyEvent:null,
-          bigComeback:true
+          analysis:introAnalysis,historyEvent:null,
+          bigComeback:true,rollNotice:'comeback'
         });
       }
 
@@ -806,7 +811,7 @@ function buildTimeline(parsed, sourceFile){
         position:beforePosition,dice:r.dice,cube,
         winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,diceMuted,
         analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'none'},historyEvent:null,
-        bigComeback:isBigComeback
+        bigComeback:isBigComeback,rollNotice
       });
       const forcedMove = candidates.length <= 1 || diceMuted;
       if(forcedMove){
@@ -867,7 +872,7 @@ function buildTimeline(parsed, sourceFile){
   }
 
   return {
-    schemaVersion:9,
+    schemaVersion:10,
     sourceFile,
     generatedAt:new Date().toISOString(),
     match:{...parsed.match, blackSourcePlayer:parsed.match.player1, whiteSourcePlayer:parsed.match.player2},

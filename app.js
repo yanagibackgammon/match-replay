@@ -680,14 +680,16 @@ function renderBoardDimOverlay(state){
 }
 function renderBigComeback(state){
   const el=els.bigComebackText;if(!el)return;
-  const isVisible=state?.phase==="roll" && Boolean(state?.bigComeback);
+  const notice=state?.phase==="roll" ? state?.rollNotice : null;
+  const isVisible=notice==="comeback" || notice==="nice";
   if(!isVisible){
     lastBigComebackKey="";
     el.classList.remove("is-active");
     el.setAttribute("aria-hidden","true");
     return;
   }
-  const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}`;
+  el.textContent=notice==="comeback"?"大逆転！！":"ナイスロール！";
+  const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}:${notice}`;
   el.setAttribute("aria-hidden","false");
   if(key===lastBigComebackKey) return;
   lastBigComebackKey=key;
@@ -785,7 +787,7 @@ function playbackDelayForIndex(i){
   const state=matchData.states[Math.max(0,Math.min(Number(i)||0,matchData.states.length-1))];
   if(state?.phase==="gameEnd") return SCORE_SEQUENCE_SPEED;
   if(state?.phase==="bigComebackIntro") return BIG_COMEBACK_DIM_SPEED;
-  if(state?.phase==="roll" && state?.bigComeback) return BIG_COMEBACK_SPEED;
+  if(state?.phase==="roll" && (state?.rollNotice==="comeback" || state?.rollNotice==="nice")) return BIG_COMEBACK_SPEED;
   return PLAYBACK_SPEED;
 }
 function stopPagesTimer(){if(pagesTimer){clearTimeout(pagesTimer);pagesTimer=null;}}
