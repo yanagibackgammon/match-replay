@@ -85,41 +85,39 @@ html,body{
   content:"";
   position:absolute;
   z-index:0;
-  top:-76px;
-  left:70px;
-  width:620px;
-  height:420px;
+  inset:0;
   pointer-events:none;
-  background:linear-gradient(135deg,
-    transparent 0 16%,
-    color-mix(in srgb,var(--theme-color) 72%,#ffffff) 16% 31%,
-    color-mix(in srgb,var(--theme-color) 84%,#ffffff) 31% 48%,
-    color-mix(in srgb,var(--theme-color) 74%,#ffffff) 48% 61%,
-    transparent 61% 100%);
-  clip-path:polygon(0 0,100% 0,72% 100%,0 82%);
-  transform:skewX(-11deg);
-  box-shadow:inset -2px 0 0 rgba(255,255,255,.16);
-  opacity:.26;
+  background:
+    repeating-linear-gradient(118deg,
+      transparent 0 180px,
+      color-mix(in srgb,var(--theme-color) 74%,#ffffff) 180px 240px,
+      color-mix(in srgb,var(--theme-color) 84%,#ffffff) 240px 310px,
+      transparent 310px 470px),
+    repeating-linear-gradient(-118deg,
+      transparent 0 180px,
+      color-mix(in srgb,var(--theme-color) 74%,#ffffff) 180px 240px,
+      color-mix(in srgb,var(--theme-color) 84%,#ffffff) 240px 310px,
+      transparent 310px 470px),
+    linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.02) 34%,transparent 100%);
+  opacity:.16;
+  mix-blend-mode:screen;
 }
 .top-area::after{
   content:"";
   position:absolute;
   z-index:0;
-  top:-92px;
-  right:58px;
-  width:690px;
-  height:440px;
+  inset:0;
   pointer-events:none;
-  background:linear-gradient(45deg,
-    transparent 0 18%,
-    color-mix(in srgb,var(--theme-color) 88%,#111111) 18% 34%,
-    color-mix(in srgb,var(--theme-color) 78%,#111111) 34% 52%,
-    color-mix(in srgb,var(--theme-color) 86%,#111111) 52% 66%,
-    transparent 66% 100%);
-  clip-path:polygon(20% 0,100% 0,100% 82%,34% 100%);
-  transform:skewX(10deg);
-  box-shadow:inset 2px 0 0 rgba(255,255,255,.12);
-  opacity:.24;
+  background:
+    repeating-linear-gradient(118deg,
+      transparent 0 260px,
+      color-mix(in srgb,var(--theme-color) 90%,#111111) 260px 340px,
+      transparent 340px 520px),
+    repeating-linear-gradient(-118deg,
+      transparent 0 260px,
+      color-mix(in srgb,var(--theme-color) 90%,#111111) 260px 340px,
+      transparent 340px 520px);
+  opacity:.20;
 }
 
 .headline-row{
@@ -133,12 +131,21 @@ html,body{
   gap:22px;
   padding:0 30px;
   overflow:hidden;
-  background:linear-gradient(90deg,
-    color-mix(in srgb,var(--theme-color) 70%,#111111) 0%,
-    color-mix(in srgb,var(--theme-color) 88%,#111111) 28%,
-    color-mix(in srgb,var(--theme-color) 92%,#111111) 50%,
-    color-mix(in srgb,var(--theme-color) 88%,#111111) 72%,
-    color-mix(in srgb,var(--theme-color) 70%,#111111) 100%);
+  background:
+    repeating-linear-gradient(118deg,
+      transparent 0 210px,
+      rgba(255,255,255,.045) 210px 252px,
+      transparent 252px 420px),
+    repeating-linear-gradient(-118deg,
+      transparent 0 210px,
+      rgba(255,255,255,.045) 210px 252px,
+      transparent 252px 420px),
+    linear-gradient(90deg,
+      color-mix(in srgb,var(--theme-color) 70%,#111111) 0%,
+      color-mix(in srgb,var(--theme-color) 88%,#111111) 28%,
+      color-mix(in srgb,var(--theme-color) 92%,#111111) 50%,
+      color-mix(in srgb,var(--theme-color) 88%,#111111) 72%,
+      color-mix(in srgb,var(--theme-color) 70%,#111111) 100%);
 }
 .headline-row::before{
   content:"";
@@ -243,6 +250,14 @@ html,body{
   padding:4px 30px 0;
   overflow:hidden;
   background:
+    repeating-linear-gradient(118deg,
+      transparent 0 260px,
+      rgba(255,255,255,.022) 260px 304px,
+      transparent 304px 520px),
+    repeating-linear-gradient(-118deg,
+      transparent 0 260px,
+      rgba(255,255,255,.022) 260px 304px,
+      transparent 304px 520px),
     linear-gradient(180deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,0) 34%,transparent 100%),
     linear-gradient(90deg,rgba(255,255,255,.04) 0%,transparent 15%,transparent 85%,rgba(0,0,0,.03) 100%);
 }
