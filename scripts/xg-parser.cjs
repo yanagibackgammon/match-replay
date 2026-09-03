@@ -198,27 +198,67 @@ function formatCheckerMove(raw, beforePosition, activePlayer){
   const applied = applyCheckerMove(beforePosition, activePlayer, raw);
   if(!applied.segments.length) return 'Cannot Move';
 
-  const rendered = applied.segments.map(seg => {
-    const fromText = seg.from === 24 ? 'bar' : String(seg.from + 1);
-    const toText = seg.to < 0 ? 'off' : String(seg.to + 1);
-    return {route:`${fromText}/${toText}`, hit:seg.hit};
-  });
-
-  // Position Drill準拠: 同一ムーブが連続する場合は (2) などにまとめる。
-  // ヒットが含まれる場合はルート末尾に * を一度だけ付ける。
-  const compact = [];
-  for(const item of rendered){
-    const last = compact[compact.length - 1];
-    if(last && last.route === item.route){
-      last.count += 1;
-      last.hit = last.hit || item.hit;
+  // XG式ムーブ表記。
+  // - Bar は先頭大文字、bear-off は off。
+  // - 同一チェッカーの連続移動は、途中でヒットしていなければ1本にまとめる。
+  //   例: 24/20 20/16 -> 24/16、Bar/20 20/15 -> Bar/15。
+  // - 途中でヒットした場合は経路を分ける。
+  //   例: Bar/21* 21/15*。
+  // - 同一路線は (2)(3) のようにまとめ、いずれかがヒットなら * を付ける。
+  // 盤面アニメーション用の applied.segments 自体は変更しない。
+  const paths=[];
+  for(const seg of applied.segments){
+    // 同じ地点に到達済みの経路が複数ある場合、XG表記に近づけるため
+    // 先に到達した経路を優先する。最初の到達がヒットなら連結しない。
+    const firstEnding=paths.find(path=>path.to===seg.from && path.to>=0);
+    if(firstEnding && !firstEnding.lastHit){
+      firstEnding.to=seg.to;
+      firstEnding.hit=Boolean(seg.hit);
+      firstEnding.lastHit=Boolean(seg.hit);
+      firstEnding.steps+=1;
     }else{
-      compact.push({route:item.route,count:1,hit:item.hit});
+      paths.push({
+        from:seg.from,
+        to:seg.to,
+        hit:Boolean(seg.hit),
+        lastHit:Boolean(seg.hit),
+        steps:1
+      });
     }
   }
-  return compact.map(item => `${item.route}${item.hit ? '*' : ''}${item.count > 1 ? `(${item.count})` : ''}`).join(' ');
-}
 
+  const pointText=value=>{
+    if(value===24) return 'Bar';
+    if(value<0) return 'off';
+    return String(value+1);
+  };
+  const sourceSortValue=value=>value===24?100:value+1;
+  const destinationSortValue=value=>value<0?0:value+1;
+
+  // XGと同様に Bar を最優先し、その後は大きい起点から並べる。
+  // 同一起点では大きい着点（短い移動）を先にする。
+  paths.sort((a,b)=>{
+    const sourceDiff=sourceSortValue(b.from)-sourceSortValue(a.from);
+    if(sourceDiff) return sourceDiff;
+    const destinationDiff=destinationSortValue(b.to)-destinationSortValue(a.to);
+    if(destinationDiff) return destinationDiff;
+    return 0;
+  });
+
+  const compact=[];
+  for(const path of paths){
+    const route=`${pointText(path.from)}/${pointText(path.to)}`;
+    const last=compact[compact.length-1];
+    if(last && last.route===route){
+      last.count+=1;
+      last.hit=last.hit||path.hit;
+    }else{
+      compact.push({route,count:1,hit:path.hit});
+    }
+  }
+
+  return compact.map(item=>`${item.route}${item.hit?'*':''}${item.count>1?`(${item.count})`:''}`).join(' ');
+}
 
 function positionKey(position,activePlayer){
   const pts=(position?.points||[]).slice(1,25).join(',');
@@ -806,26 +846,41 @@ function buildTimeline(parsed, sourceFile){
         });
       }
 
-      pushState({
-        phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
-        position:beforePosition,dice:r.dice,cube,
-        winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,diceMuted,
-        analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'none'},historyEvent:null,
-        bigComeback:isBigComeback,rollNotice
-      });
-      const forcedMove = candidates.length <= 1 || diceMuted;
-      if(forcedMove){
-        // フォースト／Cannot Move は候補表示自体が選択シーケンスなので、ここでPRを反映する。
+      const cannotMove = r.move === 'Cannot Move' || r.move === 'Dance';
+      if(cannotMove){
+        // Cannot Move はロール表示と候補選択を同一シーケンスにする。
+        // ロールが出た瞬間に選択済み候補・履歴・PRまで同時に反映する。
         addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
         pushState({
-          phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
-          position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,luckKind,diceMuted,
+          phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
+          position:selectedPosition,dice:r.dice,cube,
+          winRate:selectedWinRate,gammonRate:selectedGammonRate,luckKind,diceMuted,
           analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
           moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
           historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'},
-          forcedMove:true
+          forcedMove:true,bigComeback:isBigComeback,rollNotice
         });
       }else{
+        pushState({
+          phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
+          position:beforePosition,dice:r.dice,cube,
+          winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,diceMuted,
+          analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'none'},historyEvent:null,
+          bigComeback:isBigComeback,rollNotice
+        });
+        const forcedMove = candidates.length <= 1 || diceMuted;
+        if(forcedMove){
+          // 1通りしかないフォーストムーブは従来どおり、ロール後に選択シーケンスを表示する。
+          addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
+          pushState({
+            phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
+            position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,luckKind,diceMuted,
+            analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
+            moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
+            historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'},
+            forcedMove:true
+          });
+        }else{
         pushState({
           phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:r.dice,cube,winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,diceMuted,
@@ -842,6 +897,7 @@ function buildTimeline(parsed, sourceFile){
           moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
           historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'}
         });
+        }
       }
       gameHasCheckerMove = true;
       lastPosition = afterPosition;
@@ -872,7 +928,7 @@ function buildTimeline(parsed, sourceFile){
   }
 
   return {
-    schemaVersion:10,
+    schemaVersion:13,
     sourceFile,
     generatedAt:new Date().toISOString(),
     match:{...parsed.match, blackSourcePlayer:parsed.match.player1, whiteSourcePlayer:parsed.match.player2},
