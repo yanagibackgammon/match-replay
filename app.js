@@ -775,11 +775,16 @@ function renderBigComeback(state){
   el.classList.add("is-active");
 }
 function render(){
-  const s=currentState(),b=Number(s.winRate?.black??50),w=Number(s.winRate?.white??(100-b));renderMeta(s);
-  const gb=Math.max(0,Math.min(b,Number(s.gammonRate?.black??0)));
-  const gw=Math.max(0,Math.min(w,Number(s.gammonRate?.white??0)));
-  const rawBgb=Math.max(0,Number(s.backgammonRate?.black??0));
-  const rawBgw=Math.max(0,Number(s.backgammonRate?.white??0));
+  const s=currentState();
+  // 手番変更後のpreRollでは盤面もまだ変化していないため、勝率バー類は直前の表示値を維持する。
+  // 実際のロール状態に進んだ瞬間だけ、そのロール後の解析値へアニメーションさせる。
+  const previousState=index>0?matchData.states[index-1]:null;
+  const rateState=(s?.phase==="preRoll"&&previousState?.gameNumber===s.gameNumber)?previousState:s;
+  const b=Number(rateState?.winRate?.black??50),w=Number(rateState?.winRate?.white??(100-b));renderMeta(s);
+  const gb=Math.max(0,Math.min(b,Number(rateState?.gammonRate?.black??0)));
+  const gw=Math.max(0,Math.min(w,Number(rateState?.gammonRate?.white??0)));
+  const rawBgb=Math.max(0,Number(rateState?.backgammonRate?.black??0));
+  const rawBgw=Math.max(0,Number(rateState?.backgammonRate?.white??0));
   const bgb=Math.max(0,Math.min(gb,rawBgb));
   const bgw=Math.max(0,Math.min(gw,rawBgw));
   const showBgb=bgb>=5;
