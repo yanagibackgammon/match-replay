@@ -765,6 +765,7 @@ function buildTimeline(parsed, sourceFile){
       // 選択手では、候補側の推定盤面ではなく棋譜に実際に適用した盤面を表示する。
       const selectedPosition = afterPosition;
       const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode)};
+      const diceMuted = r.move === 'Cannot Move' || r.move === 'Dance' || !(Array.isArray(r.appliedSegments) && r.appliedSegments.length);
 
       // 通常手は5段階で表示する。
       // 1) 手番交代 + Joker / Anti-Joker候補
@@ -792,18 +793,18 @@ function buildTimeline(parsed, sourceFile){
       pushState({
         phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
         position:beforePosition,dice:r.dice,cube,
-        winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,
+        winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,diceMuted,
         analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'none'},historyEvent:null
       });
       pushState({
         phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
-        position:beforePosition,dice:r.dice,cube,winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,
+        position:beforePosition,dice:r.dice,cube,winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,diceMuted,
         analysis:{type:'moves',candidates},historyEvent:null
       });
       addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
       pushState({
         phase:'analysis',gameNumber,score:[...score],activePlayer:r.activePlayer,
-        position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,luckKind,
+        position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,luckKind,diceMuted,
         analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
         // 配信側でムーブ前→ムーブ後を順番に0.5秒ずつアニメーションするため、
         // 実棋譜の移動区間をそのまま保持する。外部ファイル参照は不要。

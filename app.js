@@ -17,7 +17,7 @@ const CHECKER_MOVE_DURATION=500;
 const defaultMeta={
   tournamentTitleLine1:"JBS第31期名人戦 準々決勝",
   tournamentTitleLine2:"2025-08-30　25ポイントマッチ　勝てばベスト4",
-  blackName:"柳 暢祐",whiteName:"平林 直",blackScore:0,whiteScore:0,matchFile:"",themeColor:"#6B670D",designPreset:"classic"
+  blackName:"柳 暢祐",whiteName:"平林 直",blackScore:0,whiteScore:0,matchFile:"",themeColor:"#6B670D",designPreset:"green"
 };
 const standardPoints=[0,-2,0,0,0,0,5,0,3,0,0,0,-5,5,0,0,0,-3,0,-5,0,0,0,0,2];
 const emptyState={
@@ -26,10 +26,10 @@ const emptyState={
 };
 
 const FALLBACK_DESIGN={
-  id:"classic",name:"クラシック（黒・白）",
-  checkers:{player1:"#111111",player2:"#FFFFFF"},
-  winRate:{player1:"#111111",player2:"#FFFFFF"},
-  board:{surface:"#FFFFFF",pointLight:"#FFFFFF",pointDark:"#CFCFCF",bar:"#111111",line:"#000000"}
+  id:"green",name:"グリーン",
+  checkers:{player1:"#17382C",player2:"#F7F0DE"},
+  winRate:{player1:"#1E513D",player2:"#E8DDBF"},
+  board:{surface:"#CDBB91",pointLight:"#F2E6C6",pointDark:"#3E705B",bar:"#284F3D",line:"#173327"}
 };
 let designPresets=[FALLBACK_DESIGN];
 let currentDesign=FALLBACK_DESIGN;
@@ -112,16 +112,23 @@ function addBarStack(centerY,n,klass){
     checkersG.appendChild(c);
   }
 }
+const BEAR_OFF_GEOMETRY={x:648,w:41,h:12,upperBase:33,lowerBase:501,pitch:12.4,groupGap:4};
+function bearOffRectY(index,upper){
+  const g=BEAR_OFF_GEOMETRY;
+  const gap=Math.floor(index/5)*g.groupGap;
+  return upper ? g.upperBase+index*g.pitch+gap : g.lowerBase-index*g.pitch-gap;
+}
 function addBearOffStack(count,klass,upper){
   const n=Math.max(0,Math.min(15,Number(count)||0));
   if(!n)return;
-  // ベアオフは右端トレイに薄いチェッカーを積む。選手2=上、選手1=下。
-  const x=651.5,w=34,h=9,pitch=14;
+  // 添付SVGの右端ベアオフトレイに合わせる。15枚でも上下中央に食い込まず、
+  // 5枚ごとに小さな間隔を設けて 5 / 5 / 5 のまとまりを読み取りやすくする。
+  const g=BEAR_OFF_GEOMETRY;
   for(let i=0;i<n;i++){
     const r=document.createElementNS("http://www.w3.org/2000/svg","rect");
-    r.setAttribute("x",String(x));
-    r.setAttribute("y",String(upper ? 38+i*pitch : 499-h-i*pitch));
-    r.setAttribute("width",String(w));r.setAttribute("height",String(h));r.setAttribute("rx","4.5");
+    r.setAttribute("x",String(g.x));
+    r.setAttribute("y",String(bearOffRectY(i,upper)));
+    r.setAttribute("width",String(g.w));r.setAttribute("height",String(g.h));r.setAttribute("rx","4");
     r.setAttribute("class",klass);checkersG.appendChild(r);
   }
 }
@@ -161,13 +168,13 @@ function barMoveCoord(position,activePlayer){
   return {x:350.5,y};
 }
 function bearOffMoveCoord(position,activePlayer){
-  const h=9,pitch=14,x=668.5;
+  const g=BEAR_OFF_GEOMETRY,x=g.x+g.w/2;
   if(activePlayer===1){
-    const n=Math.max(0,Number(position?.blackOff)||0);
-    return {x,y:499-h-n*pitch+h/2};
+    const n=Math.max(0,Math.min(14,Number(position?.blackOff)||0));
+    return {x,y:bearOffRectY(n,false)+g.h/2};
   }
-  const n=Math.max(0,Number(position?.whiteOff)||0);
-  return {x,y:38+n*pitch+h/2};
+  const n=Math.max(0,Math.min(14,Number(position?.whiteOff)||0));
+  return {x,y:bearOffRectY(n,true)+g.h/2};
 }
 function sourceMoveCoord(position,segment,activePlayer){
   if(segment?.source==="bar")return barMoveCoord(position,activePlayer);
@@ -263,10 +270,11 @@ function renderAnimatedCheckers(state){
   }
   if(!moveAnimationRunning)drawCheckers(state.position);
 }
-function drawDice(vals,activePlayer,{luckKind=null}={}){
+function drawDice(vals,activePlayer,{luckKind=null,muted=false}={}){
   diceG.innerHTML="";
-  diceG.classList.toggle("is-joker-glow",luckKind==="joker");
-  diceG.classList.toggle("is-antijoker-glow",luckKind==="antiJoker");
+  diceG.classList.toggle("is-joker-glow",luckKind==="joker"&&!muted);
+  diceG.classList.toggle("is-antijoker-glow",luckKind==="antiJoker"&&!muted);
+  diceG.classList.toggle("is-muted",Boolean(muted));
   if(!vals)return;const spots={1:[[18,18]],2:[[10,10],[26,26]],3:[[10,10],[18,18],[26,26]],4:[[10,10],[26,10],[10,26],[26,26]],5:[[10,10],[26,10],[18,18],[10,26],[26,26]],6:[[10,9],[26,9],[10,18],[26,18],[10,27],[26,27]]};
   const player1=activePlayer===1;
   const face=normalizeHex(player1?currentDesign?.checkers?.player1:currentDesign?.checkers?.player2,player1?"#111111":"#FFFFFF");
@@ -331,7 +339,7 @@ function findDesignPreset(id){
   return designPresets.find(p=>p&&p.id===id)||designPresets[0]||FALLBACK_DESIGN;
 }
 function applyDesignPreset(id){
-  const next=findDesignPreset(id||"classic");
+  const next=findDesignPreset(id||"green");
   currentDesign=next;
   if(appliedDesignPresetId===next.id) return;
   appliedDesignPresetId=next.id;
@@ -376,7 +384,7 @@ async function loadDesignPresets(){
     designPresets=[FALLBACK_DESIGN];
   }
   appliedDesignPresetId="";
-  applyDesignPreset(meta.designPreset||"classic");
+  applyDesignPreset(meta.designPreset||"green");
   render();
 }
 
@@ -399,7 +407,7 @@ function renderHistoryHeader(el,prValue,nameText){
 }
 function renderMeta(state){
   document.documentElement.style.setProperty("--theme-color",normalizeThemeColor(meta.themeColor));
-  applyDesignPreset(meta.designPreset||"classic");
+  applyDesignPreset(meta.designPreset||"green");
   els.tournamentTitleLine1.textContent=meta.tournamentTitleLine1;
   els.tournamentTitleLine2.textContent=meta.tournamentTitleLine2||"";
   els.blackName.textContent=meta.blackName;els.whiteName.textContent=meta.whiteName;
@@ -568,12 +576,14 @@ function render(){
   const gw=Math.max(0,Math.min(w,Number(s.gammonRate?.white??0)));
   const displayBlack=Math.round(b),displayWhite=100-displayBlack;
   els.winBarBlack.style.width=`${b}%`;els.winBarWhite.style.width=`${w}%`;
+  els.winBarBlack.classList.toggle("is-zero",b<=0);
+  els.winBarWhite.classList.toggle("is-zero",w<=0);
   els.gammonBarBlack.style.width=`${gb}%`;els.gammonBarWhite.style.width=`${gw}%`;
   els.blackRateText.textContent=`${displayBlack}%`;els.whiteRateText.textContent=`${displayWhite}%`;
   els.blackGammonText.textContent=`G ${Math.round(gb)}%`;els.whiteGammonText.textContent=`G ${Math.round(gw)}%`;
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
   els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);
-  drawPointLabels(s.activePlayer);renderAnimatedCheckers(s);drawDice(s.dice,s.activePlayer,{luckKind:s.luckKind||null});drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
+  drawPointLabels(s.activePlayer);renderAnimatedCheckers(s);drawDice(s.dice,s.activePlayer,{luckKind:s.luckKind||null,muted:Boolean(s.diceMuted)});drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
 }
 
 async function fetchManifest(){try{const u=new URL("./matches/manifest.json",location.href);u.searchParams.set("t",Date.now());const r=await fetch(u,{cache:"no-store"});return r.ok?await r.json():{};}catch{return {};}}

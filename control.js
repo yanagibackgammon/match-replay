@@ -41,7 +41,7 @@ let lastState = {
     whiteScore:0,
     matchFile:"",
     themeColor:"#6B670D",
-    designPreset:"classic"
+    designPreset:"green"
   }
 };
 
@@ -87,7 +87,7 @@ function syncMetaEditorsFromState(){
   syncEditorValue(whiteNameInput,"whiteName",lastState.meta.whiteName || "");
 
   if(designPresetSelect && !dirtyMetaFields.has("designPreset")){
-    const presetId=lastState.meta.designPreset||"classic";
+    const presetId=lastState.meta.designPreset||"green";
     if(![...designPresetSelect.options].some(opt=>opt.value===presetId)){
       const option=document.createElement("option");
       option.value=presetId;
@@ -146,7 +146,7 @@ function renderDesignPreview(){
   designPresetPreview.innerHTML=colors.map(color=>`<span style="background:${color}"></span>`).join("");
 }
 function renderDesignOptions(){
-  const current=lastState.meta.designPreset||designPresetSelect.value||"classic";
+  const current=lastState.meta.designPreset||designPresetSelect.value||"green";
   designPresetSelect.innerHTML="";
   designPresets.forEach(preset=>{
     const option=document.createElement("option");option.value=preset.id;option.textContent=preset.name||preset.id;designPresetSelect.appendChild(option);
@@ -166,7 +166,7 @@ async function loadDesignPresets(){
     designPresets=Array.isArray(data.presets)?data.presets:[];
   }catch(error){
     console.warn("Failed to load design presets",error);
-    designPresets=[{id:"classic",name:"クラシック（黒・白）",checkers:{player1:"#111111",player2:"#FFFFFF"},winRate:{player1:"#111111",player2:"#FFFFFF"},board:{pointLight:"#FFFFFF",pointDark:"#CFCFCF"}}];
+    designPresets=[{id:"green",name:"グリーン",checkers:{player1:"#17382C",player2:"#F7F0DE"},winRate:{player1:"#1E513D",player2:"#E8DDBF"},board:{surface:"#CDBB91",pointLight:"#F2E6C6",pointDark:"#3E705B",bar:"#284F3D",line:"#173327"}}];
   }
   renderDesignOptions();
 }
@@ -297,7 +297,7 @@ async function applyMeta(){
     tournamentTitleLine1: tournamentLine1Input.value.trim(),
     tournamentTitleLine2: tournamentLine2Input.value.trim(),
     themeColor: themeColorInput.value.trim() || "#6B670D",
-    designPreset: designPresetSelect.value || "classic",
+    designPreset: designPresetSelect.value || "green",
     blackName: blackNameInput.value.trim(),
     whiteName: whiteNameInput.value.trim(),
     matchFile: matchFileSelect.value
