@@ -767,12 +767,11 @@ function buildTimeline(parsed, sourceFile){
       const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode)};
       const diceMuted = r.move === 'Cannot Move' || r.move === 'Dance' || !(Array.isArray(r.appliedSegments) && r.appliedSegments.length);
 
-      // 通常手は5段階で表示する。
+      // 通常手は4段階で表示する。
       // 1) 手番交代 + Joker / Anti-Joker候補
       // 2) ロールのみ表示（候補手はまだ出さない）+ 最善手の勝率へバー推移
       // 3) 候補手表示（勝率バーはそのまま）
       // 4) 選択手を金表示 + チェッカー移動 + 選択手の勝率
-      // 5) ロールダイスを消す
       // 各ゲームの初手だけは、手番開始とロールを同一シーケンスにする。
       // オープニングロールには事前Joker/Anti-Joker候補を出さない。
       const isOpeningMove=!gameHasCheckerMove;
@@ -824,11 +823,6 @@ function buildTimeline(parsed, sourceFile){
           historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'}
         });
       }
-      pushState({
-        phase:'move',gameNumber,score:[...score],activePlayer:r.activePlayer,
-        position:afterPosition,dice:null,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,
-        analysis:{type:'none'},historyEvent:null
-      });
       gameHasCheckerMove = true;
       lastPosition = afterPosition;
       lastCube = cube;

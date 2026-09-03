@@ -719,8 +719,17 @@ html,body{
 .point{stroke:var(--board-line);stroke-width:1;stroke-linejoin:round}
 .checker-piece-black{fill:var(--checker-player1);stroke:var(--board-line);stroke-width:1.2}
 .checker-piece-white{fill:var(--checker-player2);stroke:var(--board-line);stroke-width:1.2}
-.point-label{font-family:Arial,Helvetica,sans-serif;font-size:12px;fill:#000;text-anchor:middle}
+.point-label{font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;fill:#000;text-anchor:middle}
 .checker-text{font-size:19px;font-weight:900;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+.pip-label{
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:16px;
+  font-weight:900;
+  letter-spacing:.02em;
+  fill:#000;
+  text-anchor:middle;
+  dominant-baseline:middle;
+}
 
 /* v16: XG error coloring in history */
 .history-cell.error-green .history-move{color:#0d8b50}

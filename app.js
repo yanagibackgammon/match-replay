@@ -6,6 +6,9 @@ const boardSvg=document.getElementById("board");
 const gameOverlayG=document.createElementNS("http://www.w3.org/2000/svg","g");
 gameOverlayG.setAttribute("id","gameOverlay");
 boardSvg.appendChild(gameOverlayG);
+const pipInfoG=document.createElementNS("http://www.w3.org/2000/svg","g");
+pipInfoG.setAttribute("id","pipInfo");
+boardSvg.appendChild(pipInfoG);
 const moveAnimationG=document.createElementNS("http://www.w3.org/2000/svg","g");
 moveAnimationG.setAttribute("id","moveAnimation");
 boardSvg.appendChild(moveAnimationG);
@@ -75,6 +78,29 @@ function drawPointLabels(activePlayer=1){
       t.setAttribute("x",cx);t.setAttribute("y",y);t.setAttribute("class","point-label");t.textContent=n;labelsG.appendChild(t);
     }
   });
+}
+function calculatePips(position){
+  const points=position?.points||standardPoints;
+  let black=25*Number(position?.blackBar||0);
+  let white=25*Number(position?.whiteBar||0);
+  for(let p=1;p<=24;p++){
+    const v=Number(points[p]||0);
+    if(v>0) black += p*v;
+    else if(v<0) white += (25-p)*Math.abs(v);
+  }
+  return {black,white};
+}
+function drawPipInfo(position){
+  pipInfoG.innerHTML="";
+  const pips=calculatePips(position);
+  for(const [y,text] of [[147,`PIP ${pips.white}`],[405,`PIP ${pips.black}`]]){
+    const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+    t.setAttribute("x","350.5");
+    t.setAttribute("y",String(y));
+    t.setAttribute("class","pip-label");
+    t.textContent=text;
+    pipInfoG.appendChild(t);
+  }
 }
 function trianglePoints(){
   pointsG.innerHTML="";
@@ -642,7 +668,7 @@ function render(){
   els.blackGammonText.textContent=`G ${Math.round(gb)}%`;els.whiteGammonText.textContent=`G ${Math.round(gw)}%`;
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
   els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);
-  drawPointLabels(s.activePlayer);renderAnimatedCheckers(s);drawDice(s.dice,s.activePlayer,{luckKind:s.luckKind||null,muted:Boolean(s.diceMuted)});drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
+  drawPointLabels(s.activePlayer);drawPipInfo(s.position);renderAnimatedCheckers(s);drawDice(s.dice,s.activePlayer,{luckKind:s.luckKind||null,muted:Boolean(s.diceMuted)});drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
 }
 
 async function fetchManifest(){try{const u=new URL("./matches/manifest.json",location.href);u.searchParams.set("t",Date.now());const r=await fetch(u,{cache:"no-store"});return r.ok?await r.json():{};}catch{return {};}}
