@@ -661,8 +661,10 @@ function renderAnalysis(a){
       const keys=new Set(list.map(key).filter(Boolean));
       const fullFaces=[];
       for(let face=1;face<=6;face++){
-        const hasAllRelatedRolls=[1,2,3,4,5,6].every(other=>keys.has(`${Math.max(face,other)}-${Math.min(face,other)}`));
-        if(hasAllRelatedRolls) fullFaces.push(face);
+        const related=[1,2,3,4,5,6].map(other=>`${Math.max(face,other)}-${Math.min(face,other)}`);
+        const hasAllRelatedRolls=related.every(k=>keys.has(k));
+        const hasAllNonDoubleRelatedRolls=kind==="minus"&&related.filter(k=>k!==`${face}-${face}`).every(k=>keys.has(k));
+        if(hasAllRelatedRolls||hasAllNonDoubleRelatedRolls) fullFaces.push(face);
       }
       const covered=new Set();
       for(const face of fullFaces){
@@ -687,7 +689,8 @@ function renderAnalysis(a){
     // その他を大量の「チャンス！」として見せず、その悪い面を大きな「ピンチ！」で優先表示する。
     // 通常の Anti-Joker 候補は従来どおり候補エリアには表示しない。
     const antiFaceItems=groupRolls(a.antiJoker,"minus").filter(item=>item.single);
-    const items=antiFaceItems.length?antiFaceItems:[...groupRolls(a.joker,"plus")];
+    const chanceItems=groupRolls(a.joker,"plus");
+    const items=[...antiFaceItems,...chanceItems];
     els.analysisContent.innerHTML=`<div class="analysis-jokers${items.length>6?" is-many":""}">${items.map(renderItem).join("")}</div>`;return;
   }
   const selectedIndex=Number.isInteger(a.playedIndex)?a.playedIndex:-1;

@@ -369,14 +369,71 @@ function madeHomePoints(position,player){
 function blotCount(position,player){let n=0;for(let p=1;p<=24;p++)if(countChecker(position,player,p)===1)n++;return n;}
 function staticEquityProxy(position,player){
   const opp=-player;
-  if(offCount(position,player)>=15)return 3;
-  if(offCount(position,opp)>=15)return -3;
   const pipAdv=pipCount(position,opp)-pipCount(position,player);
   const offAdv=offCount(position,player)-offCount(position,opp);
   const barAdv=barCount(position,opp)-barCount(position,player);
   const homeAdv=madeHomePoints(position,player)-madeHomePoints(position,opp);
   const blotAdv=blotCount(position,opp)-blotCount(position,player);
-  return Math.max(-3,Math.min(3,0.008*pipAdv+0.16*offAdv+0.20*barAdv+0.035*homeAdv+0.012*blotAdv));
+  return 0.008*pipAdv+0.10*offAdv+0.16*barAdv+0.03*homeAdv+0.02*blotAdv;
+}
+function contextOutcomeEquity(context,player){
+  const blackW=Number(context?.winRate?.black),whiteW=Number(context?.winRate?.white);
+  if(!Number.isFinite(blackW)||!Number.isFinite(whiteW))return NaN;
+  const activeW=(player===1?blackW:whiteW)/100;
+  const activeG=Number(player===1?context?.gammonRate?.black:context?.gammonRate?.white)||0;
+  const oppG=Number(player===1?context?.gammonRate?.white:context?.gammonRate?.black)||0;
+  const activeBG=Number(player===1?context?.backgammonRate?.black:context?.backgammonRate?.white)||0;
+  const oppBG=Number(player===1?context?.backgammonRate?.white:context?.backgammonRate?.black)||0;
+  return (2*activeW-1)+(activeG+activeBG-oppG-oppBG)/100;
+}
+function terminalPointValue(position,winner){
+  const loser=-winner;
+  if(offCount(position,winner)<15)return null;
+  if(offCount(position,loser)>0)return 1;
+  let loserInWinnersHome=barCount(position,loser)>0;
+  if(!loserInWinnersHome){
+    if(winner===1){for(let p=1;p<=6;p++)if(countChecker(position,loser,p)>0){loserInWinnersHome=true;break;}}
+    else{for(let p=19;p<=24;p++)if(countChecker(position,loser,p)>0){loserInWinnersHome=true;break;}}
+  }
+  return loserInWinnersHome?3:2;
+}
+function hitExposure(position,victim){
+  const attacker=-victim,beforeBar=barCount(position,victim);
+  let hitFaces=0;
+  for(let die=1;die<=6;die++){
+    const moves=singleDieMoves(position,attacker,die);
+    if(moves.some(next=>barCount(next,victim)>beforeBar))hitFaces++;
+  }
+  const miss=(6-hitFaces)/6;
+  return {hitFaces,probability:1-miss*miss,blots:blotCount(position,victim)};
+}
+function postRollEquityProxy(position,player,basePosition,context){
+  const terminal=terminalPointValue(position,player);
+  if(terminal!==null)return terminal;
+  const opp=-player;
+  const baseEq=contextOutcomeEquity(context,player);
+  if(!Number.isFinite(baseEq))return staticEquityProxy(position,player);
+  const baseExposure=hitExposure(basePosition,player);
+  const nextExposure=hitExposure(position,player);
+  const pipGain=pipCount(basePosition,player)-pipCount(position,player);
+  const offGain=offCount(position,player)-offCount(basePosition,player);
+  const oppBarGain=barCount(position,opp)-barCount(basePosition,opp);
+  const ownBarReduction=barCount(basePosition,player)-barCount(position,player);
+  const homeGain=madeHomePoints(position,player)-madeHomePoints(basePosition,player);
+  const activeG=(Number(player===1?context?.gammonRate?.black:context?.gammonRate?.white)||0)/100;
+  const oppG=(Number(player===1?context?.gammonRate?.white:context?.gammonRate?.black)||0)/100;
+  const activeBG=(Number(player===1?context?.backgammonRate?.black:context?.backgammonRate?.white)||0)/100;
+  const oppBG=(Number(player===1?context?.backgammonRate?.white:context?.backgammonRate?.black)||0)/100;
+  const outcomeLeverage=Math.min(1,activeG+oppG+activeBG+oppBG);
+  const exposureWeight=0.35+0.65*outcomeLeverage;
+  return baseEq
+    +0.006*pipGain
+    +0.04*offGain
+    +0.10*oppBarGain
+    +0.10*ownBarReduction
+    +0.03*homeGain
+    -exposureWeight*(nextExposure.probability-baseExposure.probability)
+    -0.05*(nextExposure.blots-baseExposure.blots);
 }
 const jokerRollCache=new Map();
 function isOutcomeLockedForJoker(context){
@@ -395,7 +452,7 @@ function analyzeJokerRolls(position,activePlayer,context=null){
   if(isOutcomeLockedForJoker(context)){
     return {joker:[],antiJoker:[],thresholdEquity:JOKER_EQUITY_THRESHOLD,averageEquityProxy:null,source:'xg-outcome-locked'};
   }
-  const contextKey=context?`${Number(context?.winRate?.black??NaN).toFixed(3)}|${Number(context?.gammonRate?.black??0).toFixed(3)}|${Number(context?.gammonRate?.white??0).toFixed(3)}`:'na';
+  const contextKey=context?`${Number(context?.winRate?.black??NaN).toFixed(3)}|${Number(context?.gammonRate?.black??0).toFixed(3)}|${Number(context?.gammonRate?.white??0).toFixed(3)}|${Number(context?.backgammonRate?.black??0).toFixed(3)}|${Number(context?.backgammonRate?.white??0).toFixed(3)}`:'na';
   const key=`${positionKey(position,activePlayer)}|${contextKey}`;
   if(jokerRollCache.has(key))return jokerRollCache.get(key);
   const rolls=[];
@@ -403,12 +460,12 @@ function analyzeJokerRolls(position,activePlayer,context=null){
   for(let hi=1;hi<=6;hi++)for(let lo=1;lo<=hi;lo++){
     const positions=generateRollPositions(position,activePlayer,hi,lo);
     let best=-Infinity;
-    for(const next of positions)best=Math.max(best,staticEquityProxy(next,activePlayer));
-    if(!Number.isFinite(best))best=staticEquityProxy(position,activePlayer);
+    for(const next of positions)best=Math.max(best,postRollEquityProxy(next,activePlayer,position,context));
+    if(!Number.isFinite(best))best=postRollEquityProxy(position,activePlayer,position,context);
     const weight=hi===lo?1:2;
     rolls.push({dice:[hi,lo],equity:best,weight});weighted+=best*weight;totalWeight+=weight;
   }
-  const average=totalWeight?weighted/totalWeight:staticEquityProxy(position,activePlayer);
+  const average=totalWeight?weighted/totalWeight:postRollEquityProxy(position,activePlayer,position,context);
   for(const r of rolls)r.luck=r.equity-average;
   const joker=rolls.filter(r=>r.luck>=JOKER_EQUITY_THRESHOLD).sort((a,b)=>b.luck-a.luck).map(r=>r.dice);
   const antiJoker=rolls.filter(r=>r.luck<=-JOKER_EQUITY_THRESHOLD).sort((a,b)=>a.luck-b.luck).map(r=>r.dice);
@@ -849,7 +906,7 @@ function buildTimeline(parsed, sourceFile){
         // 各ゲーム初手だけは opening roll 自体を手番開始シーケンスにするため、
         // 初手直前の No Double 解析レコードから preRoll を生成しない。
         if(gameHasCheckerMove){
-          const rollAnalysis=analyzeJokerRolls(position,r.activePlayer,{winRate,gammonRate});
+          const rollAnalysis=analyzeJokerRolls(position,r.activePlayer,{winRate,gammonRate,backgammonRate});
           pushState({
             phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
             position,dice:null,cube,winRate,gammonRate,backgammonRate,
@@ -911,7 +968,7 @@ function buildTimeline(parsed, sourceFile){
       const isOpeningMove=!gameHasCheckerMove;
       let previous = states[states.length - 1];
       if(!isOpeningMove && !(previous && previous.phase === 'preRoll' && previous.gameNumber === gameNumber && previous.activePlayer === r.activePlayer)){
-        const rollAnalysis=analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate});
+        const rollAnalysis=analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate,backgammonRate:lastBackgammonRate});
         pushState({
           phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:null,cube,winRate:{black:lastBlackRate,white:100-lastBlackRate},
@@ -930,7 +987,7 @@ function buildTimeline(parsed, sourceFile){
       if(isBigComeback){
         const introAnalysis=isOpeningMove
           ? {type:'jokers',joker:[],antiJoker:[],openingRoll:true}
-          : (previous?.analysis?.type==='jokers' ? previous.analysis : {type:'jokers',...analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate})});
+          : (previous?.analysis?.type==='jokers' ? previous.analysis : {type:'jokers',...analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate,backgammonRate:lastBackgammonRate})});
         pushState({
           phase:'bigComebackIntro',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:null,cube,
