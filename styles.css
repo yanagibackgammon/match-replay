@@ -279,8 +279,7 @@ html,body{
 }
 @keyframes scoreNewTravel{
   0%,84%{transform:translateY(92px);opacity:0}
-  91%,95%{transform:translateY(0);opacity:1}
-  100%{transform:translateY(-92px);opacity:0}
+  91%,100%{transform:translateY(0);opacity:1}
 }
 
 .eval-wrap{
