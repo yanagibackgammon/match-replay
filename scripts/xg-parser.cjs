@@ -467,6 +467,8 @@ function parseBestMoveEngine(rec, base){
       winRate: result[3] * 100,
       gammonRate: result[4] * 100,
       opponentGammonRate: result[1] * 100,
+      backgammonRate: result[5] * 100,
+      opponentBackgammonRate: result[0] * 100,
       equity: result[6]
     });
   }
@@ -646,6 +648,20 @@ function gammonRateFromResult(activePlayer,result,fallback){
   // win G / lose G already include backgammon outcomes, so use indices 4 / 1 directly.
   return stateGammonRate(activePlayer,Number(result[4])*100,Number(result[1])*100,fallback);
 }
+function stateBackgammonRate(activePlayer, activeBackgammonRate, opponentBackgammonRate, fallback={black:0,white:0}){
+  const active=Number(activeBackgammonRate),opponent=Number(opponentBackgammonRate);
+  if(!Number.isFinite(active)||!Number.isFinite(opponent)){
+    return {black:clampRate(fallback?.black??0),white:clampRate(fallback?.white??0)};
+  }
+  return activePlayer===1
+    ? {black:clampRate(active),white:clampRate(opponent)}
+    : {black:clampRate(opponent),white:clampRate(active)};
+}
+function backgammonRateFromResult(activePlayer,result,fallback){
+  if(!Array.isArray(result)||result.length<6) return stateBackgammonRate(activePlayer,NaN,NaN,fallback);
+  // XG TResult: index 5 = active player's BG win rate, index 0 = opponent's BG win rate.
+  return stateBackgammonRate(activePlayer,Number(result[5])*100,Number(result[0])*100,fallback);
+}
 
 function buildTimeline(parsed, sourceFile){
   const states = [];
@@ -653,6 +669,7 @@ function buildTimeline(parsed, sourceFile){
   let score = [0,0];
   let lastBlackRate = 50;
   let lastGammonRate = {black:0,white:0};
+  let lastBackgammonRate = {black:0,white:0};
   let lastPosition = null;
   let lastCube = {value:1,owner:0};
   let gameHasCheckerMove = false;
@@ -690,7 +707,7 @@ function buildTimeline(parsed, sourceFile){
     const dt=Number(r.analysis?.equityDoubleTake),dp=Number(r.analysis?.equityDrop);
     return Number.isFinite(dt)&&Number.isFinite(dp)&&Math.abs(dt-dp)>=0.001;
   };
-  const pushState = state => states.push({...state,pr:snapshotPR()});
+  const pushState = state => states.push({...state,backgammonRate:state.backgammonRate??{...lastBackgammonRate},pr:snapshotPR()});
 
   const recs = parsed.records;
   for(let i=0;i<recs.length;i++){
@@ -702,6 +719,7 @@ function buildTimeline(parsed, sourceFile){
       lastCube = {value: 2 ** Math.max(0,r.autoDoubles || 0), owner:0};
       lastBlackRate = 50;
       lastGammonRate = {black:0,white:0};
+      lastBackgammonRate = {black:0,white:0};
       gameHasCheckerMove = false;
       if(!matchIntroPushed){
         matchIntroPushed = true;
@@ -728,9 +746,11 @@ function buildTimeline(parsed, sourceFile){
       const activeRate = r.analysis && r.analysis.result ? r.analysis.result[3] * 100 : null;
       let winRate = stateWinRate(r.activePlayer, activeRate, lastBlackRate);
       let gammonRate = gammonRateFromResult(r.activePlayer,r.analysis?.result,lastGammonRate);
+      let backgammonRate = backgammonRateFromResult(r.activePlayer,r.analysis?.result,lastBackgammonRate);
       if(r.analysis.result.every(v => v === 0)){
         winRate = {black:lastBlackRate,white:100-lastBlackRate};
         gammonRate = {...lastGammonRate};
+        backgammonRate = {...lastBackgammonRate};
       }
       const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode)};
 
@@ -754,13 +774,13 @@ function buildTimeline(parsed, sourceFile){
         // Doubleした場合も、まず候補を未選択で表示し、その次に実際のDoubleを選択する。
         pushState({
           phase:'cubeOffer',gameNumber,score:[...score],activePlayer:r.activePlayer,
-          position,dice:null,cube,winRate,gammonRate,
+          position,dice:null,cube,winRate,gammonRate,backgammonRate,
           analysis:{type:'moves',candidates:offerCandidates},historyEvent:null
         });
         addPrDecision(r.activePlayer,r.errCube,cubeOfferCounts(r));
         pushState({
           phase:'cubeOfferSelect',gameNumber,score:[...score],activePlayer:r.activePlayer,
-          position,dice:null,cube,winRate,gammonRate,
+          position,dice:null,cube,winRate,gammonRate,backgammonRate,
           analysis:{type:'moves',candidates:offerCandidates,playedIndex:0},
           historyEvent:{player:doubler,dice:null,move:'Double',error:-Math.abs(Number(r.errCube)||0),kind:'cube',cubeValue:offeredValue,pairId}
         });
@@ -773,7 +793,7 @@ function buildTimeline(parsed, sourceFile){
         ];
         pushState({
           phase:'cubeResponse',gameNumber,score:[...score],activePlayer:responderActive,
-          position,dice:null,cube,winRate,gammonRate,
+          position,dice:null,cube,winRate,gammonRate,backgammonRate,
           analysis:{type:'moves',candidates:responseCandidates},historyEvent:null
         });
 
@@ -783,7 +803,7 @@ function buildTimeline(parsed, sourceFile){
         addPrDecision(responderActive,r.errTake,takePassCounts(r));
         pushState({
           phase:'cubeResponseSelect',gameNumber,score:[...score],activePlayer:responderActive,
-          position,dice:null,cube:cubeAfter,winRate,gammonRate,
+          position,dice:null,cube:cubeAfter,winRate,gammonRate,backgammonRate,
           analysis:{type:'moves',candidates:responseCandidates,playedIndex:responseIndex},
           historyEvent:{player:responder,dice:null,move:responseMove,error:-Math.abs(Number(r.errTake)||0),kind:'cubeResponse',pairId}
         });
@@ -807,7 +827,7 @@ function buildTimeline(parsed, sourceFile){
           const pairId=`cube-nd-${gameNumber}-${r.index}`;
           pushState({
             phase:'cubeOffer',gameNumber,score:[...score],activePlayer:r.activePlayer,
-            position,dice:null,cube,winRate,gammonRate,
+            position,dice:null,cube,winRate,gammonRate,backgammonRate,
             analysis:{type:'moves',candidates:offerCandidates},historyEvent:null
           });
           addPrDecision(r.activePlayer,r.errCube,cubeOfferCounts(r));
@@ -815,7 +835,7 @@ function buildTimeline(parsed, sourceFile){
           const isHistoryError=Math.abs(noDoubleError)>=0.020;
           pushState({
             phase:'cubeOfferSelect',gameNumber,score:[...score],activePlayer:r.activePlayer,
-            position,dice:null,cube,winRate,gammonRate,
+            position,dice:null,cube,winRate,gammonRate,backgammonRate,
             analysis:{type:'moves',candidates:offerCandidates,playedIndex:1},
             historyEvent:isHistoryError?{player,dice:null,move:'No Double',error:noDoubleError,kind:'cube',cubeValue:offeredValue,pairId}:null
           });
@@ -832,7 +852,7 @@ function buildTimeline(parsed, sourceFile){
           const rollAnalysis=analyzeJokerRolls(position,r.activePlayer,{winRate,gammonRate});
           pushState({
             phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
-            position,dice:null,cube,winRate,gammonRate,
+            position,dice:null,cube,winRate,gammonRate,backgammonRate,
             analysis:{type:'jokers',...rollAnalysis},historyEvent:null
           });
         }
@@ -841,6 +861,7 @@ function buildTimeline(parsed, sourceFile){
       lastPosition = position;
       lastBlackRate = winRate.black;
       lastGammonRate = {...gammonRate};
+      lastBackgammonRate = {...backgammonRate};
       continue;
     }
 
@@ -855,6 +876,12 @@ function buildTimeline(parsed, sourceFile){
       const bestGammonRate = best
         ? stateGammonRate(r.activePlayer,best.gammonRate,best.opponentGammonRate,lastGammonRate)
         : {...lastGammonRate};
+      const selectedBackgammonRate = played
+        ? stateBackgammonRate(r.activePlayer,played.backgammonRate,played.opponentBackgammonRate,lastBackgammonRate)
+        : {...lastBackgammonRate};
+      const bestBackgammonRate = best
+        ? stateBackgammonRate(r.activePlayer,best.backgammonRate,best.opponentBackgammonRate,lastBackgammonRate)
+        : {...lastBackgammonRate};
       const beforePosition = r.beforePosition || normalizeStoredPosition(r.positionI);
       const afterPosition = r.afterPosition || applyCheckerMove(beforePosition,r.activePlayer,r.moveRaw).position;
       const candidates = r.best.candidates.map(c => ({
@@ -864,6 +891,8 @@ function buildTimeline(parsed, sourceFile){
         winRate:c.winRate,
         gammonRate:c.gammonRate,
         opponentGammonRate:c.opponentGammonRate,
+        backgammonRate:c.backgammonRate,
+        opponentBackgammonRate:c.opponentBackgammonRate,
         // 候補手ごとのムーブ後盤面もJSONへ保持し、配信側だけで完結させる。
         position:applyCheckerMove(beforePosition,r.activePlayer,c.moveRaw).position
       }));
@@ -886,7 +915,7 @@ function buildTimeline(parsed, sourceFile){
         pushState({
           phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:null,cube,winRate:{black:lastBlackRate,white:100-lastBlackRate},
-          gammonRate:{...lastGammonRate},
+          gammonRate:{...lastGammonRate},backgammonRate:{...lastBackgammonRate},
           analysis:{type:'jokers',...rollAnalysis},historyEvent:null
         });
         previous=states[states.length-1];
@@ -905,7 +934,7 @@ function buildTimeline(parsed, sourceFile){
         pushState({
           phase:'bigComebackIntro',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:null,cube,
-          winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},luckKind:null,diceMuted,
+          winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},backgammonRate:{...lastBackgammonRate},luckKind:null,diceMuted,
           analysis:introAnalysis,historyEvent:null,
           bigComeback:true,rollNotice:'comeback'
         });
@@ -919,7 +948,7 @@ function buildTimeline(parsed, sourceFile){
         pushState({
           phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:selectedPosition,dice:r.dice,cube,
-          winRate:selectedWinRate,gammonRate:selectedGammonRate,luckKind,diceMuted,
+          winRate:selectedWinRate,gammonRate:selectedGammonRate,backgammonRate:selectedBackgammonRate,luckKind,diceMuted,
           analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
           moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
           historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'},
@@ -929,7 +958,7 @@ function buildTimeline(parsed, sourceFile){
         pushState({
           phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:r.dice,cube,
-          winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,diceMuted,
+          winRate:bestWinRate,gammonRate:bestGammonRate,backgammonRate:bestBackgammonRate,luckKind,diceMuted,
           analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'none'},historyEvent:null,
           bigComeback:isBigComeback,rollNotice
         });
@@ -944,7 +973,7 @@ function buildTimeline(parsed, sourceFile){
           addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
           pushState({
             phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
-            position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,luckKind,diceMuted,
+            position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,backgammonRate:selectedBackgammonRate,luckKind,diceMuted,
             analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
             moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
             historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'},
@@ -953,14 +982,14 @@ function buildTimeline(parsed, sourceFile){
         }else{
         pushState({
           phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
-          position:beforePosition,dice:r.dice,cube,winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,diceMuted,
+          position:beforePosition,dice:r.dice,cube,winRate:bestWinRate,gammonRate:bestGammonRate,backgammonRate:bestBackgammonRate,luckKind,diceMuted,
           analysis:{type:'moves',candidates},historyEvent:null
         });
         // 通常手は候補表示ではPRを変えず、実際の手を選択した瞬間に反映する。
         addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
         pushState({
           phase:'analysis',gameNumber,score:[...score],activePlayer:r.activePlayer,
-          position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,luckKind,diceMuted,
+          position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,backgammonRate:selectedBackgammonRate,luckKind,diceMuted,
           analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
           // 配信側でムーブ前→ムーブ後を順番に0.5秒ずつアニメーションするため、
           // 実棋譜の移動区間をそのまま保持する。外部ファイル参照は不要。
@@ -974,6 +1003,7 @@ function buildTimeline(parsed, sourceFile){
       lastCube = cube;
       lastBlackRate = selectedWinRate.black;
       lastGammonRate = {...selectedGammonRate};
+      lastBackgammonRate = {...selectedBackgammonRate};
       continue;
     }
 
@@ -1009,7 +1039,7 @@ function buildTimeline(parsed, sourceFile){
   }
 
   return {
-    schemaVersion:16,
+    schemaVersion:17,
     sourceFile,
     generatedAt:new Date().toISOString(),
     match:{...parsed.match, blackSourcePlayer:parsed.match.player1, whiteSourcePlayer:parsed.match.player2},

@@ -25,7 +25,7 @@ const defaultMeta={
 const standardPoints=[0,-2,0,0,0,0,5,0,3,0,0,0,-5,5,0,0,0,-3,0,-5,0,0,0,0,2];
 const emptyState={
   phase:"empty",score:[0,0],activePlayer:0,position:{points:standardPoints,blackBar:0,whiteBar:0,blackOff:0,whiteOff:0},
-  dice:null,cube:{value:1,owner:0},winRate:{black:50,white:50},gammonRate:{black:0,white:0},analysis:{type:"none"},historyEvent:null
+  dice:null,cube:{value:1,owner:0},winRate:{black:50,white:50},gammonRate:{black:0,white:0},backgammonRate:{black:0,white:0},analysis:{type:"none"},historyEvent:null
 };
 
 const FALLBACK_DESIGN={
@@ -62,6 +62,7 @@ const els={
   blackScore:document.getElementById("blackScore"),whiteScore:document.getElementById("whiteScore"),
   winBarBlack:document.getElementById("winBarBlack"),winBarWhite:document.getElementById("winBarWhite"),
   gammonBarBlack:document.getElementById("gammonBarBlack"),gammonBarWhite:document.getElementById("gammonBarWhite"),
+  backgammonBarBlack:document.getElementById("backgammonBarBlack"),backgammonBarWhite:document.getElementById("backgammonBarWhite"),
   blackRateText:document.getElementById("blackRateText"),whiteRateText:document.getElementById("whiteRateText"),
   blackGammonText:document.getElementById("blackGammonText"),whiteGammonText:document.getElementById("whiteGammonText"),
   bigComebackText:document.getElementById("bigComebackText"),
@@ -751,14 +752,23 @@ function render(){
   const s=currentState(),b=Number(s.winRate?.black??50),w=Number(s.winRate?.white??(100-b));renderMeta(s);
   const gb=Math.max(0,Math.min(b,Number(s.gammonRate?.black??0)));
   const gw=Math.max(0,Math.min(w,Number(s.gammonRate?.white??0)));
+  const rawBgb=Math.max(0,Number(s.backgammonRate?.black??0));
+  const rawBgw=Math.max(0,Number(s.backgammonRate?.white??0));
+  const bgb=Math.max(0,Math.min(gb,rawBgb));
+  const bgw=Math.max(0,Math.min(gw,rawBgw));
+  const showBgb=bgb>=5;
+  const showBgw=bgw>=5;
   const displayBlack=Math.round(b),displayWhite=100-displayBlack;
   els.winBarBlack.style.width=`${b}%`;els.winBarWhite.style.width=`${w}%`;
   els.winBarBlack.classList.toggle("is-zero",b<=0);
   els.winBarWhite.classList.toggle("is-zero",w<=0);
   els.gammonBarBlack.style.width=`${gb}%`;els.gammonBarWhite.style.width=`${gw}%`;
   els.gammonBarBlack.classList.toggle("is-zero",gb<=0);els.gammonBarWhite.classList.toggle("is-zero",gw<=0);
+  els.backgammonBarBlack.style.width=`${showBgb?bgb:0}%`;els.backgammonBarWhite.style.width=`${showBgw?bgw:0}%`;
+  els.backgammonBarBlack.classList.toggle("is-zero",!showBgb);els.backgammonBarWhite.classList.toggle("is-zero",!showBgw);
   els.blackRateText.textContent=`${displayBlack}%`;els.whiteRateText.textContent=`${displayWhite}%`;
-  els.blackGammonText.textContent=`G ${Math.round(gb)}%`;els.whiteGammonText.textContent=`G ${Math.round(gw)}%`;
+  els.blackGammonText.textContent=showBgb?`G ${Math.round(gb)}%　BG ${Math.round(bgb)}%`:`G ${Math.round(gb)}%`;
+  els.whiteGammonText.textContent=showBgw?`G ${Math.round(gw)}%　BG ${Math.round(bgw)}%`:`G ${Math.round(gw)}%`;
   renderBigComeback(s);
   renderBoardDimOverlay(s);
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
