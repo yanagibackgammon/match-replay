@@ -303,6 +303,32 @@ html,body{
 }
 
 .winrate-fill{height:100%;transition:width 1.75s cubic-bezier(.22,.61,.36,1);will-change:width;box-sizing:border-box;flex:0 0 auto}
+.winrate-guide{
+  position:absolute;
+  top:0;
+  bottom:0;
+  width:0;
+  z-index:4;
+  pointer-events:none;
+}
+.guide-spike{
+  position:absolute;
+  left:50%;
+  width:0;
+  height:0;
+  transform:translateX(-50%);
+  border-left:10px solid transparent;
+  border-right:10px solid transparent;
+}
+.guide-spike.top{
+  top:0;
+  border-top:14px solid #111;
+}
+.guide-spike.bottom{
+  bottom:0;
+  border-bottom:14px solid #111;
+}
+
 .winrate-fill.is-zero{width:0!important;border-width:0!important}
 .winrate-fill.black{background:var(--win-player1)}
 .winrate-fill.white{background:var(--win-player2);border-left:4px solid #111}
