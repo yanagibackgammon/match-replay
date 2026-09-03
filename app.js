@@ -95,7 +95,7 @@ function calculatePips(position){
 function drawPipInfo(position){
   pipInfoG.innerHTML="";
   const pips=calculatePips(position);
-  for(const [y,text] of [[18,String(pips.white)],[540,String(pips.black)]]){
+  for(const [y,text] of [[18,`(${pips.white})`],[540,`(${pips.black})`]]){
     const t=document.createElementNS("http://www.w3.org/2000/svg","text");
     t.setAttribute("x","350.5");
     t.setAttribute("y",String(y));
@@ -477,11 +477,11 @@ function renderMeta(state){
     if(gainNow){
       const oldScore=Number(value)||0;
       const newScore=oldScore+gain;
-      const key=`${state?.gameNumber||0}-${index}-${oldScore}-${newScore}`;
+      const key=`${state?.gameNumber||0}-${index}-${oldScore}-${gain}-${newScore}`;
       if(el.dataset.scoreGainKey!==key){
         el.dataset.scoreGainKey=key;
         el.classList.add('is-score-transition');
-        el.innerHTML=`<span class="score-number score-number-old">${oldScore}</span><span class="score-number score-number-new">${newScore}</span>`;
+        el.innerHTML=`<span class="score-number score-number-old">${oldScore}</span><span class="score-number score-number-gain">＋${gain}</span><span class="score-number score-number-new">${newScore}</span>`;
       }
     }else{
       el.dataset.scoreGainKey='';

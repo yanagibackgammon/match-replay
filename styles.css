@@ -262,15 +262,23 @@ html,body{
   align-items:center;
   justify-content:center;
 }
-.score-value.is-score-transition .score-number-old{animation:scoreOldExit 5s cubic-bezier(.18,.72,.22,1) both}
-.score-value.is-score-transition .score-number-new{animation:scoreNewEnter 5s cubic-bezier(.18,.72,.22,1) both}
-@keyframes scoreOldExit{
-  0%,12%{transform:translateY(0);opacity:1}
-  34%,100%{transform:translateY(-78px);opacity:0}
+.score-value.is-score-transition .score-number-old{animation:scoreOldTravel 5s cubic-bezier(.18,.72,.22,1) both}
+.score-value.is-score-transition .score-number-gain{animation:scoreGainTravel 5s cubic-bezier(.18,.72,.22,1) both;color:#18b86b;font-size:72px}
+.score-value.is-score-transition .score-number-new{animation:scoreNewTravel 5s cubic-bezier(.18,.72,.22,1) both}
+@keyframes scoreOldTravel{
+  0%{transform:translateY(92px);opacity:0}
+  5%,14%{transform:translateY(0);opacity:1}
+  23%,100%{transform:translateY(-92px);opacity:0}
 }
-@keyframes scoreNewEnter{
-  0%,22%{transform:translateY(78px);opacity:0}
-  44%,100%{transform:translateY(0);opacity:1}
+@keyframes scoreGainTravel{
+  0%,18%{transform:translateY(92px);opacity:0}
+  25%,82%{transform:translateY(0);opacity:1}
+  91%,100%{transform:translateY(-92px);opacity:0}
+}
+@keyframes scoreNewTravel{
+  0%,84%{transform:translateY(92px);opacity:0}
+  91%,95%{transform:translateY(0);opacity:1}
+  100%{transform:translateY(-92px);opacity:0}
 }
 
 .eval-wrap{
@@ -662,12 +670,12 @@ html,body{
 .joker-glow.plus{animation:jokerPulseGold 1.15s ease-in-out infinite}
 .joker-glow.minus{animation:jokerPulseRed 1.15s ease-in-out infinite}
 @keyframes jokerPulseGold{
-  0%,100%{filter:drop-shadow(0 0 3px rgba(213,166,46,.30)) drop-shadow(0 0 7px rgba(213,166,46,.26))}
-  50%{filter:drop-shadow(0 0 8px rgba(213,166,46,.94)) drop-shadow(0 0 16px rgba(213,166,46,.70)) drop-shadow(0 0 24px rgba(213,166,46,.40))}
+  0%,100%{filter:drop-shadow(0 0 2px rgba(213,166,46,.28)) drop-shadow(0 0 5px rgba(213,166,46,.22))}
+  50%{filter:drop-shadow(0 0 5px rgba(213,166,46,.92)) drop-shadow(0 0 10px rgba(213,166,46,.58)) drop-shadow(0 0 14px rgba(213,166,46,.28))}
 }
 @keyframes jokerPulseRed{
-  0%,100%{filter:drop-shadow(0 0 3px rgba(196,59,59,.28)) drop-shadow(0 0 7px rgba(196,59,59,.24))}
-  50%{filter:drop-shadow(0 0 8px rgba(196,59,59,.90)) drop-shadow(0 0 16px rgba(196,59,59,.64)) drop-shadow(0 0 24px rgba(196,59,59,.36))}
+  0%,100%{filter:drop-shadow(0 0 2px rgba(196,59,59,.26)) drop-shadow(0 0 5px rgba(196,59,59,.22))}
+  50%{filter:drop-shadow(0 0 5px rgba(196,59,59,.88)) drop-shadow(0 0 10px rgba(196,59,59,.56)) drop-shadow(0 0 14px rgba(196,59,59,.30))}
 }
 
 #dice.is-muted{
@@ -684,22 +692,24 @@ html,body{
 #dice.is-joker-glow{animation:boardJokerPulseGold 1.15s ease-in-out infinite}
 #dice.is-antijoker-glow{animation:boardJokerPulseRed 1.15s ease-in-out infinite}
 @keyframes boardJokerPulseGold{
-  0%,100%{filter:drop-shadow(0 0 4px rgba(213,166,46,.34)) drop-shadow(0 0 9px rgba(213,166,46,.28))}
-  50%{filter:drop-shadow(0 0 10px rgba(213,166,46,1)) drop-shadow(0 0 20px rgba(213,166,46,.82)) drop-shadow(0 0 30px rgba(213,166,46,.48))}
+  0%,100%{filter:drop-shadow(0 0 3px rgba(213,166,46,.30)) drop-shadow(0 0 6px rgba(213,166,46,.24))}
+  50%{filter:drop-shadow(0 0 6px rgba(213,166,46,.96)) drop-shadow(0 0 12px rgba(213,166,46,.68)) drop-shadow(0 0 18px rgba(213,166,46,.34))}
 }
 @keyframes boardJokerPulseRed{
-  0%,100%{filter:drop-shadow(0 0 4px rgba(196,59,59,.32)) drop-shadow(0 0 9px rgba(196,59,59,.26))}
-  50%{filter:drop-shadow(0 0 10px rgba(196,59,59,.98)) drop-shadow(0 0 20px rgba(196,59,59,.78)) drop-shadow(0 0 30px rgba(196,59,59,.44))}
+  0%,100%{filter:drop-shadow(0 0 3px rgba(196,59,59,.28)) drop-shadow(0 0 6px rgba(196,59,59,.24))}
+  50%{filter:drop-shadow(0 0 6px rgba(196,59,59,.94)) drop-shadow(0 0 12px rgba(196,59,59,.64)) drop-shadow(0 0 18px rgba(196,59,59,.36))}
 }
 @media (prefers-reduced-motion:reduce){
-  .joker-glow.plus{animation:none;filter:drop-shadow(0 0 9px rgba(213,166,46,.92)) drop-shadow(0 0 18px rgba(213,166,46,.40))}
-  .joker-glow.minus{animation:none;filter:drop-shadow(0 0 9px rgba(196,59,59,.9)) drop-shadow(0 0 18px rgba(196,59,59,.36))}
-  #dice.is-joker-glow{animation:none;filter:drop-shadow(0 0 12px rgba(213,166,46,.92)) drop-shadow(0 0 24px rgba(213,166,46,.46))}
-  #dice.is-antijoker-glow{animation:none;filter:drop-shadow(0 0 12px rgba(196,59,59,.9)) drop-shadow(0 0 24px rgba(196,59,59,.42))}
+  .joker-glow.plus{animation:none;filter:drop-shadow(0 0 6px rgba(213,166,46,.88)) drop-shadow(0 0 10px rgba(213,166,46,.28))}
+  .joker-glow.minus{animation:none;filter:drop-shadow(0 0 6px rgba(196,59,59,.86)) drop-shadow(0 0 10px rgba(196,59,59,.26))}
+  #dice.is-joker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(213,166,46,.88)) drop-shadow(0 0 12px rgba(213,166,46,.30))}
+  #dice.is-antijoker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(196,59,59,.86)) drop-shadow(0 0 12px rgba(196,59,59,.28))}
   .big-comeback.is-active{animation:none;opacity:1;transform:translate(-50%,-8px)}
   .score-value.is-score-transition .score-number-old,
+  .score-value.is-score-transition .score-number-gain,
   .score-value.is-score-transition .score-number-new{animation:none}
-  .score-value.is-score-transition .score-number-old{display:none}
+  .score-value.is-score-transition .score-number-old,
+  .score-value.is-score-transition .score-number-gain{display:none}
 }
 
 .analysis-moves{
