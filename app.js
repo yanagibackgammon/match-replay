@@ -42,10 +42,14 @@ let index=0,meta={...defaultMeta},matchData={states:[emptyState]},loadedMatchFil
 let adFiles=[],adIndex=0,adTimer=null;
 let lastBigComebackKey="";
 let lastBoardDimKey="";
-const BIG_COMEBACK_SPEED=3000;
+const BIG_COMEBACK_SPEED=5000;
 const BIG_COMEBACK_DIM_SPEED=5000;
 let pagesTimer=null;
 const PLAYBACK_SPEED=3000;
+const PRE_ROLL_SPEED=5000;
+const ROLL_SPEED=5000;
+const CANDIDATE_SPEED=5000;
+const MOVE_SPEED=5000;
 const SCORE_SEQUENCE_SPEED=5000;
 let pagesState={index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED,mode:"auto"};
 const isLocal=()=>location.hostname==="localhost"||location.hostname==="127.0.0.1";
@@ -887,13 +891,16 @@ function playbackDelayForIndex(i){
   const state=matchData.states[Math.max(0,Math.min(Number(i)||0,matchData.states.length-1))];
   if(state?.phase==="gameEnd" || state?.phase==="matchStart" || state?.phase==="matchEnd") return SCORE_SEQUENCE_SPEED;
   if(state?.phase==="bigComebackIntro") return BIG_COMEBACK_DIM_SPEED;
-  if(state?.phase==="roll" && (state?.rollNotice==="comeback" || state?.rollNotice==="nice")) return BIG_COMEBACK_SPEED;
+  if(state?.phase==="preRoll") return PRE_ROLL_SPEED;
+  if(state?.phase==="roll") return ROLL_SPEED;
   const segments=Array.isArray(state?.moveAnimation?.segments)?state.moveAnimation.segments:[];
-  if(segments.length){
-    const hitCount=segments.reduce((n,s)=>n+(s?.hit?1:0),0);
-    const animationMs=(segments.length+hitCount)*CHECKER_MOVE_DURATION+250;
-    return Math.max(PLAYBACK_SPEED,animationMs);
+  const hitCount=segments.reduce((n,s)=>n+(s?.hit?1:0),0);
+  const animationMs=segments.length?(segments.length+hitCount)*CHECKER_MOVE_DURATION+250:0;
+  if(state?.phase==="analysis" || (state?.phase==="candidates"&&state?.forcedMove)){
+    return Math.max(MOVE_SPEED,animationMs);
   }
+  if(state?.phase==="candidates") return CANDIDATE_SPEED;
+  if(segments.length) return Math.max(PLAYBACK_SPEED,animationMs);
   return PLAYBACK_SPEED;
 }
 function stopPagesTimer(){if(pagesTimer){clearTimeout(pagesTimer);pagesTimer=null;}}

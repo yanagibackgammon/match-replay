@@ -516,6 +516,15 @@ function classifyRollLuck(analysis,dice){
   if((analysis?.antiJoker||[]).some(d=>rollKey(d)===key))return'antiJoker';
   return null;
 }
+function hasRollAlerts(analysis){
+  return Boolean((analysis?.joker||[]).length || (analysis?.antiJoker||[]).length);
+}
+function shouldShowPreRoll(analysis,upcomingDice=null){
+  // 予告内容はあくまで盤面予測だけで作る。
+  // 表示するのは候補が存在する場合、または次の実ロールがその盤面予測候補に該当する場合のみ。
+  // 後者は候補自体を書き換えず、表示シーケンスの有無だけに使用する。
+  return hasRollAlerts(analysis) || Boolean(classifyRollLuck(analysis,upcomingDice));
+}
 function cubeValueFromCode(code){
   if(!code) return 1;
   return 2 ** Math.abs(code);
@@ -943,11 +952,14 @@ function buildTimeline(parsed, sourceFile){
         // 初手直前の No Double 解析レコードから preRoll を生成しない。
         if(gameHasCheckerMove){
           const rollAnalysis=analyzeJokerRolls(position,r.activePlayer,{winRate,gammonRate,backgammonRate});
-          pushState({
-            phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
-            position,dice:null,cube,winRate,gammonRate,backgammonRate,
-            analysis:{type:'jokers',...rollAnalysis},historyEvent:null
-          });
+          const preRollAnalysis={type:'jokers',...rollAnalysis};
+          if(shouldShowPreRoll(preRollAnalysis)){
+            pushState({
+              phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
+              position,dice:null,cube,winRate,gammonRate,backgammonRate,
+              analysis:preRollAnalysis,historyEvent:null
+            });
+          }
         }
         lastCube = cube;
       }
@@ -1009,13 +1021,16 @@ function buildTimeline(parsed, sourceFile){
           // 直後に実際に出た目のerrLuckで候補を上書きしない。
         }else{
           const rollAnalysis=analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate,backgammonRate:lastBackgammonRate});
-          pushState({
-            phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
-            position:beforePosition,dice:null,cube,winRate:{black:lastBlackRate,white:100-lastBlackRate},
-            gammonRate:{...lastGammonRate},backgammonRate:{...lastBackgammonRate},
-            analysis:{type:'jokers',...rollAnalysis},historyEvent:null
-          });
-          previous=states[states.length-1];
+          const preRollAnalysis={type:'jokers',...rollAnalysis};
+          if(shouldShowPreRoll(preRollAnalysis,r.dice)){
+            pushState({
+              phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
+              position:beforePosition,dice:null,cube,winRate:{black:lastBlackRate,white:100-lastBlackRate},
+              gammonRate:{...lastGammonRate},backgammonRate:{...lastBackgammonRate},
+              analysis:preRollAnalysis,historyEvent:null
+            });
+            previous=states[states.length-1];
+          }
         }
       }
       // ロール後の光り方も、事前の盤面予測と同じ判定を使用する。
@@ -1071,19 +1086,21 @@ function buildTimeline(parsed, sourceFile){
         const candidateEquities=candidates.map(c=>Number(c.equity)).filter(Number.isFinite);
         const allCandidateEquitiesSame=candidates.length>1 && candidateEquities.length===candidates.length &&
           (Math.max(...candidateEquities)-Math.min(...candidateEquities)<=1e-6);
+        const allCandidatesWithin001=candidates.length>1 && candidateEquities.length===candidates.length &&
+          (Math.max(...candidateEquities)-Math.min(...candidateEquities)<=0.0100001);
         const sameEquityBearoff=allInHome(beforePosition,r.activePlayer) && allCandidateEquitiesSame;
-        const forcedMove = candidates.length <= 1 || diceMuted || sameEquityBearoff;
+        const forcedMove = candidates.length <= 1 || diceMuted || sameEquityBearoff || allCandidatesWithin001;
         if(forcedMove){
-          // 1通りしかないフォーストムーブに加え、ベアオフで全候補のエクイティが同一なら、
-          // 候補表示と選択確定を同一シーケンスにする。
+          // 全候補の評価値差が0.01以内なら候補一覧を省略し、実際の選択手をそのまま確定する。
+          // 従来のフォーストムーブ等は表示仕様を維持する。
           addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
           pushState({
             phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
             position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,backgammonRate:selectedBackgammonRate,luckKind,diceMuted,
-            analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
+            analysis:allCandidatesWithin001?{type:'none'}:{type:'moves',candidates,playedIndex:r.playedIndex},
             moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
             historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'},
-            forcedMove:true
+            forcedMove:true,autoSelectedNearEqual:allCandidatesWithin001
           });
         }else{
         pushState({

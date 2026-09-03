@@ -6,6 +6,10 @@ const { parseXgFile } = require("./scripts/xg-parser.cjs");
 
 const PORT = Number(process.env.PORT || 3000);
 const PLAYBACK_SPEED = 3000;
+const PRE_ROLL_SPEED = 5000;
+const ROLL_SPEED = 5000;
+const CANDIDATE_SPEED = 5000;
+const MOVE_SPEED = 5000;
 const SCORE_SEQUENCE_SPEED = 5000;
 const BIG_COMEBACK_DIM_SPEED = 5000;
 const CHECKER_MOVE_DURATION = 500;
@@ -217,12 +221,14 @@ function currentPlaybackDelay(){
     const current=data.states?.[state.index];
     if(current?.phase==="gameEnd" || current?.phase==="matchStart" || current?.phase==="matchEnd")return SCORE_SEQUENCE_SPEED;
     if(current?.phase==="bigComebackIntro")return BIG_COMEBACK_DIM_SPEED;
+    if(current?.phase==="preRoll")return PRE_ROLL_SPEED;
+    if(current?.phase==="roll")return ROLL_SPEED;
     const segments=Array.isArray(current?.moveAnimation?.segments)?current.moveAnimation.segments:[];
-    if(segments.length){
-      const hitCount=segments.reduce((n,s)=>n+(s?.hit?1:0),0);
-      const animationMs=(segments.length+hitCount)*CHECKER_MOVE_DURATION+250;
-      return Math.max(PLAYBACK_SPEED,animationMs);
-    }
+    const hitCount=segments.reduce((n,s)=>n+(s?.hit?1:0),0);
+    const animationMs=segments.length?(segments.length+hitCount)*CHECKER_MOVE_DURATION+250:0;
+    if(current?.phase==="analysis" || (current?.phase==="candidates"&&current?.forcedMove))return Math.max(MOVE_SPEED,animationMs);
+    if(current?.phase==="candidates")return CANDIDATE_SPEED;
+    if(segments.length)return Math.max(PLAYBACK_SPEED,animationMs);
     return PLAYBACK_SPEED;
   }catch{return PLAYBACK_SPEED;}
 }
