@@ -796,9 +796,9 @@ function buildTimeline(parsed, sourceFile){
         analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'none'},historyEvent:null
       });
       const forcedMove = candidates.length <= 1 || diceMuted;
-      addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
       if(forcedMove){
-        // フォースト／Cannot Move は、候補表示と選択・ムーブを同一シーケンスにする。
+        // フォースト／Cannot Move は候補表示自体が選択シーケンスなので、ここでPRを反映する。
+        addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
         pushState({
           phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,luckKind,diceMuted,
@@ -813,6 +813,8 @@ function buildTimeline(parsed, sourceFile){
           position:beforePosition,dice:r.dice,cube,winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,diceMuted,
           analysis:{type:'moves',candidates},historyEvent:null
         });
+        // 通常手は候補表示ではPRを変えず、実際の手を選択した瞬間に反映する。
+        addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
         pushState({
           phase:'analysis',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,luckKind,diceMuted,
@@ -852,7 +854,7 @@ function buildTimeline(parsed, sourceFile){
   }
 
   return {
-    schemaVersion:7,
+    schemaVersion:8,
     sourceFile,
     generatedAt:new Date().toISOString(),
     match:{...parsed.match, blackSourcePlayer:parsed.match.player1, whiteSourcePlayer:parsed.match.player2},
