@@ -468,7 +468,7 @@ html,body{
   white-space:nowrap;
 }
 
-.bar-rate-percent{font-size:.5em}
+.bar-rate-percent{font-size:.58em;line-height:1;align-self:flex-end;margin-bottom:12px}
 
 .bar-gammon-rate,
 .bar-backgammon-rate{
