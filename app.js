@@ -680,12 +680,33 @@ function renderAnalysis(a){
     };
     const orderedItems=(rolls,kind)=>{
       const keys=new Set((Array.isArray(rolls)?rolls:[]).map(key).filter(Boolean));
-      return rollOrder
-        .filter(dice=>keys.has(key(dice)))
-        .map(dice=>({kind,dice}));
+      const fullFaces=new Set();
+      for(let face=1;face<=6;face++){
+        const related=[1,2,3,4,5,6].map(other=>`${Math.max(face,other)}-${Math.min(face,other)}`);
+        if(related.every(k=>keys.has(k))) fullFaces.add(face);
+      }
+      const emittedFaces=new Set();
+      const items=[];
+      for(const dice of rollOrder){
+        const diceKey=key(dice);
+        if(!keys.has(diceKey)) continue;
+        const groupedFaces=[...fullFaces].filter(face=>dice.includes(face)&&!emittedFaces.has(face));
+        if(groupedFaces.length){
+          const face=groupedFaces.sort((a,b)=>b-a)[0];
+          emittedFaces.add(face);
+          items.push({kind,face,single:true});
+          continue;
+        }
+        if([...fullFaces].some(face=>dice.includes(face))) continue;
+        items.push({kind,dice,single:false});
+      }
+      return items;
     };
     const renderItem=item=>{
       const label=item.kind==="plus"?"チャンス！":"ピンチ！";
+      if(item.single){
+        return `<div class="joker-glow ${item.kind} is-single-face"><div class="joker-label">${label}</div><div class="single-die-block">${renderDie(item.face,activePlayer)}</div></div>`;
+      }
       return `<div class="joker-glow ${item.kind}"><div class="joker-label">${label}</div><div class="dice-pair-block">${renderDie(item.dice[0],activePlayer)}${renderDie(item.dice[1],activePlayer)}</div></div>`;
     };
     // 表示順は固定：チャンスを先に、その後にピンチ。
