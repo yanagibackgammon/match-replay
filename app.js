@@ -772,10 +772,15 @@ function render(){
   els.backgammonBarBlack.style.width=`${showBgb?bgb:0}%`;els.backgammonBarWhite.style.width=`${showBgw?bgw:0}%`;
   els.backgammonBarBlack.classList.toggle("is-zero",!showBgb);els.backgammonBarWhite.classList.toggle("is-zero",!showBgw);
   els.blackRateText.textContent=`${displayBlack}%`;els.whiteRateText.textContent=`${displayWhite}%`;
-  els.blackGammonText.textContent=`G ${Math.round(gb)}%`;
-  els.whiteGammonText.textContent=`G ${Math.round(gw)}%`;
-  if(els.blackBackgammonText)els.blackBackgammonText.textContent=`BG ${Math.round(bgb)}%`;
-  if(els.whiteBackgammonText)els.whiteBackgammonText.textContent=`BG ${Math.round(bgw)}%`;
+  const blackGText=`G ${Math.round(gb)}%`;
+  const whiteGText=`G ${Math.round(gw)}%`;
+  const blackBgText=showBgb?`BG ${Math.round(bgb)}%`:"";
+  const whiteBgText=showBgw?`BG ${Math.round(bgw)}%`:"";
+  // G率とBG率は半角スペース1つで連結。選手2は右端側から「勝率 → G率 → BG率」になるよう逆順で描画する。
+  els.blackGammonText.textContent=blackBgText?`${blackGText} ${blackBgText}`:blackGText;
+  els.whiteGammonText.textContent=whiteBgText?`${whiteBgText} ${whiteGText}`:whiteGText;
+  if(els.blackBackgammonText)els.blackBackgammonText.textContent="";
+  if(els.whiteBackgammonText)els.whiteBackgammonText.textContent="";
   renderBigComeback(s);
   renderBoardDimOverlay(s);
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);

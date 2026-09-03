@@ -458,8 +458,7 @@ html,body{
 .bar-rate-left{left:18px;color:#fff}
 .bar-rate-right{right:18px;color:#fff}
 
-.bar-gammon-rate,
-.bar-backgammon-rate{
+.bar-gammon-rate{
   position:absolute;
   bottom:8px;
   z-index:3;
@@ -473,12 +472,10 @@ html,body{
   text-shadow:0 2px 2px rgba(0,0,0,.38);
   white-space:nowrap;
 }
-/* 選手1：左から 勝率 → G率 → BG率 */
+/* G率とBG率は同一行内で半角スペース1つに連結 */
 .bar-gammon-rate-left{left:205px}
-.bar-backgammon-rate-left{left:292px}
-/* 選手2：右から 勝率 → G率 → BG率 */
 .bar-gammon-rate-right{right:205px}
-.bar-backgammon-rate-right{right:292px}
+.bar-backgammon-rate{display:none}
 
 .big-comeback{
   position:absolute;
