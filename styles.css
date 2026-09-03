@@ -67,58 +67,65 @@ html,body{
   grid-template-rows:96px 144px;
   overflow:hidden;
   background:
-    radial-gradient(circle at 50% -18%,rgba(255,255,255,.18) 0%,rgba(255,255,255,.045) 30%,transparent 56%),
-    radial-gradient(circle at 14% 6%,rgba(255,255,255,.10) 0%,transparent 34%),
-    radial-gradient(circle at 86% 6%,rgba(255,255,255,.10) 0%,transparent 34%),
+    radial-gradient(circle at 50% -18%,rgba(255,255,255,.14) 0%,rgba(255,255,255,.04) 28%,transparent 54%),
     linear-gradient(180deg,
-      color-mix(in srgb,var(--theme-color) 78%,#111111) 0%,
-      color-mix(in srgb,var(--theme-color) 84%,#111111) 32%,
-      color-mix(in srgb,var(--theme-color) 92%,#111111) 63%,
+      color-mix(in srgb,var(--theme-color) 80%,#111111) 0%,
+      color-mix(in srgb,var(--theme-color) 86%,#111111) 50%,
       color-mix(in srgb,var(--theme-color) 82%,#111111) 100%);
-  border-top:1px solid rgba(255,255,255,.18);
-  border-bottom:4px solid color-mix(in srgb,var(--theme-color) 84%,#ffffff);
+  border-top:1px solid rgba(255,255,255,.14);
+  border-bottom:1px solid rgba(255,255,255,.16);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.12),
-    inset 0 -1px 0 rgba(0,0,0,.16),
+    inset 0 1px 0 rgba(255,255,255,.10),
+    inset 0 -1px 0 rgba(0,0,0,.12),
     0 8px 22px rgba(0,0,0,.14);
 }
 .top-area::before{
   content:"";
   position:absolute;
   z-index:0;
-  inset:0;
+  left:-120px;
+  top:-54px;
+  width:900px;
+  height:360px;
   pointer-events:none;
   background:
-    repeating-linear-gradient(118deg,
-      transparent 0 180px,
-      color-mix(in srgb,var(--theme-color) 74%,#ffffff) 180px 240px,
-      color-mix(in srgb,var(--theme-color) 84%,#ffffff) 240px 310px,
-      transparent 310px 470px),
-    repeating-linear-gradient(-118deg,
-      transparent 0 180px,
-      color-mix(in srgb,var(--theme-color) 74%,#ffffff) 180px 240px,
-      color-mix(in srgb,var(--theme-color) 84%,#ffffff) 240px 310px,
-      transparent 310px 470px),
-    linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.02) 34%,transparent 100%);
-  opacity:.16;
-  mix-blend-mode:screen;
+    radial-gradient(120% 104% at 0% 50%,
+      transparent 58%,
+      color-mix(in srgb,var(--theme-color) 60%,#ffffff) 58.8% 64.6%,
+      transparent 65.4%),
+    radial-gradient(108% 94% at 0% 52%,
+      transparent 67%,
+      color-mix(in srgb,var(--theme-color) 76%,#ffffff) 67.8% 72.2%,
+      transparent 73%),
+    radial-gradient(94% 82% at 2% 56%,
+      transparent 75%,
+      color-mix(in srgb,var(--theme-color) 90%,#111111) 75.8% 79.4%,
+      transparent 80.2%);
+  opacity:.30;
 }
 .top-area::after{
   content:"";
   position:absolute;
   z-index:0;
-  inset:0;
+  right:-120px;
+  top:-54px;
+  width:900px;
+  height:360px;
   pointer-events:none;
   background:
-    repeating-linear-gradient(118deg,
-      transparent 0 260px,
-      color-mix(in srgb,var(--theme-color) 90%,#111111) 260px 340px,
-      transparent 340px 520px),
-    repeating-linear-gradient(-118deg,
-      transparent 0 260px,
-      color-mix(in srgb,var(--theme-color) 90%,#111111) 260px 340px,
-      transparent 340px 520px);
-  opacity:.20;
+    radial-gradient(120% 104% at 100% 50%,
+      transparent 58%,
+      color-mix(in srgb,var(--theme-color) 60%,#ffffff) 58.8% 64.6%,
+      transparent 65.4%),
+    radial-gradient(108% 94% at 100% 52%,
+      transparent 67%,
+      color-mix(in srgb,var(--theme-color) 76%,#ffffff) 67.8% 72.2%,
+      transparent 73%),
+    radial-gradient(94% 82% at 98% 56%,
+      transparent 75%,
+      color-mix(in srgb,var(--theme-color) 90%,#111111) 75.8% 79.4%,
+      transparent 80.2%);
+  opacity:.30;
 }
 
 .headline-row{
@@ -132,21 +139,7 @@ html,body{
   gap:22px;
   padding:0 30px;
   overflow:hidden;
-  background:
-    repeating-linear-gradient(118deg,
-      transparent 0 210px,
-      rgba(255,255,255,.045) 210px 252px,
-      transparent 252px 420px),
-    repeating-linear-gradient(-118deg,
-      transparent 0 210px,
-      rgba(255,255,255,.045) 210px 252px,
-      transparent 252px 420px),
-    linear-gradient(90deg,
-      color-mix(in srgb,var(--theme-color) 70%,#111111) 0%,
-      color-mix(in srgb,var(--theme-color) 88%,#111111) 28%,
-      color-mix(in srgb,var(--theme-color) 92%,#111111) 50%,
-      color-mix(in srgb,var(--theme-color) 88%,#111111) 72%,
-      color-mix(in srgb,var(--theme-color) 70%,#111111) 100%);
+  background:transparent;
 }
 .headline-row::before{
   content:"";
@@ -156,15 +149,8 @@ html,body{
   bottom:0;
   height:2px;
   pointer-events:none;
-  background:linear-gradient(90deg,
-    transparent 0%,
-    rgba(255,255,255,.14) 8%,
-    color-mix(in srgb,var(--theme-color) 40%,#ffffff) 28%,
-    rgba(255,255,255,.56) 50%,
-    color-mix(in srgb,var(--theme-color) 40%,#ffffff) 72%,
-    rgba(255,255,255,.14) 92%,
-    transparent 100%);
-  box-shadow:0 1px 0 rgba(255,255,255,.26);
+  background:none;
+  box-shadow:none;
 }
 .headline-row::after{content:none}
 
@@ -250,17 +236,7 @@ html,body{
   gap:22px;
   padding:4px 30px 0;
   overflow:hidden;
-  background:
-    repeating-linear-gradient(118deg,
-      transparent 0 260px,
-      rgba(255,255,255,.022) 260px 304px,
-      transparent 304px 520px),
-    repeating-linear-gradient(-118deg,
-      transparent 0 260px,
-      rgba(255,255,255,.022) 260px 304px,
-      transparent 304px 520px),
-    linear-gradient(180deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,0) 34%,transparent 100%),
-    linear-gradient(90deg,rgba(255,255,255,.04) 0%,transparent 15%,transparent 85%,rgba(0,0,0,.03) 100%);
+  background:transparent;
 }
 .scorebar-row::before{
   content:"";
@@ -270,7 +246,7 @@ html,body{
   bottom:11px;
   height:1px;
   pointer-events:none;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12) 18%,rgba(255,255,255,.28) 50%,rgba(255,255,255,.12) 82%,transparent);
+  background:none;
 }
 .scorebar-row::after{
   content:"";
@@ -281,9 +257,9 @@ html,body{
   height:58px;
   pointer-events:none;
   border-radius:999px;
-  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.10) 20%,rgba(255,255,255,.24) 50%,rgba(255,255,255,.10) 80%,transparent 100%);
-  filter:blur(10px);
-  opacity:.52;
+  background:none;
+  filter:none;
+  opacity:0;
 }
 
 .match-note{
