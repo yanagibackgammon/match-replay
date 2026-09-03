@@ -50,6 +50,7 @@ const PRE_ROLL_SPEED=5000;
 const ROLL_SPEED=5000;
 const CANDIDATE_SPEED=5000;
 const MOVE_SPEED=5000;
+const CUBE_SPEED=5000;
 const SCORE_SEQUENCE_SPEED=5000;
 let pagesState={index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED,mode:"auto"};
 const isLocal=()=>location.hostname==="localhost"||location.hostname==="127.0.0.1";
@@ -327,7 +328,7 @@ async function runCheckerAnimation(state,key){
   drawCheckers(state.position);
 }
 function renderAnimatedCheckers(state){
-  const eligible=(state?.phase==="analysis"||(state?.phase==="candidates"&&state?.forcedMove))&&state?.moveAnimation&&Array.isArray(state.moveAnimation.segments)&&state.moveAnimation.segments.length>0;
+  const eligible=(state?.phase==="analysis"||(state?.phase==="candidates"&&state?.forcedMove)||(state?.phase==="roll"&&state?.noContactCombined))&&state?.moveAnimation&&Array.isArray(state.moveAnimation.segments)&&state.moveAnimation.segments.length>0;
   const key=`${loadedMatchFile}|${index}`;
   if(!eligible){
     if(moveAnimationRunning)cancelCheckerAnimation();
@@ -892,8 +893,14 @@ function playbackDelayForIndex(i){
   if(state?.phase==="gameEnd" || state?.phase==="matchStart" || state?.phase==="matchEnd") return SCORE_SEQUENCE_SPEED;
   if(state?.phase==="bigComebackIntro") return BIG_COMEBACK_DIM_SPEED;
   if(state?.phase==="preRoll") return PRE_ROLL_SPEED;
-  if(state?.phase==="roll") return ROLL_SPEED;
+  if(["cubeOffer","cubeOfferSelect","cubeResponse","cubeResponseSelect"].includes(state?.phase)) return CUBE_SPEED;
   const segments=Array.isArray(state?.moveAnimation?.segments)?state.moveAnimation.segments:[];
+  if(state?.phase==="roll"&&state?.noContactCombined){
+    const hitCount=segments.reduce((n,s)=>n+(s?.hit?1:0),0);
+    const animationMs=segments.length?(segments.length+hitCount)*CHECKER_MOVE_DURATION+250:0;
+    return Math.max(ROLL_SPEED,animationMs);
+  }
+  if(state?.phase==="roll") return ROLL_SPEED;
   const hitCount=segments.reduce((n,s)=>n+(s?.hit?1:0),0);
   const animationMs=segments.length?(segments.length+hitCount)*CHECKER_MOVE_DURATION+250:0;
   if(state?.phase==="analysis" || (state?.phase==="candidates"&&state?.forcedMove)){

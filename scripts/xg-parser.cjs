@@ -284,6 +284,19 @@ function allInHome(position,player){
   }
   return true;
 }
+function isNoContact(position){
+  // Player 1 moves 24 -> 1, Player 2 moves 1 -> 24.
+  // バー上に駒がなく、Player 1 の最後尾が Player 2 の最後尾を完全に通過したらノーコンタクト。
+  if(barCount(position,1)>0||barCount(position,-1)>0)return false;
+  let blackBack=0;
+  let whiteBack=25;
+  for(let p=1;p<=24;p++){
+    if(countChecker(position,1,p)>0)blackBack=Math.max(blackBack,p);
+    if(countChecker(position,-1,p)>0)whiteBack=Math.min(whiteBack,p);
+  }
+  if(blackBack===0||whiteBack===25)return true;
+  return blackBack<whiteBack;
+}
 function canBearOffFrom(position,player,point,die){
   if(!allInHome(position,player))return false;
   if(player===1){
@@ -1005,6 +1018,7 @@ function buildTimeline(parsed, sourceFile){
       const selectedPosition = afterPosition;
       const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode)};
       const diceMuted = r.move === 'Cannot Move' || r.move === 'Dance' || !(Array.isArray(r.appliedSegments) && r.appliedSegments.length);
+      const noContact = isNoContact(beforePosition);
 
       // 通常手は4段階で表示する。
       // 1) 手番交代 + Joker / Anti-Joker候補
@@ -1062,7 +1076,20 @@ function buildTimeline(parsed, sourceFile){
       }
 
       const cannotMove = r.move === 'Cannot Move' || r.move === 'Dance';
-      if(cannotMove){
+      if(noContact){
+        // ノーコンタクト後は「ロール・候補手表示・着手」を1つの5秒シーケンスに統合する。
+        // 候補手は省略せず、実際に選択された手を選択済みで表示する。
+        addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
+        pushState({
+          phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
+          position:selectedPosition,dice:r.dice,cube,
+          winRate:selectedWinRate,gammonRate:selectedGammonRate,backgammonRate:selectedBackgammonRate,luckKind,diceMuted,
+          analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
+          moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
+          historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'},
+          noContactCombined:true,bigComeback:isBigComeback,rollNotice
+        });
+      }else if(cannotMove){
         // Cannot Move はロール表示と候補選択を同一シーケンスにする。
         // ロールが出た瞬間に選択済み候補・履歴・PRまで同時に反映する。
         addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
