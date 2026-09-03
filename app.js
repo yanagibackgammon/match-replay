@@ -95,7 +95,7 @@ function calculatePips(position){
 function drawPipInfo(position){
   pipInfoG.innerHTML="";
   const pips=calculatePips(position);
-  for(const [y,text] of [[147,`PIP ${pips.white}`],[405,`PIP ${pips.black}`]]){
+  for(const [y,text] of [[18,String(pips.white)],[540,String(pips.black)]]){
     const t=document.createElementNS("http://www.w3.org/2000/svg","text");
     t.setAttribute("x","350.5");
     t.setAttribute("y",String(y));
