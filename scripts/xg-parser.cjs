@@ -379,8 +379,24 @@ function staticEquityProxy(position,player){
   return Math.max(-3,Math.min(3,0.008*pipAdv+0.16*offAdv+0.20*barAdv+0.035*homeAdv+0.012*blotAdv));
 }
 const jokerRollCache=new Map();
-function analyzeJokerRolls(position,activePlayer){
-  const key=positionKey(position,activePlayer);
+function isOutcomeLockedForJoker(context){
+  const black=Number(context?.winRate?.black);
+  const white=Number(context?.winRate?.white);
+  const blackG=Math.abs(Number(context?.gammonRate?.black)||0);
+  const whiteG=Math.abs(Number(context?.gammonRate?.white)||0);
+  const winLocked=(Number.isFinite(black)&&Number.isFinite(white)) && (black>=99.95||black<=0.05||white>=99.95||white<=0.05);
+  const gammonFlat=blackG<0.05&&whiteG<0.05;
+  return winLocked&&gammonFlat;
+}
+function analyzeJokerRolls(position,activePlayer,context=null){
+  // XGの実勝率がほぼ100/0（または0/100）で、双方のG率もほぼ0なら、
+  // 出目による実質的なエクイティ差はないものとして候補表示を抑止する。
+  // 簡易PIP評価がベアオフ枚数の差を「チャンス」と誤認するのを防ぐ。
+  if(isOutcomeLockedForJoker(context)){
+    return {joker:[],antiJoker:[],thresholdEquity:JOKER_EQUITY_THRESHOLD,averageEquityProxy:null,source:'xg-outcome-locked'};
+  }
+  const contextKey=context?`${Number(context?.winRate?.black??NaN).toFixed(3)}|${Number(context?.gammonRate?.black??0).toFixed(3)}|${Number(context?.gammonRate?.white??0).toFixed(3)}`:'na';
+  const key=`${positionKey(position,activePlayer)}|${contextKey}`;
   if(jokerRollCache.has(key))return jokerRollCache.get(key);
   const rolls=[];
   let weighted=0,totalWeight=0;
@@ -813,7 +829,7 @@ function buildTimeline(parsed, sourceFile){
         // 各ゲーム初手だけは opening roll 自体を手番開始シーケンスにするため、
         // 初手直前の No Double 解析レコードから preRoll を生成しない。
         if(gameHasCheckerMove){
-          const rollAnalysis=analyzeJokerRolls(position,r.activePlayer);
+          const rollAnalysis=analyzeJokerRolls(position,r.activePlayer,{winRate,gammonRate});
           pushState({
             phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
             position,dice:null,cube,winRate,gammonRate,
@@ -866,7 +882,7 @@ function buildTimeline(parsed, sourceFile){
       const isOpeningMove=!gameHasCheckerMove;
       let previous = states[states.length - 1];
       if(!isOpeningMove && !(previous && previous.phase === 'preRoll' && previous.gameNumber === gameNumber && previous.activePlayer === r.activePlayer)){
-        const rollAnalysis=analyzeJokerRolls(beforePosition,r.activePlayer);
+        const rollAnalysis=analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate});
         pushState({
           phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:null,cube,winRate:{black:lastBlackRate,white:100-lastBlackRate},
@@ -885,7 +901,7 @@ function buildTimeline(parsed, sourceFile){
       if(isBigComeback){
         const introAnalysis=isOpeningMove
           ? {type:'jokers',joker:[],antiJoker:[],openingRoll:true}
-          : (previous?.analysis?.type==='jokers' ? previous.analysis : {type:'jokers',...analyzeJokerRolls(beforePosition,r.activePlayer)});
+          : (previous?.analysis?.type==='jokers' ? previous.analysis : {type:'jokers',...analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate})});
         pushState({
           phase:'bigComebackIntro',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:null,cube,
@@ -993,7 +1009,7 @@ function buildTimeline(parsed, sourceFile){
   }
 
   return {
-    schemaVersion:15,
+    schemaVersion:16,
     sourceFile,
     generatedAt:new Date().toISOString(),
     match:{...parsed.match, blackSourcePlayer:parsed.match.player1, whiteSourcePlayer:parsed.match.player2},
