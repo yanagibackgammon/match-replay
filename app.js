@@ -659,45 +659,32 @@ function renderAnalysis(a){
   if(!a||a.type==="none"){els.analysisContent.innerHTML="";return;}
   if(a.type==="jokers"){
     const activePlayer=currentState().activePlayer===1?1:-1;
+    const rollOrder=[
+      [6,6],[6,5],[6,4],[6,3],[6,2],[6,1],
+      [5,5],[5,4],[5,3],[5,2],[5,1],
+      [4,4],[4,3],[4,2],[4,1],
+      [3,3],[3,2],[3,1],
+      [2,2],[2,1],[1,1]
+    ];
     const key=d=>{
       const x=Number(d?.[0]),y=Number(d?.[1]);
       return Number.isFinite(x)&&Number.isFinite(y)?`${Math.max(x,y)}-${Math.min(x,y)}`:"";
     };
-    const groupRolls=(rolls,kind)=>{
-      const list=Array.isArray(rolls)?rolls:[];
-      const keys=new Set(list.map(key).filter(Boolean));
-      const fullFaces=[];
-      for(let face=1;face<=6;face++){
-        const related=[1,2,3,4,5,6].map(other=>`${Math.max(face,other)}-${Math.min(face,other)}`);
-        const hasAllRelatedRolls=related.every(k=>keys.has(k));
-        const hasAllNonDoubleRelatedRolls=kind==="minus"&&related.filter(k=>k!==`${face}-${face}`).every(k=>keys.has(k));
-        if(hasAllRelatedRolls||hasAllNonDoubleRelatedRolls) fullFaces.push(face);
-      }
-      const covered=new Set();
-      for(const face of fullFaces){
-        for(let other=1;other<=6;other++) covered.add(`${Math.max(face,other)}-${Math.min(face,other)}`);
-      }
-      const singles=fullFaces.map(face=>({kind,face,single:true}));
-      const pairs=[];
-      for(const dice of list){
-        const k=key(dice);
-        if(!covered.has(k)) pairs.push({kind,dice,single:false});
-      }
-      return [...singles,...pairs];
+    const orderedItems=(rolls,kind)=>{
+      const keys=new Set((Array.isArray(rolls)?rolls:[]).map(key).filter(Boolean));
+      return rollOrder
+        .filter(dice=>keys.has(key(dice)))
+        .map(dice=>({kind,dice}));
     };
     const renderItem=item=>{
       const label=item.kind==="plus"?"チャンス！":"ピンチ！";
-      if(item.single){
-        return `<div class="joker-glow ${item.kind} is-single-face"><div class="joker-label">${label}</div><div class="single-die-block">${renderDie(item.face,activePlayer)}</div></div>`;
-      }
       return `<div class="joker-glow ${item.kind}"><div class="joker-label">${label}</div><div class="dice-pair-block">${renderDie(item.dice[0],activePlayer)}${renderDie(item.dice[1],activePlayer)}</div></div>`;
     };
-    // 特定の面を含む6通りすべてが Anti-Joker の場合は、
-    // その他を大量の「チャンス！」として見せず、その悪い面を大きな「ピンチ！」で優先表示する。
-    // 通常の Anti-Joker 候補は従来どおり候補エリアには表示しない。
-    const antiFaceItems=groupRolls(a.antiJoker,"minus").filter(item=>item.single);
-    const chanceItems=groupRolls(a.joker,"plus");
-    const items=[...antiFaceItems,...chanceItems];
+    // 表示順は固定：チャンスを先に、その後にピンチ。
+    // 各カテゴリ内は 66,65,64,63,62,61,55,...,21,11 の順で対象出目だけを表示する。
+    const chanceItems=orderedItems(a.joker,"plus");
+    const pinchItems=orderedItems(a.antiJoker,"minus");
+    const items=[...chanceItems,...pinchItems];
     els.analysisContent.innerHTML=`<div class="analysis-jokers${items.length>6?" is-many":""}">${items.map(renderItem).join("")}</div>`;return;
   }
   const selectedIndex=Number.isInteger(a.playedIndex)?a.playedIndex:-1;
