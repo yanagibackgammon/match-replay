@@ -40,6 +40,7 @@ let appliedDesignPresetId="";
 
 let index=0,meta={...defaultMeta},matchData={states:[emptyState]},loadedMatchFile="",socket=null;
 let adFiles=[],adIndex=0,adTimer=null;
+let lastBigComebackKey="";
 let pagesTimer=null;
 const PLAYBACK_SPEED=3000;
 const SCORE_SEQUENCE_SPEED=5000;
@@ -60,6 +61,7 @@ const els={
   gammonBarBlack:document.getElementById("gammonBarBlack"),gammonBarWhite:document.getElementById("gammonBarWhite"),
   blackRateText:document.getElementById("blackRateText"),whiteRateText:document.getElementById("whiteRateText"),
   blackGammonText:document.getElementById("blackGammonText"),whiteGammonText:document.getElementById("whiteGammonText"),
+  bigComebackText:document.getElementById("bigComebackText"),
   historyList:document.getElementById("historyList"),
   blackHistoryList:document.getElementById("blackHistoryList"),whiteHistoryList:document.getElementById("whiteHistoryList"),
   analysisContent:document.getElementById("analysisContent"),
@@ -654,6 +656,27 @@ function renderAnalysis(a){
   els.analysisContent.innerHTML=`<div class="analysis-moves">${rows.slice(0,5).join("")}</div>`;
 }
 function currentState(){return matchData.states[Math.max(0,Math.min(index,matchData.states.length-1))]||emptyState;}
+function renderBigComeback(state){
+  const el=els.bigComebackText;if(!el)return;
+  const previous=matchData.states[Math.max(0,index-1)];
+  const currentBlack=Number(state?.winRate?.black);
+  const previousBlack=Number(previous?.winRate?.black);
+  const isRoll=state?.phase==="roll";
+  const swing=isRoll&&Number.isFinite(currentBlack)&&Number.isFinite(previousBlack)?Math.abs(currentBlack-previousBlack):0;
+  if(swing<50){
+    lastBigComebackKey="";
+    el.classList.remove("is-active");
+    el.setAttribute("aria-hidden","true");
+    return;
+  }
+  const key=`${index}:${previousBlack.toFixed(4)}:${currentBlack.toFixed(4)}`;
+  el.setAttribute("aria-hidden","false");
+  if(key===lastBigComebackKey) return;
+  lastBigComebackKey=key;
+  el.classList.remove("is-active");
+  void el.offsetWidth;
+  el.classList.add("is-active");
+}
 function render(){
   const s=currentState(),b=Number(s.winRate?.black??50),w=Number(s.winRate?.white??(100-b));renderMeta(s);
   const gb=Math.max(0,Math.min(b,Number(s.gammonRate?.black??0)));
@@ -666,6 +689,7 @@ function render(){
   els.gammonBarBlack.classList.toggle("is-zero",gb<=0);els.gammonBarWhite.classList.toggle("is-zero",gw<=0);
   els.blackRateText.textContent=`${displayBlack}%`;els.whiteRateText.textContent=`${displayWhite}%`;
   els.blackGammonText.textContent=`G ${Math.round(gb)}%`;els.whiteGammonText.textContent=`G ${Math.round(gw)}%`;
+  renderBigComeback(s);
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
   els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);
   drawPointLabels(s.activePlayer);drawPipInfo(s.position);renderAnimatedCheckers(s);drawDice(s.dice,s.activePlayer,{luckKind:s.luckKind||null,muted:Boolean(s.diceMuted)});drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);

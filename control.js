@@ -368,11 +368,11 @@ async function applyMeta(){
 
 function connect(){
   if(!isLocalRuntime()){
-    connectionEl.textContent = "PAGES MODE";
-    connectionEl.className = "connection offline";
+    connectionEl.hidden = true;
     return;
   }
 
+  connectionEl.hidden = false;
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   socket = new WebSocket(`${protocol}//${location.host}/ws`);
 
