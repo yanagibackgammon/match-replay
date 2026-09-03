@@ -39,6 +39,7 @@ let index=0,meta={...defaultMeta},matchData={states:[emptyState]},loadedMatchFil
 let adFiles=[],adIndex=0,adTimer=null;
 let pagesTimer=null;
 const PLAYBACK_SPEED=3000;
+const SCORE_SEQUENCE_SPEED=5000;
 let pagesState={index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED,mode:"auto"};
 const isLocal=()=>location.hostname==="localhost"||location.hostname==="127.0.0.1";
 const pageChannel=(!isLocal()&&"BroadcastChannel" in window)?new BroadcastChannel("match-replay-control"):null;
@@ -299,15 +300,41 @@ function drawCube(cube){
 }
 function drawGameOverlay(state){
   gameOverlayG.innerHTML="";
-  if(!state || state.phase!=="gameStart") return;
+  if(!state) return;
+  if(state.phase==="gameStart"){
+    const r=document.createElementNS("http://www.w3.org/2000/svg","rect");
+    r.setAttribute("x","246");r.setAttribute("y","232");r.setAttribute("width","210");r.setAttribute("height","82");r.setAttribute("rx","14");
+    r.setAttribute("fill","rgba(0,0,0,.82)");r.setAttribute("stroke","#fff");r.setAttribute("stroke-width","2");
+    gameOverlayG.appendChild(r);
+    const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+    t.setAttribute("x","351");t.setAttribute("y","286");t.setAttribute("text-anchor","middle");t.setAttribute("fill","#fff");
+    t.setAttribute("font-family","Arial, Helvetica, sans-serif");t.setAttribute("font-size","42");t.setAttribute("font-weight","700");
+    t.textContent=`Game ${state.gameNumber || 1}`;gameOverlayG.appendChild(t);
+    return;
+  }
+  if(state.phase!=="gameEnd" || !state.scoreDelta) return;
+
+  const winner=state.scoreDelta.winner;
+  const points=Math.max(0,Number(state.scoreDelta.points)||0);
+  const cubeValue=Math.max(1,Number(state.cube?.value)||1);
+  const winMultiplier=Math.max(1,Math.min(3,Math.round(points/cubeValue)||1));
+  const winnerName=winner==="black"?meta.blackName:meta.whiteName;
+  const winLabel=winMultiplier>=3?"バックギャモン勝ち":winMultiplier===2?"ギャモン勝ち":"通常勝ち";
+
   const r=document.createElementNS("http://www.w3.org/2000/svg","rect");
-  r.setAttribute("x","246");r.setAttribute("y","232");r.setAttribute("width","210");r.setAttribute("height","82");r.setAttribute("rx","14");
-  r.setAttribute("fill","rgba(0,0,0,.82)");r.setAttribute("stroke","#fff");r.setAttribute("stroke-width","2");
+  r.setAttribute("x","116");r.setAttribute("y","165");r.setAttribute("width","470");r.setAttribute("height","216");r.setAttribute("rx","18");
+  r.setAttribute("fill","rgba(0,0,0,.84)");r.setAttribute("stroke","rgba(255,255,255,.9)");r.setAttribute("stroke-width","2");
   gameOverlayG.appendChild(r);
-  const t=document.createElementNS("http://www.w3.org/2000/svg","text");
-  t.setAttribute("x","351");t.setAttribute("y","286");t.setAttribute("text-anchor","middle");t.setAttribute("fill","#fff");
-  t.setAttribute("font-family","Arial, Helvetica, sans-serif");t.setAttribute("font-size","42");t.setAttribute("font-weight","700");
-  t.textContent=`Game ${state.gameNumber || 1}`;gameOverlayG.appendChild(t);
+
+  const addText=(y,text,size,color,weight=800)=>{
+    const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+    t.setAttribute("x","351");t.setAttribute("y",String(y));t.setAttribute("text-anchor","middle");t.setAttribute("fill",color);
+    t.setAttribute("font-family","Arial, Helvetica, sans-serif");t.setAttribute("font-size",String(size));t.setAttribute("font-weight",String(weight));
+    t.textContent=text;gameOverlayG.appendChild(t);
+  };
+  addText(220,winnerName,32,"#fff",800);
+  addText(300,`＋${points}`,72,"#18b86b",900);
+  addText(350,`${winLabel}×${cubeValue}倍`,28,"#fff",800);
 }
 trianglePoints();
 
@@ -655,17 +682,23 @@ function publishPagesState(extra={}){
   try{localStorage.setItem("matchReplayPlaybackState",JSON.stringify(payload));}catch{}
   if(pageChannel) pageChannel.postMessage(payload);
 }
-function stopPagesTimer(){if(pagesTimer){clearInterval(pagesTimer);pagesTimer=null;}}
+function playbackDelayForIndex(i){
+  const state=matchData.states[Math.max(0,Math.min(Number(i)||0,matchData.states.length-1))];
+  return state?.phase==="gameEnd"?SCORE_SEQUENCE_SPEED:PLAYBACK_SPEED;
+}
+function stopPagesTimer(){if(pagesTimer){clearTimeout(pagesTimer);pagesTimer=null;}}
 function startPagesTimer(){
   stopPagesTimer();
   if(!pagesState.playing || pagesState.mode!=="auto") return;
-  pagesTimer=setInterval(()=>{
+  pagesTimer=setTimeout(()=>{
+    pagesTimer=null;
     const last=Math.max(0,pagesState.totalSteps-1);
     if(pagesState.index>=last){
-      pagesState.index=last;pagesState.playing=false;stopPagesTimer();publishPagesState();return;
+      pagesState.index=last;pagesState.playing=false;publishPagesState();return;
     }
     pagesState.index+=1;index=pagesState.index;render();publishPagesState();
-  },PLAYBACK_SPEED);
+    startPagesTimer();
+  },playbackDelayForIndex(pagesState.index));
 }
 function handlePagesCommand(command,value){
   pagesState.speed=PLAYBACK_SPEED;

@@ -205,11 +205,11 @@ html,body{
   line-height:1;
 }
 .score-value.is-score-gain{color:#0d8b50}
-.score-value.score-gain-animate{animation:scoreGainRise 2.4s cubic-bezier(.18,.72,.22,1) both}
+.score-value.score-gain-animate{animation:scoreGainRise 5s cubic-bezier(.18,.72,.22,1) both}
 @keyframes scoreGainRise{
   0%{transform:translateY(76px);opacity:0}
-  18%{transform:translateY(0);opacity:1}
-  70%{transform:translateY(0);opacity:1}
+  12%{transform:translateY(0);opacity:1}
+  78%{transform:translateY(0);opacity:1}
   100%{transform:translateY(-76px);opacity:0}
 }
 
@@ -252,7 +252,7 @@ html,body{
 
 .bar-rate{
   position:absolute;
-  top:calc(50% - 10px);
+  top:calc(50% - 17px);
   transform:translateY(-50%);
   font-size:38px;
   font-weight:900;
@@ -512,15 +512,15 @@ html,body{
   height:285px;
   display:flex;
   flex-wrap:wrap;
-  align-content:flex-start;
-  align-items:flex-start;
+  align-content:center;
+  align-items:center;
   justify-content:center;
-  gap:12px 8px;
-  padding:14px 20px 0;
+  gap:8px 8px;
+  padding:0 20px;
   box-sizing:border-box;
   overflow:hidden;
 }
-.analysis-jokers.is-many{gap:12px 8px;padding:14px 20px 0}
+.analysis-jokers.is-many{gap:6px 8px;padding:0 20px}
 
 .joker-glow{
   position:relative;
@@ -528,7 +528,7 @@ html,body{
   align-items:center;
   justify-content:center;
   width:124px;
-  height:58px;
+  height:92px;
   padding:0;
   border:0;
   background:transparent;
@@ -538,13 +538,24 @@ html,body{
 .joker-label{
   position:absolute;
   left:50%;
-  top:-12px;
+  top:auto;
+  bottom:calc(50% + 35px);
+  width:124px;
   transform:translateX(-50%);
-  font-size:14px;
-  line-height:12px;
+  text-align:center;
+  font-size:26px;
+  line-height:28px;
   font-weight:900;
-  letter-spacing:.02em;
+  letter-spacing:-.06em;
   white-space:nowrap;
+}
+
+.analysis-jokers .joker-glow .dice-pair-block{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  flex-wrap:nowrap;
 }
 .joker-glow.plus .joker-label{color:#0d8b50}
 .joker-glow.minus .joker-label{color:#c43b3b}
@@ -742,4 +753,4 @@ html,body{
 .history-cell.history-blunder .history-move{color:#7a1fa2}
 .history-cell.history-error .history-cube-icon{color:#d01818;border-color:#d01818}
 .history-cell.history-blunder .history-cube-icon{color:#7a1fa2;border-color:#7a1fa2}
-.bar-rate{font-size:42px;top:42%}
+.bar-rate{font-size:42px;top:34%}

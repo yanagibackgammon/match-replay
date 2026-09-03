@@ -6,6 +6,7 @@ const { parseXgFile } = require("./scripts/xg-parser.cjs");
 
 const PORT = Number(process.env.PORT || 3000);
 const PLAYBACK_SPEED = 3000;
+const SCORE_SEQUENCE_SPEED = 5000;
 const ROOT = __dirname;
 const MATCH_DIR = path.join(ROOT, "matches");
 const ADS_DIR = path.join(ROOT, "ads");
@@ -206,15 +207,25 @@ function broadcastState(){
   const payload=JSON.stringify({type:"state",...state});
   for(const client of wss.clients) if(client.readyState===WebSocket.OPEN) client.send(payload);
 }
-function stopTimer(){if(timer){clearInterval(timer);timer=null;}}
+function currentPlaybackDelay(){
+  try{
+    const file=state.meta.matchFile;
+    if(!file)return PLAYBACK_SPEED;
+    const data=loadMatchData(file);
+    return data.states?.[state.index]?.phase==="gameEnd"?SCORE_SEQUENCE_SPEED:PLAYBACK_SPEED;
+  }catch{return PLAYBACK_SPEED;}
+}
+function stopTimer(){if(timer){clearTimeout(timer);timer=null;}}
 function startTimer(){
   stopTimer();
   if(!state.playing || state.mode!=="auto")return;
-  timer=setInterval(()=>{
+  timer=setTimeout(()=>{
+    timer=null;
     const last=Math.max(0,state.totalSteps-1);
-    if(state.index>=last){state.index=last;state.playing=false;stopTimer();broadcastState();return;}
+    if(state.index>=last){state.index=last;state.playing=false;broadcastState();return;}
     state.index+=1;broadcastState();
-  },PLAYBACK_SPEED);
+    startTimer();
+  },currentPlaybackDelay());
 }
 function setIndex(v){state.index=Math.max(0,Math.min(Math.max(0,state.totalSteps-1),Number(v)||0));}
 
