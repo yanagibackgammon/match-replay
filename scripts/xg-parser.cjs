@@ -788,12 +788,25 @@ function buildTimeline(parsed, sourceFile){
       }
       const actualLuck=Number(r.errLuck);
       const luckKind=isOpeningMove?null:(Number.isFinite(actualLuck)?(actualLuck>=JOKER_EQUITY_THRESHOLD?'joker':(actualLuck<=-JOKER_EQUITY_THRESHOLD?'antiJoker':null)):classifyRollLuck(previous?.analysis,r.dice));
+      const rollSwing=Math.abs(Number(bestWinRate.black)-Number(lastBlackRate));
+      const isBigComeback=Number.isFinite(rollSwing) && rollSwing>=50;
+
+      if(isBigComeback){
+        pushState({
+          phase:'bigComebackIntro',gameNumber,score:[...score],activePlayer:r.activePlayer,
+          position:beforePosition,dice:null,cube,
+          winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},luckKind:null,diceMuted,
+          analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'jokers',...rollAnalysis},historyEvent:null,
+          bigComeback:true
+        });
+      }
 
       pushState({
         phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
         position:beforePosition,dice:r.dice,cube,
         winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,diceMuted,
-        analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'none'},historyEvent:null
+        analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'none'},historyEvent:null,
+        bigComeback:isBigComeback
       });
       const forcedMove = candidates.length <= 1 || diceMuted;
       if(forcedMove){
@@ -854,7 +867,7 @@ function buildTimeline(parsed, sourceFile){
   }
 
   return {
-    schemaVersion:8,
+    schemaVersion:9,
     sourceFile,
     generatedAt:new Date().toISOString(),
     match:{...parsed.match, blackSourcePlayer:parsed.match.player1, whiteSourcePlayer:parsed.match.player2},

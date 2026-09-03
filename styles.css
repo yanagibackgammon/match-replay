@@ -361,7 +361,7 @@ html,body{
   left:50%;
   top:50%;
   z-index:8;
-  transform:translate(-50%,46px);
+  transform:translate(-50%,-50%);
   opacity:0;
   pointer-events:none;
   white-space:nowrap;
@@ -373,13 +373,7 @@ html,body{
   paint-order:stroke fill;
   text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 12px rgba(213,166,46,.42);
 }
-.big-comeback.is-active{animation:bigComebackRise 2.75s ease-in-out both}
-@keyframes bigComebackRise{
-  0%{opacity:0;transform:translate(-50%,54px)}
-  14%{opacity:1;transform:translate(-50%,10px)}
-  58%{opacity:1;transform:translate(-50%,-8px)}
-  100%{opacity:0;transform:translate(-50%,-62px)}
-}
+.big-comeback.is-active{opacity:1}
 
 .main-area{
   width:1920px;
@@ -390,6 +384,7 @@ html,body{
 }
 
 .board-area{
+  position:relative;
   width:1080px;
   height:840px;
   background:var(--board-surface);
@@ -398,6 +393,19 @@ html,body{
   justify-content:flex-start;
   overflow:hidden;
   border-right:1px solid var(--line);
+}
+.board-dim-overlay{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.78);
+  opacity:0;
+  pointer-events:none;
+  z-index:6;
+}
+.board-dim-overlay.is-active{animation:boardDimBeforeComeback 5s linear both}
+@keyframes boardDimBeforeComeback{
+  0%{opacity:0}
+  100%{opacity:1}
 }
 
 #board{
@@ -706,7 +714,8 @@ html,body{
   .joker-glow.minus{animation:none;filter:drop-shadow(0 0 6px rgba(196,59,59,.86)) drop-shadow(0 0 10px rgba(196,59,59,.26))}
   #dice.is-joker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(213,166,46,.88)) drop-shadow(0 0 12px rgba(213,166,46,.30))}
   #dice.is-antijoker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(196,59,59,.86)) drop-shadow(0 0 12px rgba(196,59,59,.28))}
-  .big-comeback.is-active{animation:none;opacity:1;transform:translate(-50%,-8px)}
+  .big-comeback.is-active{animation:none;opacity:1;transform:translate(-50%,-50%)}
+  .board-dim-overlay.is-active{animation:none;opacity:1}
   .score-value.is-score-transition .score-number-old,
   .score-value.is-score-transition .score-number-gain,
   .score-value.is-score-transition .score-number-new{animation:none}

@@ -41,6 +41,9 @@ let appliedDesignPresetId="";
 let index=0,meta={...defaultMeta},matchData={states:[emptyState]},loadedMatchFile="",socket=null;
 let adFiles=[],adIndex=0,adTimer=null;
 let lastBigComebackKey="";
+let lastBoardDimKey="";
+const BIG_COMEBACK_SPEED=3000;
+const BIG_COMEBACK_DIM_SPEED=5000;
 let pagesTimer=null;
 const PLAYBACK_SPEED=3000;
 const SCORE_SEQUENCE_SPEED=5000;
@@ -62,6 +65,7 @@ const els={
   blackRateText:document.getElementById("blackRateText"),whiteRateText:document.getElementById("whiteRateText"),
   blackGammonText:document.getElementById("blackGammonText"),whiteGammonText:document.getElementById("whiteGammonText"),
   bigComebackText:document.getElementById("bigComebackText"),
+  boardDimOverlay:document.getElementById("boardDimOverlay"),
   historyList:document.getElementById("historyList"),
   blackHistoryList:document.getElementById("blackHistoryList"),whiteHistoryList:document.getElementById("whiteHistoryList"),
   analysisContent:document.getElementById("analysisContent"),
@@ -655,25 +659,38 @@ function renderAnalysis(a){
   els.analysisContent.innerHTML=`<div class="analysis-moves">${rows.slice(0,5).join("")}</div>`;
 }
 function currentState(){return matchData.states[Math.max(0,Math.min(index,matchData.states.length-1))]||emptyState;}
+function resetBoardDimOverlay(){
+  const el=els.boardDimOverlay;if(!el)return;
+  lastBoardDimKey="";
+  el.classList.remove("is-active");
+}
+function renderBoardDimOverlay(state){
+  const el=els.boardDimOverlay;if(!el)return;
+  const isIntro=state?.phase==="bigComebackIntro" && Boolean(state?.bigComeback);
+  if(!isIntro){
+    resetBoardDimOverlay();
+    return;
+  }
+  const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}`;
+  if(key===lastBoardDimKey) return;
+  lastBoardDimKey=key;
+  el.classList.remove("is-active");
+  void el.offsetWidth;
+  el.classList.add("is-active");
+}
 function renderBigComeback(state){
   const el=els.bigComebackText;if(!el)return;
-  const previous=matchData.states[Math.max(0,index-1)];
-  const currentBlack=Number(state?.winRate?.black);
-  const previousBlack=Number(previous?.winRate?.black);
-  const isRoll=state?.phase==="roll";
-  const swing=isRoll&&Number.isFinite(currentBlack)&&Number.isFinite(previousBlack)?Math.abs(currentBlack-previousBlack):0;
-  if(swing<50){
+  const isVisible=state?.phase==="roll" && Boolean(state?.bigComeback);
+  if(!isVisible){
     lastBigComebackKey="";
     el.classList.remove("is-active");
     el.setAttribute("aria-hidden","true");
     return;
   }
-  const key=`${index}:${previousBlack.toFixed(4)}:${currentBlack.toFixed(4)}`;
+  const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}`;
   el.setAttribute("aria-hidden","false");
   if(key===lastBigComebackKey) return;
   lastBigComebackKey=key;
-  el.classList.remove("is-active");
-  void el.offsetWidth;
   el.classList.add("is-active");
 }
 function render(){
@@ -689,6 +706,7 @@ function render(){
   els.blackRateText.textContent=`${displayBlack}%`;els.whiteRateText.textContent=`${displayWhite}%`;
   els.blackGammonText.textContent=`G ${Math.round(gb)}%`;els.whiteGammonText.textContent=`G ${Math.round(gw)}%`;
   renderBigComeback(s);
+  renderBoardDimOverlay(s);
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
   els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);
   drawPointLabels(s.activePlayer);drawPipInfo(s.position);renderAnimatedCheckers(s);drawDice(s.dice,s.activePlayer,{luckKind:s.luckKind||null,muted:Boolean(s.diceMuted)});drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
@@ -765,7 +783,10 @@ function publishPagesState(extra={}){
 }
 function playbackDelayForIndex(i){
   const state=matchData.states[Math.max(0,Math.min(Number(i)||0,matchData.states.length-1))];
-  return state?.phase==="gameEnd"?SCORE_SEQUENCE_SPEED:PLAYBACK_SPEED;
+  if(state?.phase==="gameEnd") return SCORE_SEQUENCE_SPEED;
+  if(state?.phase==="bigComebackIntro") return BIG_COMEBACK_DIM_SPEED;
+  if(state?.phase==="roll" && state?.bigComeback) return BIG_COMEBACK_SPEED;
+  return PLAYBACK_SPEED;
 }
 function stopPagesTimer(){if(pagesTimer){clearTimeout(pagesTimer);pagesTimer=null;}}
 function startPagesTimer(){
