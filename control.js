@@ -151,7 +151,7 @@ function renderDesignPreview(){
   const items=[
     {label:"選手1", color:preset.checkers?.player1},
     {label:"選手2", color:preset.checkers?.player2},
-    {label:"背景", color:preset.board?.surface},
+    {label:"メイン", color:preset.board?.surface},
     {label:"ポイント1", color:preset.board?.pointLight},
     {label:"ポイント2", color:preset.board?.pointDark}
   ].filter(item=>item.color);

@@ -263,11 +263,13 @@ html,body{
   pointer-events:none;
   transition:width 1.75s cubic-bezier(.22,.61,.36,1);
   will-change:width;
-  border-top:2px solid rgba(17,17,17,.28);
+  border:0;
+  outline:0;
+  box-shadow:none;
 }
-.gammon-fill.black{left:0;background:var(--gammon-player1);border-right:2px solid #111}
-.gammon-fill.white{right:0;background:var(--gammon-player2);border-left:2px solid #111}
-.gammon-fill.is-zero{width:0!important;border-left-width:0!important;border-right-width:0!important}
+.gammon-fill.black{left:0;background:var(--gammon-player1)}
+.gammon-fill.white{right:0;background:var(--gammon-player2)}
+.gammon-fill.is-zero{width:0!important;border-width:0!important;outline:0!important}
 
 .bar-rate{
   position:absolute;
@@ -534,12 +536,12 @@ html,body{
   align-content:center;
   align-items:center;
   justify-content:center;
-  gap:10px 18px;
+  gap:10px 24px;
   padding:0 20px;
   box-sizing:border-box;
   overflow:hidden;
 }
-.analysis-jokers.is-many{gap:8px 14px;padding:0 20px}
+.analysis-jokers.is-many{gap:8px 18px;padding:0 20px}
 
 .joker-glow{
   position:relative;
@@ -593,12 +595,12 @@ html,body{
 .joker-glow.plus{animation:jokerPulseGreen 1.15s ease-in-out infinite}
 .joker-glow.minus{animation:jokerPulseRed 1.15s ease-in-out infinite}
 @keyframes jokerPulseGreen{
-  0%,100%{filter:drop-shadow(0 0 4px rgba(13,139,80,.30)) drop-shadow(0 0 10px rgba(13,139,80,.26))}
-  50%{filter:drop-shadow(0 0 12px rgba(13,139,80,.92)) drop-shadow(0 0 26px rgba(13,139,80,.72)) drop-shadow(0 0 42px rgba(13,139,80,.42))}
+  0%,100%{filter:drop-shadow(0 0 3px rgba(13,139,80,.28)) drop-shadow(0 0 7px rgba(13,139,80,.24))}
+  50%{filter:drop-shadow(0 0 8px rgba(13,139,80,.88)) drop-shadow(0 0 16px rgba(13,139,80,.62)) drop-shadow(0 0 24px rgba(13,139,80,.34))}
 }
 @keyframes jokerPulseRed{
-  0%,100%{filter:drop-shadow(0 0 4px rgba(196,59,59,.30)) drop-shadow(0 0 10px rgba(196,59,59,.26))}
-  50%{filter:drop-shadow(0 0 12px rgba(196,59,59,.94)) drop-shadow(0 0 26px rgba(196,59,59,.74)) drop-shadow(0 0 42px rgba(196,59,59,.44))}
+  0%,100%{filter:drop-shadow(0 0 3px rgba(196,59,59,.28)) drop-shadow(0 0 7px rgba(196,59,59,.24))}
+  50%{filter:drop-shadow(0 0 8px rgba(196,59,59,.90)) drop-shadow(0 0 16px rgba(196,59,59,.64)) drop-shadow(0 0 24px rgba(196,59,59,.36))}
 }
 
 #dice.is-muted{
@@ -615,18 +617,18 @@ html,body{
 #dice.is-joker-glow{animation:boardJokerPulseGreen 1.15s ease-in-out infinite}
 #dice.is-antijoker-glow{animation:boardJokerPulseRed 1.15s ease-in-out infinite}
 @keyframes boardJokerPulseGreen{
-  0%,100%{filter:drop-shadow(0 0 5px rgba(13,139,80,.35)) drop-shadow(0 0 12px rgba(13,139,80,.30))}
-  50%{filter:drop-shadow(0 0 14px rgba(13,139,80,1)) drop-shadow(0 0 34px rgba(13,139,80,.92)) drop-shadow(0 0 58px rgba(13,139,80,.68))}
+  0%,100%{filter:drop-shadow(0 0 4px rgba(13,139,80,.32)) drop-shadow(0 0 9px rgba(13,139,80,.26))}
+  50%{filter:drop-shadow(0 0 10px rgba(13,139,80,.98)) drop-shadow(0 0 20px rgba(13,139,80,.76)) drop-shadow(0 0 30px rgba(13,139,80,.42))}
 }
 @keyframes boardJokerPulseRed{
-  0%,100%{filter:drop-shadow(0 0 5px rgba(196,59,59,.35)) drop-shadow(0 0 12px rgba(196,59,59,.30))}
-  50%{filter:drop-shadow(0 0 14px rgba(196,59,59,1)) drop-shadow(0 0 34px rgba(196,59,59,.92)) drop-shadow(0 0 58px rgba(196,59,59,.68))}
+  0%,100%{filter:drop-shadow(0 0 4px rgba(196,59,59,.32)) drop-shadow(0 0 9px rgba(196,59,59,.26))}
+  50%{filter:drop-shadow(0 0 10px rgba(196,59,59,.98)) drop-shadow(0 0 20px rgba(196,59,59,.78)) drop-shadow(0 0 30px rgba(196,59,59,.44))}
 }
 @media (prefers-reduced-motion:reduce){
-  .joker-glow.plus{animation:none;filter:drop-shadow(0 0 14px rgba(13,139,80,.9)) drop-shadow(0 0 30px rgba(13,139,80,.48))}
-  .joker-glow.minus{animation:none;filter:drop-shadow(0 0 14px rgba(196,59,59,.9)) drop-shadow(0 0 30px rgba(196,59,59,.48))}
-  #dice.is-joker-glow{animation:none;filter:drop-shadow(0 0 22px rgba(13,139,80,.9)) drop-shadow(0 0 44px rgba(13,139,80,.58))}
-  #dice.is-antijoker-glow{animation:none;filter:drop-shadow(0 0 22px rgba(196,59,59,.9)) drop-shadow(0 0 44px rgba(196,59,59,.58))}
+  .joker-glow.plus{animation:none;filter:drop-shadow(0 0 9px rgba(13,139,80,.9)) drop-shadow(0 0 18px rgba(13,139,80,.36))}
+  .joker-glow.minus{animation:none;filter:drop-shadow(0 0 9px rgba(196,59,59,.9)) drop-shadow(0 0 18px rgba(196,59,59,.36))}
+  #dice.is-joker-glow{animation:none;filter:drop-shadow(0 0 12px rgba(13,139,80,.9)) drop-shadow(0 0 24px rgba(13,139,80,.42))}
+  #dice.is-antijoker-glow{animation:none;filter:drop-shadow(0 0 12px rgba(196,59,59,.9)) drop-shadow(0 0 24px rgba(196,59,59,.42))}
   .score-value.is-score-transition .score-number-old,
   .score-value.is-score-transition .score-number-new{animation:none}
   .score-value.is-score-transition .score-number-old{display:none}
