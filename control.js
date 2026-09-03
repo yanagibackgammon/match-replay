@@ -152,8 +152,9 @@ function renderDesignPreview(){
     {label:"選手1", color:preset.checkers?.player1},
     {label:"選手2", color:preset.checkers?.player2},
     {label:"メイン", color:preset.board?.surface},
-    {label:"ポイント1", color:preset.board?.pointLight},
-    {label:"ポイント2", color:preset.board?.pointDark}
+    {label:"枠", color:preset.board?.frame||preset.board?.line},
+    {label:"マス1", color:preset.board?.pointLight},
+    {label:"マス2", color:preset.board?.pointDark}
   ].filter(item=>item.color);
   designPresetPreview.innerHTML=items.map(item=>{
     const textColor=getPreviewTextColor(item.color);
@@ -181,7 +182,7 @@ async function loadDesignPresets(){
     designPresets=Array.isArray(data.presets)?data.presets:[];
   }catch(error){
     console.warn("Failed to load design presets",error);
-    designPresets=[{id:"green",name:"グリーン",checkers:{player1:"#17382C",player2:"#F7F0DE"},winRate:{player1:"#17382C",player2:"#F7F0DE"},board:{surface:"#CDBB91",pointLight:"#F2E6C6",pointDark:"#3E705B",bar:"#284F3D",line:"#173327"}}];
+    designPresets=[{id:"green",name:"グリーン",checkers:{player1:"#17382C",player2:"#F7F0DE"},winRate:{player1:"#17382C",player2:"#F7F0DE"},board:{surface:"#CDBB91",frame:"#173327",pointLight:"#F2E6C6",pointDark:"#3E705B",bar:"#284F3D",line:"#173327"}}];
   }
   renderDesignOptions();
 }
@@ -195,7 +196,7 @@ function renderGameMarkers(){
     const pct=total<=1?0:(idx/(total-1))*100;
     const edgeClass=pct<=0.5?" first":(pct>=99.5?" last":"");
     const gameNumber=Number(g.gameNumber)||i+1;
-    return `<span class="game-marker${edgeClass}" style="left:${pct}%" title="Game ${gameNumber}">▼</span>`;
+    return `<span class="game-marker${edgeClass}" style="left:${pct}%" data-index="${idx}" title="Game ${gameNumber}へ移動" role="button" tabindex="0" aria-label="Game ${gameNumber}へ移動"><span class="game-marker-number">${gameNumber}</span><span class="game-marker-caret">▼</span></span>`;
   }).join("");
 }
 
@@ -413,6 +414,22 @@ playBtn.addEventListener("click", () => sendCommand("play"));
 pauseBtn.addEventListener("click", () => sendCommand("pause"));
 prevBtn.addEventListener("click", () => sendCommand("prev"));
 nextBtn.addEventListener("click", () => sendCommand("next"));
+function jumpToGameMarker(marker){
+  if(!marker)return;
+  const targetIndex=Number(marker.dataset.index);
+  if(!Number.isFinite(targetIndex))return;
+  timeline.value=String(targetIndex);
+  sendCommand("seek",targetIndex);
+}
+gameMarkers.addEventListener("click",event=>jumpToGameMarker(event.target.closest(".game-marker")));
+gameMarkers.addEventListener("keydown",event=>{
+  if(event.key!=="Enter"&&event.key!==" ")return;
+  const marker=event.target.closest(".game-marker");
+  if(!marker)return;
+  event.preventDefault();
+  jumpToGameMarker(marker);
+});
+
 timeline.addEventListener("input", () => sendCommand("seek", Number(timeline.value)));
 applyMetaBtn.addEventListener("click", applyMeta);
 refreshMatchesBtn.addEventListener("click", refreshMatches);

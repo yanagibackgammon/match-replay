@@ -40,10 +40,20 @@ body{padding:20px 28px 28px}
 .status-row-right{text-align:right}
 .timeline-block{margin-top:18px;padding-top:18px;border-top:1px solid #ddd}
 .timeline-block label{margin-bottom:15px}
-.timeline-wrap{position:relative;padding-top:18px}
+.timeline-wrap{position:relative;padding-top:34px}
 #timeline{width:100%;margin:0;display:block;accent-color:#b7924b}
-.game-markers{position:absolute;left:8px;right:8px;top:0;height:18px;pointer-events:none}
-.game-marker{position:absolute;top:0;transform:translateX(-50%);font-size:15px;line-height:1;color:#c40000;font-weight:900;text-shadow:0 1px 0 #fff}
+.game-markers{position:absolute;left:8px;right:8px;top:0;height:32px;pointer-events:auto}
+.game-marker{
+  position:absolute;top:0;transform:translateX(-50%);
+  min-width:26px;min-height:32px;height:32px;padding:0 2px;
+  border:0;border-radius:0;background:transparent;color:#111;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;
+  font:inherit;font-weight:900;line-height:1;cursor:pointer;box-shadow:none;
+}
+.game-marker-number{font-size:11px;line-height:13px;color:#555;text-shadow:0 1px 0 #fff}
+.game-marker-caret{font-size:15px;line-height:16px;color:#c40000;text-shadow:0 1px 0 #fff}
+.game-marker:hover .game-marker-caret,.game-marker:focus-visible .game-marker-caret{color:#8f0000;transform:scale(1.12)}
+.game-marker:focus-visible{outline:2px solid #b7924b;outline-offset:1px}
 .game-marker.first{transform:none}
 .game-marker.last{transform:translateX(-100%)}
 
@@ -79,7 +89,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .design-preset-preview{
   margin-top:9px;
   display:grid;
-  grid-template-columns:repeat(5,minmax(0,1fr));
+  grid-template-columns:repeat(6,minmax(0,1fr));
   gap:0;
   height:18px;
   border:1px solid #111;
@@ -131,7 +141,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .status-summary strong{font-size:20px;line-height:1}
 .status-summary .status-divider{margin-left:22px}
 .timeline-block{margin-top:8px;padding-top:0;border-top:0}
-.timeline-wrap{padding-top:18px}
+.timeline-wrap{padding-top:34px}
 
 .mode-card{padding-top:12px;padding-bottom:12px}
 .playback-buttons{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
