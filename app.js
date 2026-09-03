@@ -609,24 +609,23 @@ function renderAnalysis(a){
     };
     const groupRolls=(rolls,kind)=>{
       const list=Array.isArray(rolls)?rolls:[];
-      const keys=new Set(list.map(key));
+      const keys=new Set(list.map(key).filter(Boolean));
       const fullFaces=[];
       for(let face=1;face<=6;face++){
-        let all=true;
-        for(let other=1;other<=6;other++){
-          if(!keys.has(`${Math.max(face,other)}-${Math.min(face,other)}`)){all=false;break;}
-        }
-        if(all) fullFaces.push(face);
+        const hasAllRelatedRolls=[1,2,3,4,5,6].every(other=>keys.has(`${Math.max(face,other)}-${Math.min(face,other)}`));
+        if(hasAllRelatedRolls) fullFaces.push(face);
       }
       const covered=new Set();
       for(const face of fullFaces){
         for(let other=1;other<=6;other++) covered.add(`${Math.max(face,other)}-${Math.min(face,other)}`);
       }
-      const items=fullFaces.map(face=>({kind,face,single:true}));
+      const singles=fullFaces.map(face=>({kind,face,single:true}));
+      const pairs=[];
       for(const dice of list){
-        if(!covered.has(key(dice))) items.push({kind,dice,single:false});
+        const k=key(dice);
+        if(!covered.has(k)) pairs.push({kind,dice,single:false});
       }
-      return items;
+      return [...singles,...pairs];
     };
     const renderItem=item=>{
       const label=item.kind==="plus"?"チャンス！":"ピンチ！";
