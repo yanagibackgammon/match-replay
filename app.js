@@ -540,7 +540,7 @@ function renderAnalysis(a){
   if(!a||a.type==="none"){els.analysisContent.innerHTML="";return;}
   if(a.type==="jokers"){
     const activePlayer=currentState().activePlayer===1?1:-1;
-    const pair=(d,kind)=>`<div class="joker-glow ${kind}"><div class="dice-pair-block">${renderDie(d[0],activePlayer)}${renderDie(d[1],activePlayer)}</div></div>`;
+    const pair=(d,kind)=>`<div class="joker-glow ${kind}"><div class="joker-label">${kind==="plus"?"チャンス！":"ピンチ！"}</div><div class="dice-pair-block">${renderDie(d[0],activePlayer)}${renderDie(d[1],activePlayer)}</div></div>`;
     const items=[...(a.joker||[]).map(d=>pair(d,"plus")),...(a.antiJoker||[]).map(d=>pair(d,"minus"))];
     els.analysisContent.innerHTML=`<div class="analysis-jokers${items.length>6?" is-many":""}">${items.join("")}</div>`;return;
   }

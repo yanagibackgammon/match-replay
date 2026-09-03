@@ -251,7 +251,7 @@ html,body{
 
 .bar-rate{
   position:absolute;
-  top:50%;
+  top:calc(50% - 10px);
   transform:translateY(-50%);
   font-size:38px;
   font-weight:900;
@@ -511,25 +511,42 @@ html,body{
   height:285px;
   display:flex;
   flex-wrap:wrap;
-  align-content:center;
-  align-items:center;
+  align-content:flex-start;
+  align-items:flex-start;
   justify-content:center;
-  gap:28px 38px;
-  padding:18px 28px;
+  gap:12px 8px;
+  padding:14px 20px 0;
+  box-sizing:border-box;
   overflow:hidden;
 }
-.analysis-jokers.is-many{gap:4px 8px;padding:4px}
-.analysis-jokers.is-many .joker-glow{padding:4px}
+.analysis-jokers.is-many{gap:12px 8px;padding:14px 20px 0}
 
 .joker-glow{
+  position:relative;
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:18px;
+  width:124px;
+  height:58px;
+  padding:0;
   border:0;
   background:transparent;
   transform-origin:center;
+  flex:0 0 124px;
 }
+.joker-label{
+  position:absolute;
+  left:50%;
+  top:-12px;
+  transform:translateX(-50%);
+  font-size:14px;
+  line-height:12px;
+  font-weight:900;
+  letter-spacing:.02em;
+  white-space:nowrap;
+}
+.joker-glow.plus .joker-label{color:#0d8b50}
+.joker-glow.minus .joker-label{color:#c43b3b}
 .joker-glow.plus{animation:jokerPulseGreen 1.15s ease-in-out infinite}
 .joker-glow.minus{animation:jokerPulseRed 1.15s ease-in-out infinite}
 @keyframes jokerPulseGreen{

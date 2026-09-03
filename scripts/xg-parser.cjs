@@ -768,8 +768,8 @@ function buildTimeline(parsed, sourceFile){
 
       // 通常手は5段階で表示する。
       // 1) 手番交代 + Joker / Anti-Joker候補
-      // 2) ロールのみ表示（候補手はまだ出さない）
-      // 3) 候補手表示 + 最善手の勝率
+      // 2) ロールのみ表示（候補手はまだ出さない）+ 最善手の勝率へバー推移
+      // 3) 候補手表示（勝率バーはそのまま）
       // 4) 選択手を金表示 + チェッカー移動 + 選択手の勝率
       // 5) ロールダイスを消す
       // 各ゲームの初手だけは、手番開始とロールを同一シーケンスにする。
@@ -792,7 +792,7 @@ function buildTimeline(parsed, sourceFile){
       pushState({
         phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
         position:beforePosition,dice:r.dice,cube,
-        winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},luckKind,
+        winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,
         analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'none'},historyEvent:null
       });
       pushState({
