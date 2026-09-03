@@ -797,7 +797,7 @@ function render(){
   els.gammonBarBlack.classList.toggle("is-zero",gb<=0);els.gammonBarWhite.classList.toggle("is-zero",gw<=0);
   els.backgammonBarBlack.style.width=`${showBgb?bgb:0}%`;els.backgammonBarWhite.style.width=`${showBgw?bgw:0}%`;
   els.backgammonBarBlack.classList.toggle("is-zero",!showBgb);els.backgammonBarWhite.classList.toggle("is-zero",!showBgw);
-  els.blackRateText.textContent=`${displayBlack}%`;els.whiteRateText.textContent=`${displayWhite}%`;
+  els.blackRateText.innerHTML=`${displayBlack}<span class="bar-rate-percent">%</span>`;els.whiteRateText.innerHTML=`${displayWhite}<span class="bar-rate-percent">%</span>`;
   const blackGText=`G ${Math.round(gb)}%`;
   const whiteGText=`G ${Math.round(gw)}%`;
   const blackBgText=showBgb?`BG ${Math.round(bgb)}%`:"";

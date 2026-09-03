@@ -468,6 +468,8 @@ html,body{
   white-space:nowrap;
 }
 
+.bar-rate-percent{font-size:.5em}
+
 .bar-gammon-rate,
 .bar-backgammon-rate{
   position:relative;
