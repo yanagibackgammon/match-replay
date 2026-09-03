@@ -125,17 +125,19 @@ html,body{
 }
 
 .headline-name{
+  width:100%;
+  display:flex;
+  align-items:center;
   font-size:46px;
   font-weight:900;
   line-height:1;
   white-space:nowrap;
-  text-align:center;
   color:#fff;
   text-shadow:0 3px 6px rgba(0,0,0,.60),0 1px 0 rgba(255,255,255,.12);
   transform:translateY(8px);
 }
-.headline-name.left{text-align:left;padding-left:10px}
-.headline-name.right{text-align:right;padding-right:10px}
+.headline-name.left{justify-content:flex-start;text-align:left;padding-left:10px}
+.headline-name.right{justify-content:flex-end;text-align:right;padding-right:10px}
 
 .headline-title-block{
   position:relative;
