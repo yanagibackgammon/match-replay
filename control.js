@@ -275,20 +275,38 @@ async function fetchPagesManifest(){
   }catch{return {};}
 }
 
+function extractMatchInfo(data){
+  if(!Array.isArray(data?.states)||!data.states.length) throw new Error("棋譜データに再生ステートがありません");
+  const gameStarts=[];
+  data.states.forEach((state,index)=>{
+    if(state && state.phase==="gameStart") gameStarts.push({index,gameNumber:Number(state.gameNumber)||gameStarts.length+1});
+  });
+  const match=data.match||{};
+  const blackName=String(match.blackSourcePlayer||match.player1||"").trim();
+  const whiteName=String(match.whiteSourcePlayer||match.player2||"").trim();
+  return {totalSteps:data.states.length,gameStarts,blackName,whiteName};
+}
+
+async function getLocalMatchInfo(file){
+  if(!file) return {totalSteps:1,gameStarts:[],blackName:"",whiteName:""};
+  const u=new URL("/api/match",location.href);
+  u.searchParams.set("file",file);
+  u.searchParams.set("t",Date.now());
+  const r=await fetch(u,{cache:"no-store"});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(data.error||`棋譜データを取得できません (HTTP ${r.status})`);
+  return extractMatchInfo(data);
+}
+
 async function getPagesMatchInfo(file){
-  if(!file) return {totalSteps:1,gameStarts:[]};
+  if(!file) return {totalSteps:1,gameStarts:[],blackName:"",whiteName:""};
   const manifest=await fetchPagesManifest();
   const rel=manifest.generated?.[file]||(/\.xg$/i.test(file)?`generated/${file}.json`:file);
   const u=new URL(`./matches/${rel}`,location.href);u.searchParams.set("t",Date.now());
   const r=await fetch(u,{cache:"no-store"});
   if(!r.ok) throw new Error(`棋譜データを取得できません (HTTP ${r.status})`);
   const data=await r.json();
-  if(!Array.isArray(data.states)||!data.states.length) throw new Error("棋譜データに再生ステートがありません");
-  const gameStarts=[];
-  data.states.forEach((state,index)=>{
-    if(state && state.phase==="gameStart") gameStarts.push({index,gameNumber:Number(state.gameNumber)||gameStarts.length+1});
-  });
-  return {totalSteps:data.states.length,gameStarts};
+  return extractMatchInfo(data);
 }
 
 async function loadPagesInitialState(){
@@ -318,12 +336,23 @@ async function applyMeta(){
     whiteName: whiteNameInput.value.trim(),
     matchFile: matchFileSelect.value
   };
+  const oldFile=lastState.meta.matchFile||"";
+  const fileChanged=nextMeta.matchFile!==oldFile;
 
   const originalText = applyMetaBtn.textContent;
   applyMetaBtn.disabled = true;
   applyMetaBtn.textContent = "反映中…";
 
   try{
+    // 別の棋譜を初めて読み込む時だけ、棋譜内の選手名を初期値として採用する。
+    // 同じ棋譜への再反映では入力中の名前を維持する。
+    let matchInfo=null;
+    if(fileChanged && nextMeta.matchFile){
+      matchInfo=isLocalRuntime()?await getLocalMatchInfo(nextMeta.matchFile):await getPagesMatchInfo(nextMeta.matchFile);
+      if(matchInfo.blackName) nextMeta.blackName=matchInfo.blackName;
+      if(matchInfo.whiteName) nextMeta.whiteName=matchInfo.whiteName;
+    }
+
     if(isLocalRuntime()){
       // WebSocketの接続状態に依存せず、HTTP APIで確実に反映する。
       const res = await fetch("/api/meta", {
@@ -339,12 +368,11 @@ async function applyMeta(){
       if(data.state) renderState(data.state);
     }else{
       // GitHub Pagesでは実棋譜JSONを先に確認し、総ステップ数も更新する。
-      const oldFile=lastState.meta.matchFile;
-      const info=await getPagesMatchInfo(nextMeta.matchFile);
+      const info=matchInfo||await getPagesMatchInfo(nextMeta.matchFile);
       lastState.meta={...lastState.meta,...nextMeta};
       lastState.totalSteps=info.totalSteps;
       lastState.gameStarts=info.gameStarts;
-      if(nextMeta.matchFile!==oldFile) lastState.index=0;
+      if(fileChanged) lastState.index=0;
       else lastState.index=Math.min(lastState.index,lastState.totalSteps-1);
       const revision=writePagesMeta(lastState.meta);
       localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:3000,mode:lastState.mode||"auto"}));
