@@ -65,6 +65,7 @@ const els={
   backgammonBarBlack:document.getElementById("backgammonBarBlack"),backgammonBarWhite:document.getElementById("backgammonBarWhite"),
   blackRateText:document.getElementById("blackRateText"),whiteRateText:document.getElementById("whiteRateText"),
   blackGammonText:document.getElementById("blackGammonText"),whiteGammonText:document.getElementById("whiteGammonText"),
+  blackBackgammonText:document.getElementById("blackBackgammonText"),whiteBackgammonText:document.getElementById("whiteBackgammonText"),
   bigComebackText:document.getElementById("bigComebackText"),
   boardDimOverlay:document.getElementById("boardDimOverlay"),
   historyList:document.getElementById("historyList"),
@@ -771,8 +772,10 @@ function render(){
   els.backgammonBarBlack.style.width=`${showBgb?bgb:0}%`;els.backgammonBarWhite.style.width=`${showBgw?bgw:0}%`;
   els.backgammonBarBlack.classList.toggle("is-zero",!showBgb);els.backgammonBarWhite.classList.toggle("is-zero",!showBgw);
   els.blackRateText.textContent=`${displayBlack}%`;els.whiteRateText.textContent=`${displayWhite}%`;
-  els.blackGammonText.textContent=showBgb?`G ${Math.round(gb)}%　BG ${Math.round(bgb)}%`:`G ${Math.round(gb)}%`;
-  els.whiteGammonText.textContent=showBgw?`G ${Math.round(gw)}%　BG ${Math.round(bgw)}%`:`G ${Math.round(gw)}%`;
+  els.blackGammonText.textContent=`G ${Math.round(gb)}%`;
+  els.whiteGammonText.textContent=`G ${Math.round(gw)}%`;
+  if(els.blackBackgammonText)els.blackBackgammonText.textContent=`BG ${Math.round(bgb)}%`;
+  if(els.whiteBackgammonText)els.whiteBackgammonText.textContent=`BG ${Math.round(bgw)}%`;
   renderBigComeback(s);
   renderBoardDimOverlay(s);
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);

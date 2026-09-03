@@ -156,22 +156,27 @@ html,body{
 
 .headline-name{
   width:100%;
+  height:76px;
   min-width:0;
+  align-self:center;
   display:flex;
   align-items:center;
-  font-size:46px;
+  font-family:"Noto Sans JP",Inter,"Yu Gothic",Meiryo,sans-serif;
+  font-size:50px;
   font-weight:900;
-  line-height:1;
+  line-height:1.16;
+  padding-top:1px;
+  padding-bottom:5px;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
   color:#fff;
-  letter-spacing:.01em;
+  letter-spacing:.012em;
   text-shadow:0 2px 5px rgba(0,0,0,.52),0 0 1px rgba(0,0,0,.45);
-  transform:translateY(7px);
+  transform:translateY(6px);
 }
-.headline-name.left{justify-content:flex-start;text-align:left;padding-left:10px}
-.headline-name.right{justify-content:flex-end;text-align:right;padding-right:10px}
+.headline-name.left{justify-content:flex-start;text-align:left;padding-left:10px;padding-right:0}
+.headline-name.right{justify-content:flex-end;text-align:right;padding-right:10px;padding-left:0}
 
 .headline-title-block{
   position:relative;
@@ -437,22 +442,24 @@ html,body{
 
 .bar-rate{
   position:absolute;
-  top:calc(50% - 17px);
+  top:50%;
   transform:translateY(-50%);
-  font-size:38px;
+  font-size:72px;
   font-weight:900;
-  line-height:1;
+  line-height:.94;
   z-index:3;
   pointer-events:none;
   color:#fff;
   -webkit-text-stroke:2px #000;
   paint-order:stroke fill;
   text-shadow:0 4px 3px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.35);
+  white-space:nowrap;
 }
-.bar-rate-left{left:24px;color:#fff}
-.bar-rate-right{right:24px;color:#fff}
+.bar-rate-left{left:18px;color:#fff}
+.bar-rate-right{right:18px;color:#fff}
 
-.bar-gammon-rate{
+.bar-gammon-rate,
+.bar-backgammon-rate{
   position:absolute;
   bottom:8px;
   z-index:3;
@@ -464,9 +471,14 @@ html,body{
   -webkit-text-stroke:1.4px #000;
   paint-order:stroke fill;
   text-shadow:0 2px 2px rgba(0,0,0,.38);
+  white-space:nowrap;
 }
-.bar-gammon-rate-left{left:26px}
-.bar-gammon-rate-right{right:26px}
+/* 選手1：左から 勝率 → G率 → BG率 */
+.bar-gammon-rate-left{left:205px}
+.bar-backgammon-rate-left{left:292px}
+/* 選手2：右から 勝率 → G率 → BG率 */
+.bar-gammon-rate-right{right:205px}
+.bar-backgammon-rate-right{right:292px}
 
 .big-comeback{
   position:absolute;
@@ -1017,7 +1029,6 @@ html,body{
 .history-cell.history-blunder .history-move{color:#7a1fa2}
 .history-cell.history-error .history-cube-icon{color:#d01818;border-color:#d01818}
 .history-cell.history-blunder .history-cube-icon{color:#7a1fa2;border-color:#7a1fa2}
-.bar-rate{font-size:42px;top:34%}
 
 /* v69: large grouped Joker die uses the same visual top line as normal Joker dice */
 .joker-glow.is-single-face .single-die-block{
