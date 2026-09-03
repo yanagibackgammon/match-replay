@@ -885,3 +885,8 @@ html,body{
 .history-cell.history-error .history-cube-icon{color:#d01818;border-color:#d01818}
 .history-cell.history-blunder .history-cube-icon{color:#7a1fa2;border-color:#7a1fa2}
 .bar-rate{font-size:42px;top:34%}
+
+/* v69: large grouped Joker die uses the same visual top line as normal Joker dice */
+.joker-glow.is-single-face .single-die-block{
+  top:calc(50% + 10px);
+}
