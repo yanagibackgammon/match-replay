@@ -467,8 +467,14 @@ function analyzeJokerRolls(position,activePlayer,context=null){
   }
   const average=totalWeight?weighted/totalWeight:postRollEquityProxy(position,activePlayer,position,context);
   for(const r of rolls)r.luck=r.equity-average;
-  const joker=rolls.filter(r=>r.luck>=JOKER_EQUITY_THRESHOLD).sort((a,b)=>b.luck-a.luck).map(r=>r.dice);
-  const antiJoker=rolls.filter(r=>r.luck<=-JOKER_EQUITY_THRESHOLD).sort((a,b)=>a.luck-b.luck).map(r=>r.dice);
+  let joker=rolls.filter(r=>r.luck>=JOKER_EQUITY_THRESHOLD).sort((a,b)=>b.luck-a.luck).map(r=>r.dice);
+  let antiJoker=rolls.filter(r=>r.luck<=-JOKER_EQUITY_THRESHOLD).sort((a,b)=>a.luck-b.luck).map(r=>r.dice);
+
+  // Joker / Anti-Joker は出目ごとのエクイティ差だけで判定する。
+  // バーからエンターできる面が共通でも、ゾロ目なら2枚とも入れる一方、
+  // 非ゾロ目では1枚がバーに残るなど結果が大きく異なるため、
+  // 「エンター可能な面を含む」という理由だけで判定を一括上書きしない。
+
   const result={joker,antiJoker,thresholdEquity:JOKER_EQUITY_THRESHOLD,averageEquityProxy:average,source:'standalone-roll-evaluator'};
   jokerRollCache.set(key,result);return result;
 }
