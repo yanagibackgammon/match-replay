@@ -436,6 +436,23 @@ function postRollEquityProxy(position,player,basePosition,context){
     -0.05*(nextExposure.blots-baseExposure.blots);
 }
 const jokerRollCache=new Map();
+function directBarEntryHitFaces(position,player){
+  // 盤面予測だけで判定するための戦術補正。
+  // バーに1枚だけあり、特定の面で「エンターと同時にヒット」できる場合は、
+  // その面を含む全出目が大きなチャンスになりやすい。
+  if(barCount(position,player)!==1)return [];
+  const opponent=-player;
+  const beforeOppBar=barCount(position,opponent);
+  const faces=[];
+  for(let die=1;die<=6;die++){
+    const moves=singleDieMoves(position,player,die);
+    const canEnterAndHit=moves.some(next=>
+      barCount(next,player)===0 && barCount(next,opponent)>beforeOppBar
+    );
+    if(canEnterAndHit)faces.push(die);
+  }
+  return faces;
+}
 function isOutcomeLockedForJoker(context){
   const black=Number(context?.winRate?.black);
   const white=Number(context?.winRate?.white);
@@ -470,12 +487,26 @@ function analyzeJokerRolls(position,activePlayer,context=null){
   let joker=rolls.filter(r=>r.luck>=JOKER_EQUITY_THRESHOLD).sort((a,b)=>b.luck-a.luck).map(r=>r.dice);
   let antiJoker=rolls.filter(r=>r.luck<=-JOKER_EQUITY_THRESHOLD).sort((a,b)=>a.luck-b.luck).map(r=>r.dice);
 
-  // Joker / Anti-Joker は出目ごとのエクイティ差だけで判定する。
-  // バーからエンターできる面が共通でも、ゾロ目なら2枚とも入れる一方、
-  // 非ゾロ目では1枚がバーに残るなど結果が大きく異なるため、
-  // 「エンター可能な面を含む」という理由だけで判定を一括上書きしない。
+  // 戦術補正も「直後の実際のロール」ではなく、現在の盤面だけから判定する。
+  // バーに1枚だけあり、ある面でエンターしながら相手ブロットを直接ヒットできる場合、
+  // その面を含む全6種類の出目をチャンス候補に含める。
+  // バーに2枚以上ある場合は、1枚だけ入って残りがバーに残るケースを一括で良い目にしない。
+  const tacticalHitFaces=directBarEntryHitFaces(position,activePlayer);
+  if(tacticalHitFaces.length){
+    const jokerKeys=new Set(joker.map(rollKey));
+    const antiKeys=new Set(antiJoker.map(rollKey));
+    for(const face of tacticalHitFaces){
+      for(let other=1;other<=6;other++){
+        const dice=[Math.max(face,other),Math.min(face,other)];
+        const k=rollKey(dice);
+        antiKeys.delete(k);
+        if(!jokerKeys.has(k)){joker.push(dice);jokerKeys.add(k);}
+      }
+    }
+    antiJoker=antiJoker.filter(d=>antiKeys.has(rollKey(d)));
+  }
 
-  const result={joker,antiJoker,thresholdEquity:JOKER_EQUITY_THRESHOLD,averageEquityProxy:average,source:'standalone-roll-evaluator'};
+  const result={joker,antiJoker,thresholdEquity:JOKER_EQUITY_THRESHOLD,averageEquityProxy:average,source:'standalone-roll-evaluator',tacticalBarEntryHitFaces:tacticalHitFaces};
   jokerRollCache.set(key,result);return result;
 }
 function rollKey(dice){if(!Array.isArray(dice)||dice.length<2)return'';const a=Number(dice[0]),b=Number(dice[1]);return `${Math.max(a,b)}-${Math.min(a,b)}`;}
@@ -485,27 +516,6 @@ function classifyRollLuck(analysis,dice){
   if((analysis?.antiJoker||[]).some(d=>rollKey(d)===key))return'antiJoker';
   return null;
 }
-function reconcileRollAnalysisWithActualLuck(analysis,dice,actualLuck){
-  // This is an offline replay generated from a completed XG file.  The all-21-roll
-  // forecast remains board-based, but for the roll that was actually played XG's
-  // recorded luck value is the most reliable signal.  Reconcile that one roll in
-  // the pre-roll list so a Joker/Anti-Joker can never appear after the roll without
-  // having been forecast, and a neutral actual roll is not falsely forecast either.
-  const out={...(analysis||{})};
-  out.joker=[...(Array.isArray(analysis?.joker)?analysis.joker:[])];
-  out.antiJoker=[...(Array.isArray(analysis?.antiJoker)?analysis.antiJoker:[])];
-  const key=rollKey(dice);
-  const luck=Number(actualLuck);
-  if(!key||!Number.isFinite(luck))return out;
-  out.joker=out.joker.filter(d=>rollKey(d)!==key);
-  out.antiJoker=out.antiJoker.filter(d=>rollKey(d)!==key);
-  const normalized=[Math.max(Number(dice[0]),Number(dice[1])),Math.min(Number(dice[0]),Number(dice[1]))];
-  if(luck>=JOKER_EQUITY_THRESHOLD)out.joker.push(normalized);
-  else if(luck<=-JOKER_EQUITY_THRESHOLD)out.antiJoker.push(normalized);
-  out.actualRollReconciled=true;
-  return out;
-}
-
 function cubeValueFromCode(code){
   if(!code) return 1;
   return 2 ** Math.abs(code);
@@ -992,17 +1002,13 @@ function buildTimeline(parsed, sourceFile){
       // 各ゲームの初手だけは、手番開始とロールを同一シーケンスにする。
       // オープニングロールには事前Joker/Anti-Joker候補を出さない。
       const isOpeningMove=!gameHasCheckerMove;
-      const actualLuck=Number(r.errLuck);
       let previous = states[states.length - 1];
       if(!isOpeningMove){
         if(previous && previous.phase === 'preRoll' && previous.gameNumber === gameNumber && previous.activePlayer === r.activePlayer){
-          // A pre-roll state is often created by the preceding cube-analysis record.
-          // Once the matching move record reveals XG's actual errLuck, correct that
-          // existing forecast in place instead of leaving the two displays inconsistent.
-          previous.analysis={type:'jokers',...reconcileRollAnalysisWithActualLuck(previous.analysis,r.dice,actualLuck)};
+          // 既存のpreRollは盤面予測そのものを維持する。
+          // 直後に実際に出た目のerrLuckで候補を上書きしない。
         }else{
-          const estimatedRollAnalysis=analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate,backgammonRate:lastBackgammonRate});
-          const rollAnalysis=reconcileRollAnalysisWithActualLuck(estimatedRollAnalysis,r.dice,actualLuck);
+          const rollAnalysis=analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate,backgammonRate:lastBackgammonRate});
           pushState({
             phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
             position:beforePosition,dice:null,cube,winRate:{black:lastBlackRate,white:100-lastBlackRate},
@@ -1012,7 +1018,8 @@ function buildTimeline(parsed, sourceFile){
           previous=states[states.length-1];
         }
       }
-      const luckKind=isOpeningMove?null:(Number.isFinite(actualLuck)?(actualLuck>=JOKER_EQUITY_THRESHOLD?'joker':(actualLuck<=-JOKER_EQUITY_THRESHOLD?'antiJoker':null)):classifyRollLuck(previous?.analysis,r.dice));
+      // ロール後の光り方も、事前の盤面予測と同じ判定を使用する。
+      const luckKind=isOpeningMove?null:classifyRollLuck(previous?.analysis,r.dice);
       const preRollBlackRate=Number(lastBlackRate);
       const preRollWhiteRate=100-preRollBlackRate;
       const postRollBlackRate=Number(bestWinRate.black);
@@ -1029,7 +1036,7 @@ function buildTimeline(parsed, sourceFile){
       if(isBigComeback){
         const introAnalysis=isOpeningMove
           ? {type:'jokers',joker:[],antiJoker:[],openingRoll:true}
-          : (previous?.analysis?.type==='jokers' ? previous.analysis : {type:'jokers',...reconcileRollAnalysisWithActualLuck(analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate,backgammonRate:lastBackgammonRate}),r.dice,actualLuck)});
+          : (previous?.analysis?.type==='jokers' ? previous.analysis : {type:'jokers',...analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate,backgammonRate:lastBackgammonRate})});
         pushState({
           phase:'bigComebackIntro',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:null,cube,
