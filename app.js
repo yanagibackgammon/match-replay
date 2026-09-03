@@ -684,15 +684,19 @@ function renderBigComeback(state){
   const isVisible=notice==="comeback" || notice==="nice";
   if(!isVisible){
     lastBigComebackKey="";
-    el.classList.remove("is-active");
+    el.classList.remove("is-active","is-comeback","is-nice");
     el.setAttribute("aria-hidden","true");
     return;
   }
-  el.textContent=notice==="comeback"?"大逆転！！":"ナイスロール！";
+  el.textContent=notice==="comeback"?"大逆転！":"ナイスロール！";
+  el.classList.toggle("is-comeback",notice==="comeback");
+  el.classList.toggle("is-nice",notice==="nice");
   const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}:${notice}`;
   el.setAttribute("aria-hidden","false");
   if(key===lastBigComebackKey) return;
   lastBigComebackKey=key;
+  el.classList.remove("is-active");
+  void el.offsetWidth;
   el.classList.add("is-active");
 }
 function render(){
