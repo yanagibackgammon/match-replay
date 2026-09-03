@@ -725,7 +725,6 @@ function buildTimeline(parsed, sourceFile){
         const offeredValue=Math.max(2,(Number(cube.value)||1)*2);
         const pairId=`cube-${gameNumber}-${r.index}`;
 
-        // Double / No Double: the actual Double is selected here.
         const nd=Number(r.analysis.equityNoDouble);
         const dt=Number(r.analysis.equityDoubleTake);
         const dp=Number(r.analysis.equityDrop);
@@ -735,9 +734,16 @@ function buildTimeline(parsed, sourceFile){
           {move:'Double',equity:doubledEq,error:doubledEq-offerBest},
           {move:'No Double',equity:nd,error:nd-offerBest}
         ];
-        addPrDecision(r.activePlayer,r.errCube,cubeOfferCounts(r));
+
+        // Doubleした場合も、まず候補を未選択で表示し、その次に実際のDoubleを選択する。
         pushState({
           phase:'cubeOffer',gameNumber,score:[...score],activePlayer:r.activePlayer,
+          position,dice:null,cube,winRate,gammonRate,
+          analysis:{type:'moves',candidates:offerCandidates},historyEvent:null
+        });
+        addPrDecision(r.activePlayer,r.errCube,cubeOfferCounts(r));
+        pushState({
+          phase:'cubeOfferSelect',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position,dice:null,cube,winRate,gammonRate,
           analysis:{type:'moves',candidates:offerCandidates,playedIndex:0},
           historyEvent:{player:doubler,dice:null,move:'Double',error:-Math.abs(Number(r.errCube)||0),kind:'cube',cubeValue:offeredValue,pairId}
@@ -767,8 +773,40 @@ function buildTimeline(parsed, sourceFile){
         });
         lastCube=cubeAfter;
       }else{
-        // A non-obvious No Double is also a PR decision, even though it does not need a separate visual beat.
-        addPrDecision(r.activePlayer,r.errCube,cubeOfferCounts(r));
+        const nd=Number(r.analysis.equityNoDouble);
+        const dt=Number(r.analysis.equityDoubleTake);
+        const dp=Number(r.analysis.equityDrop);
+        const doubledEq=Math.min(dt,dp);
+        const offerBest=Math.max(nd,doubledEq);
+        const offerCandidates=[
+          {move:'Double',equity:doubledEq,error:doubledEq-offerBest},
+          {move:'No Double',equity:nd,error:nd-offerBest}
+        ];
+        const missedDouble=Number.isFinite(nd)&&Number.isFinite(doubledEq)&&doubledEq>nd+0.000001;
+
+        // 最善手がDoubleなのにNo Doubleを選んだ場合は、ロール前にキューブ判断を2段階表示する。
+        if(missedDouble){
+          const player=r.activePlayer===1?'black':'white';
+          const offeredValue=Math.max(2,(Number(cube.value)||1)*2);
+          const pairId=`cube-nd-${gameNumber}-${r.index}`;
+          pushState({
+            phase:'cubeOffer',gameNumber,score:[...score],activePlayer:r.activePlayer,
+            position,dice:null,cube,winRate,gammonRate,
+            analysis:{type:'moves',candidates:offerCandidates},historyEvent:null
+          });
+          addPrDecision(r.activePlayer,r.errCube,cubeOfferCounts(r));
+          const noDoubleError=-Math.abs(Number(r.errCube)||Math.max(0,doubledEq-nd));
+          const isHistoryError=Math.abs(noDoubleError)>=0.020;
+          pushState({
+            phase:'cubeOfferSelect',gameNumber,score:[...score],activePlayer:r.activePlayer,
+            position,dice:null,cube,winRate,gammonRate,
+            analysis:{type:'moves',candidates:offerCandidates,playedIndex:1},
+            historyEvent:isHistoryError?{player,dice:null,move:'No Double',error:noDoubleError,kind:'cube',cubeValue:offeredValue,pairId}:null
+          });
+        }else{
+          // 通常のNo Double判断は従来どおり表示せず、PRのみ選択時点として反映する。
+          addPrDecision(r.activePlayer,r.errCube,cubeOfferCounts(r));
+        }
 
         // Pre-roll state: evaluate all 21 distinct rolls from the current board.
         // The actually rolled dice are intentionally not used to decide which rolls are highlighted.
@@ -955,7 +993,7 @@ function buildTimeline(parsed, sourceFile){
   }
 
   return {
-    schemaVersion:14,
+    schemaVersion:15,
     sourceFile,
     generatedAt:new Date().toISOString(),
     match:{...parsed.match, blackSourcePlayer:parsed.match.player1, whiteSourcePlayer:parsed.match.player2},
