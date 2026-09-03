@@ -32,7 +32,7 @@ const FALLBACK_DESIGN={
   id:"green",name:"グリーン",
   checkers:{player1:"#17382C",player2:"#F7F0DE"},
   winRate:{player1:"#17382C",player2:"#F7F0DE"},
-  board:{surface:"#CDBB91",frame:"#173327",pointLight:"#F2E6C6",pointDark:"#3E705B",bar:"#284F3D",line:"#173327"}
+  board:{surface:"#CDBB91",frame:"#173327",pointLight:"#F2E6C6",pointDark:"#3E705B",bar:"#284F3D"}
 };
 let designPresets=[FALLBACK_DESIGN];
 let currentDesign=FALLBACK_DESIGN;
@@ -462,7 +462,7 @@ function applyDesignPreset(id){
   root.style.setProperty("--point-light",normalizeHex(next.board?.pointLight,"#FFFFFF"));
   root.style.setProperty("--point-dark",normalizeHex(next.board?.pointDark,"#CFCFCF"));
   root.style.setProperty("--board-bar",normalizeHex(next.board?.bar,"#111111"));
-  const boardFrame=normalizeHex(next.board?.frame||next.board?.line,"#000000");
+  const boardFrame=normalizeHex(next.board?.frame,"#000000");
   root.style.setProperty("--board-line",boardFrame);
 
   const directBg=boardSvg.firstElementChild;
@@ -471,6 +471,8 @@ function applyDesignPreset(id){
   if(baseRects[0]) baseRects[0].setAttribute("fill",normalizeHex(next.board?.surface,"#FFFFFF"));
   if(baseRects[1]) baseRects[1].setAttribute("fill",boardFrame);
   if(baseRects[2]) baseRects[2].setAttribute("fill",boardFrame);
+  // 外周・中央バー周り・左右端など、盤面の区切り線はすべて frame で統一する。
+  document.querySelectorAll("#boardBase rect, #boardBase line").forEach(el=>el.setAttribute("stroke",boardFrame));
   trianglePoints();
 }
 async function loadDesignPresets(){

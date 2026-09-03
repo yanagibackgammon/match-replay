@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "presets": [
     {
       "id": "green",
@@ -17,7 +17,6 @@
         "pointLight": "#F2E6C6",
         "pointDark": "#3E705B",
         "bar": "#284F3D",
-        "line": "#173327",
         "frame": "#173327"
       }
     },
@@ -37,7 +36,6 @@
         "pointLight": "#E8C690",
         "pointDark": "#7D452D",
         "bar": "#4A2D20",
-        "line": "#2A1A12",
         "frame": "#2A1A12"
       }
     },
@@ -57,7 +55,6 @@
         "pointLight": "#F7FAFC",
         "pointDark": "#6789A6",
         "bar": "#18344A",
-        "line": "#102536",
         "frame": "#102536"
       }
     },
@@ -77,7 +74,6 @@
         "pointLight": "#F0DFC1",
         "pointDark": "#7E3440",
         "bar": "#4C2026",
-        "line": "#321419",
         "frame": "#321419"
       }
     },
@@ -97,7 +93,6 @@
         "pointLight": "#FFFFFF",
         "pointDark": "#CFCFCF",
         "bar": "#111111",
-        "line": "#000000",
         "frame": "#000000"
       }
     }

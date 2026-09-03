@@ -152,7 +152,7 @@ function renderDesignPreview(){
     {label:"選手1", color:preset.checkers?.player1},
     {label:"選手2", color:preset.checkers?.player2},
     {label:"メイン", color:preset.board?.surface},
-    {label:"枠", color:preset.board?.frame||preset.board?.line},
+    {label:"枠", color:preset.board?.frame},
     {label:"マス1", color:preset.board?.pointLight},
     {label:"マス2", color:preset.board?.pointDark}
   ].filter(item=>item.color);
@@ -182,7 +182,7 @@ async function loadDesignPresets(){
     designPresets=Array.isArray(data.presets)?data.presets:[];
   }catch(error){
     console.warn("Failed to load design presets",error);
-    designPresets=[{id:"green",name:"グリーン",checkers:{player1:"#17382C",player2:"#F7F0DE"},winRate:{player1:"#17382C",player2:"#F7F0DE"},board:{surface:"#CDBB91",frame:"#173327",pointLight:"#F2E6C6",pointDark:"#3E705B",bar:"#284F3D",line:"#173327"}}];
+    designPresets=[{id:"green",name:"グリーン",checkers:{player1:"#17382C",player2:"#F7F0DE"},winRate:{player1:"#17382C",player2:"#F7F0DE"},board:{surface:"#CDBB91",frame:"#173327",pointLight:"#F2E6C6",pointDark:"#3E705B",bar:"#284F3D"}}];
   }
   renderDesignOptions();
 }
