@@ -22,7 +22,7 @@ const defaultMeta={
 const standardPoints=[0,-2,0,0,0,0,5,0,3,0,0,0,-5,5,0,0,0,-3,0,-5,0,0,0,0,2];
 const emptyState={
   phase:"empty",score:[0,0],activePlayer:0,position:{points:standardPoints,blackBar:0,whiteBar:0,blackOff:0,whiteOff:0},
-  dice:null,cube:{value:1,owner:0},winRate:{black:50,white:50},analysis:{type:"none"},historyEvent:null
+  dice:null,cube:{value:1,owner:0},winRate:{black:50,white:50},gammonRate:{black:0,white:0},analysis:{type:"none"},historyEvent:null
 };
 
 const FALLBACK_DESIGN={
@@ -53,7 +53,9 @@ const els={
   blackHistoryName:document.getElementById("blackHistoryName"),whiteHistoryName:document.getElementById("whiteHistoryName"),
   blackScore:document.getElementById("blackScore"),whiteScore:document.getElementById("whiteScore"),
   winBarBlack:document.getElementById("winBarBlack"),winBarWhite:document.getElementById("winBarWhite"),
+  gammonBarBlack:document.getElementById("gammonBarBlack"),gammonBarWhite:document.getElementById("gammonBarWhite"),
   blackRateText:document.getElementById("blackRateText"),whiteRateText:document.getElementById("whiteRateText"),
+  blackGammonText:document.getElementById("blackGammonText"),whiteGammonText:document.getElementById("whiteGammonText"),
   historyList:document.getElementById("historyList"),
   blackHistoryList:document.getElementById("blackHistoryList"),whiteHistoryList:document.getElementById("whiteHistoryList"),
   analysisContent:document.getElementById("analysisContent"),
@@ -316,6 +318,15 @@ function contrastText(hex){
   const lum=(r*299+g*587+b*114)/1000;
   return lum>=150?"#111111":"#FFFFFF";
 }
+function gammonTone(hex){
+  const color=normalizeHex(hex,"#808080").slice(1);
+  const rgb=[0,2,4].map(i=>parseInt(color.slice(i,i+2),16));
+  const lum=(rgb[0]*299+rgb[1]*587+rgb[2]*114)/1000;
+  const target=lum>=150?0:255;
+  const ratio=0.22;
+  const mixed=rgb.map(v=>Math.round(v*(1-ratio)+target*ratio));
+  return `#${mixed.map(v=>v.toString(16).padStart(2,"0")).join("")}`;
+}
 function findDesignPreset(id){
   return designPresets.find(p=>p&&p.id===id)||designPresets[0]||FALLBACK_DESIGN;
 }
@@ -333,8 +344,12 @@ function applyDesignPreset(id){
   root.style.setProperty("--die-player2",checkerPlayer2);
   root.style.setProperty("--die-player1-pip",contrastText(checkerPlayer1));
   root.style.setProperty("--die-player2-pip",contrastText(checkerPlayer2));
-  root.style.setProperty("--win-player1",normalizeHex(next.winRate?.player1,"#111111"));
-  root.style.setProperty("--win-player2",normalizeHex(next.winRate?.player2,"#FFFFFF"));
+  const winPlayer1=normalizeHex(next.winRate?.player1,"#111111");
+  const winPlayer2=normalizeHex(next.winRate?.player2,"#FFFFFF");
+  root.style.setProperty("--win-player1",winPlayer1);
+  root.style.setProperty("--win-player2",winPlayer2);
+  root.style.setProperty("--gammon-player1",gammonTone(winPlayer1));
+  root.style.setProperty("--gammon-player2",gammonTone(winPlayer2));
   root.style.setProperty("--board-surface",normalizeHex(next.board?.surface,"#FFFFFF"));
   root.style.setProperty("--point-light",normalizeHex(next.board?.pointLight,"#FFFFFF"));
   root.style.setProperty("--point-dark",normalizeHex(next.board?.pointDark,"#CFCFCF"));
@@ -544,8 +559,13 @@ function renderAnalysis(a){
 function currentState(){return matchData.states[Math.max(0,Math.min(index,matchData.states.length-1))]||emptyState;}
 function render(){
   const s=currentState(),b=Number(s.winRate?.black??50),w=Number(s.winRate?.white??(100-b));renderMeta(s);
+  const gb=Math.max(0,Math.min(b,Number(s.gammonRate?.black??0)));
+  const gw=Math.max(0,Math.min(w,Number(s.gammonRate?.white??0)));
   const displayBlack=Math.round(b),displayWhite=100-displayBlack;
-  els.winBarBlack.style.width=`${b}%`;els.winBarWhite.style.width=`${w}%`;els.blackRateText.textContent=`${displayBlack}%`;els.whiteRateText.textContent=`${displayWhite}%`;
+  els.winBarBlack.style.width=`${b}%`;els.winBarWhite.style.width=`${w}%`;
+  els.gammonBarBlack.style.width=`${gb}%`;els.gammonBarWhite.style.width=`${gw}%`;
+  els.blackRateText.textContent=`${displayBlack}%`;els.whiteRateText.textContent=`${displayWhite}%`;
+  els.blackGammonText.textContent=`G ${Math.round(gb)}%`;els.whiteGammonText.textContent=`G ${Math.round(gw)}%`;
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
   els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);
   drawPointLabels(s.activePlayer);renderAnimatedCheckers(s);drawDice(s.dice,s.activePlayer,{luckKind:s.luckKind||null});drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
