@@ -16,6 +16,7 @@
   --die-player2:#FFFFFF;
   --die-player1-pip:#FFFFFF;
   --die-player2-pip:#111111;
+  --die-border:#111111;
   --win-player1:#111111;
   --win-player2:#FFFFFF;
   --gammon-player1:#393939;
@@ -722,14 +723,14 @@ html,body{
   height:var(--die-size);
   border-radius:10px;
   background:var(--die-player2);
-  border:2px solid var(--die-player2-pip);
+  border:2px solid var(--die-border);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.28), 0 2px 5px rgba(0,0,0,.10);
   flex:0 0 auto;
 }
 
-.die.player1{background:var(--die-player1);border-color:var(--die-player1-pip)}
+.die.player1{background:var(--die-player1);border-color:var(--die-border)}
 .die.player1 .die-pip{background:var(--die-player1-pip)}
-.die.player2{background:var(--die-player2);border-color:var(--die-player2-pip)}
+.die.player2{background:var(--die-player2);border-color:var(--die-border)}
 .die.player2 .die-pip{background:var(--die-player2-pip)}
 
 .dice-pair-inline .die{--die-size:44px;--pip-size:8px}
