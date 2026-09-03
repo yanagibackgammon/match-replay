@@ -74,15 +74,19 @@ const els={
 };
 
 const pointLabelCenters=[81.75,126.25,170.75,215.25,259.75,304.25,397.75,442.25,486.75,531.25,575.75,620.25];
+function boardInfoTextColor(){
+  return contrastText(currentDesign?.board?.surface||"#FFFFFF");
+}
 function drawPointLabels(activePlayer=1){
   const labelsG=document.getElementById("pointLabels");labelsG.innerHTML="";
   const player2=activePlayer===-1;
+  const labelFill=boardInfoTextColor();
   const topNums=player2?[12,11,10,9,8,7,6,5,4,3,2,1]:[13,14,15,16,17,18,19,20,21,22,23,24];
   const bottomNums=player2?[13,14,15,16,17,18,19,20,21,22,23,24]:[12,11,10,9,8,7,6,5,4,3,2,1];
   pointLabelCenters.forEach((cx,i)=>{
     for(const [y,n] of [[18,topNums[i]],[540,bottomNums[i]]]){
       const t=document.createElementNS("http://www.w3.org/2000/svg","text");
-      t.setAttribute("x",cx);t.setAttribute("y",y);t.setAttribute("class","point-label");t.textContent=n;labelsG.appendChild(t);
+      t.setAttribute("x",cx);t.setAttribute("y",y);t.setAttribute("class","point-label");t.setAttribute("fill",labelFill);t.textContent=n;labelsG.appendChild(t);
     }
   });
 }
@@ -100,11 +104,13 @@ function calculatePips(position){
 function drawPipInfo(position){
   pipInfoG.innerHTML="";
   const pips=calculatePips(position);
+  const labelFill=boardInfoTextColor();
   for(const [y,text] of [[18,`(${pips.white})`],[540,`(${pips.black})`]]){
     const t=document.createElementNS("http://www.w3.org/2000/svg","text");
     t.setAttribute("x","350.5");
     t.setAttribute("y",String(y));
     t.setAttribute("class","pip-label");
+    t.setAttribute("fill",labelFill);
     t.textContent=text;
     pipInfoG.appendChild(t);
   }
