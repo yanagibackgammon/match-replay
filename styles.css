@@ -200,17 +200,35 @@ html,body{
 }
 
 .score-value{
+  position:relative;
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   font-size:82px;
   font-weight:900;
   line-height:1;
 }
-.score-value.is-score-gain{color:#0d8b50}
-.score-value.score-gain-animate{animation:scoreGainRise 5s cubic-bezier(.18,.72,.22,1) both}
-@keyframes scoreGainRise{
-  0%{transform:translateY(76px);opacity:0}
-  12%{transform:translateY(0);opacity:1}
-  78%{transform:translateY(0);opacity:1}
-  100%{transform:translateY(-76px);opacity:0}
+.score-number{
+  position:absolute;
+  left:0;
+  top:0;
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.score-value.is-score-transition .score-number-old{animation:scoreOldExit 5s cubic-bezier(.18,.72,.22,1) both}
+.score-value.is-score-transition .score-number-new{animation:scoreNewEnter 5s cubic-bezier(.18,.72,.22,1) both}
+@keyframes scoreOldExit{
+  0%,12%{transform:translateY(0);opacity:1}
+  34%,100%{transform:translateY(-78px);opacity:0}
+}
+@keyframes scoreNewEnter{
+  0%,22%{transform:translateY(78px);opacity:0}
+  44%,100%{transform:translateY(0);opacity:1}
 }
 
 .eval-wrap{
@@ -247,8 +265,9 @@ html,body{
   will-change:width;
   border-top:2px solid rgba(17,17,17,.28);
 }
-.gammon-fill.black{left:0;background:var(--gammon-player1)}
-.gammon-fill.white{right:0;background:var(--gammon-player2)}
+.gammon-fill.black{left:0;background:var(--gammon-player1);border-right:2px solid #111}
+.gammon-fill.white{right:0;background:var(--gammon-player2);border-left:2px solid #111}
+.gammon-fill.is-zero{width:0!important;border-left-width:0!important;border-right-width:0!important}
 
 .bar-rate{
   position:absolute;
@@ -515,12 +534,12 @@ html,body{
   align-content:center;
   align-items:center;
   justify-content:center;
-  gap:8px 8px;
+  gap:10px 18px;
   padding:0 20px;
   box-sizing:border-box;
   overflow:hidden;
 }
-.analysis-jokers.is-many{gap:6px 8px;padding:0 20px}
+.analysis-jokers.is-many{gap:8px 14px;padding:0 20px}
 
 .joker-glow{
   position:relative;
@@ -557,17 +576,29 @@ html,body{
   transform:translate(-50%,-50%);
   flex-wrap:nowrap;
 }
+.joker-glow.is-single-face{width:108px;flex-basis:108px}
+.joker-glow.is-single-face .joker-label{width:108px}
+.single-die-block{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.analysis-jokers .joker-glow.is-single-face .die{--die-size:78px;--pip-size:13px}
 .joker-glow.plus .joker-label{color:#0d8b50}
 .joker-glow.minus .joker-label{color:#c43b3b}
 .joker-glow.plus{animation:jokerPulseGreen 1.15s ease-in-out infinite}
 .joker-glow.minus{animation:jokerPulseRed 1.15s ease-in-out infinite}
 @keyframes jokerPulseGreen{
-  0%,100%{filter:drop-shadow(0 0 6px rgba(13,139,80,.35)) drop-shadow(0 0 16px rgba(13,139,80,.30))}
-  50%{filter:drop-shadow(0 0 18px rgba(13,139,80,.95)) drop-shadow(0 0 42px rgba(13,139,80,.88)) drop-shadow(0 0 72px rgba(13,139,80,.58))}
+  0%,100%{filter:drop-shadow(0 0 4px rgba(13,139,80,.30)) drop-shadow(0 0 10px rgba(13,139,80,.26))}
+  50%{filter:drop-shadow(0 0 12px rgba(13,139,80,.92)) drop-shadow(0 0 26px rgba(13,139,80,.72)) drop-shadow(0 0 42px rgba(13,139,80,.42))}
 }
 @keyframes jokerPulseRed{
-  0%,100%{filter:drop-shadow(0 0 6px rgba(196,59,59,.35)) drop-shadow(0 0 16px rgba(196,59,59,.30))}
-  50%{filter:drop-shadow(0 0 18px rgba(196,59,59,.98)) drop-shadow(0 0 42px rgba(196,59,59,.90)) drop-shadow(0 0 72px rgba(196,59,59,.60))}
+  0%,100%{filter:drop-shadow(0 0 4px rgba(196,59,59,.30)) drop-shadow(0 0 10px rgba(196,59,59,.26))}
+  50%{filter:drop-shadow(0 0 12px rgba(196,59,59,.94)) drop-shadow(0 0 26px rgba(196,59,59,.74)) drop-shadow(0 0 42px rgba(196,59,59,.44))}
 }
 
 #dice.is-muted{
@@ -592,11 +623,13 @@ html,body{
   50%{filter:drop-shadow(0 0 14px rgba(196,59,59,1)) drop-shadow(0 0 34px rgba(196,59,59,.92)) drop-shadow(0 0 58px rgba(196,59,59,.68))}
 }
 @media (prefers-reduced-motion:reduce){
-  .joker-glow.plus{animation:none;filter:drop-shadow(0 0 24px rgba(13,139,80,.9)) drop-shadow(0 0 52px rgba(13,139,80,.55))}
-  .joker-glow.minus{animation:none;filter:drop-shadow(0 0 24px rgba(196,59,59,.9)) drop-shadow(0 0 52px rgba(196,59,59,.55))}
+  .joker-glow.plus{animation:none;filter:drop-shadow(0 0 14px rgba(13,139,80,.9)) drop-shadow(0 0 30px rgba(13,139,80,.48))}
+  .joker-glow.minus{animation:none;filter:drop-shadow(0 0 14px rgba(196,59,59,.9)) drop-shadow(0 0 30px rgba(196,59,59,.48))}
   #dice.is-joker-glow{animation:none;filter:drop-shadow(0 0 22px rgba(13,139,80,.9)) drop-shadow(0 0 44px rgba(13,139,80,.58))}
   #dice.is-antijoker-glow{animation:none;filter:drop-shadow(0 0 22px rgba(196,59,59,.9)) drop-shadow(0 0 44px rgba(196,59,59,.58))}
-  .score-value.score-gain-animate{animation:none}
+  .score-value.is-score-transition .score-number-old,
+  .score-value.is-score-transition .score-number-new{animation:none}
+  .score-value.is-score-transition .score-number-old{display:none}
 }
 
 .analysis-moves{

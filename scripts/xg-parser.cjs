@@ -796,21 +796,34 @@ function buildTimeline(parsed, sourceFile){
         winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,diceMuted,
         analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'none'},historyEvent:null
       });
-      pushState({
-        phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
-        position:beforePosition,dice:r.dice,cube,winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,diceMuted,
-        analysis:{type:'moves',candidates},historyEvent:null
-      });
+      const forcedMove = candidates.length <= 1 || diceMuted;
       addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
-      pushState({
-        phase:'analysis',gameNumber,score:[...score],activePlayer:r.activePlayer,
-        position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,luckKind,diceMuted,
-        analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
-        // 配信側でムーブ前→ムーブ後を順番に0.5秒ずつアニメーションするため、
-        // 実棋譜の移動区間をそのまま保持する。外部ファイル参照は不要。
-        moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
-        historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'}
-      });
+      if(forcedMove){
+        // フォースト／Cannot Move は、候補表示と選択・ムーブを同一シーケンスにする。
+        pushState({
+          phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
+          position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,luckKind,diceMuted,
+          analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
+          moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
+          historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'},
+          forcedMove:true
+        });
+      }else{
+        pushState({
+          phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
+          position:beforePosition,dice:r.dice,cube,winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,diceMuted,
+          analysis:{type:'moves',candidates},historyEvent:null
+        });
+        pushState({
+          phase:'analysis',gameNumber,score:[...score],activePlayer:r.activePlayer,
+          position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,luckKind,diceMuted,
+          analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
+          // 配信側でムーブ前→ムーブ後を順番に0.5秒ずつアニメーションするため、
+          // 実棋譜の移動区間をそのまま保持する。外部ファイル参照は不要。
+          moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
+          historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'}
+        });
+      }
       pushState({
         phase:'move',gameNumber,score:[...score],activePlayer:r.activePlayer,
         position:afterPosition,dice:null,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,
@@ -845,7 +858,7 @@ function buildTimeline(parsed, sourceFile){
   }
 
   return {
-    schemaVersion:6,
+    schemaVersion:7,
     sourceFile,
     generatedAt:new Date().toISOString(),
     match:{...parsed.match, blackSourcePlayer:parsed.match.player1, whiteSourcePlayer:parsed.match.player2},

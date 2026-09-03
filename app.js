@@ -257,7 +257,7 @@ async function runCheckerAnimation(state,key){
   drawCheckers(state.position);
 }
 function renderAnimatedCheckers(state){
-  const eligible=state?.phase==="analysis"&&state?.moveAnimation&&Array.isArray(state.moveAnimation.segments)&&state.moveAnimation.segments.length>0;
+  const eligible=(state?.phase==="analysis"||(state?.phase==="candidates"&&state?.forcedMove))&&state?.moveAnimation&&Array.isArray(state.moveAnimation.segments)&&state.moveAnimation.segments.length>0;
   const key=`${loadedMatchFile}|${index}`;
   if(!eligible){
     if(moveAnimationRunning)cancelCheckerAnimation();
@@ -319,7 +319,7 @@ function drawGameOverlay(state){
   const cubeValue=Math.max(1,Number(state.cube?.value)||1);
   const winMultiplier=Math.max(1,Math.min(3,Math.round(points/cubeValue)||1));
   const winnerName=winner==="black"?meta.blackName:meta.whiteName;
-  const winLabel=winMultiplier>=3?"バックギャモン勝ち":winMultiplier===2?"ギャモン勝ち":"通常勝ち";
+  const winLabel=winMultiplier>=3?"バックギャモン勝ち":winMultiplier===2?"ギャモン勝ち":"シングル勝ち";
 
   const r=document.createElementNS("http://www.w3.org/2000/svg","rect");
   r.setAttribute("x","116");r.setAttribute("y","165");r.setAttribute("width","470");r.setAttribute("height","216");r.setAttribute("rx","18");
@@ -446,19 +446,19 @@ function renderMeta(state){
   function renderScoreValue(el,value,gain){
     if(!el)return;
     const gainNow=gain>0;
-    el.textContent=gainNow?`+${gain}`:value;
-    el.classList.toggle('is-score-gain',gainNow);
     if(gainNow){
-      const key=`${state?.gameNumber||0}-${index}-${gain}`;
+      const oldScore=Number(value)||0;
+      const newScore=oldScore+gain;
+      const key=`${state?.gameNumber||0}-${index}-${oldScore}-${newScore}`;
       if(el.dataset.scoreGainKey!==key){
         el.dataset.scoreGainKey=key;
-        el.classList.remove('score-gain-animate');
-        void el.offsetWidth;
-        el.classList.add('score-gain-animate');
+        el.classList.add('is-score-transition');
+        el.innerHTML=`<span class="score-number score-number-old">${oldScore}</span><span class="score-number score-number-new">${newScore}</span>`;
       }
     }else{
       el.dataset.scoreGainKey='';
-      el.classList.remove('score-gain-animate');
+      el.classList.remove('is-score-transition');
+      el.textContent=value;
     }
   }
   renderScoreValue(els.blackScore,score[0]??meta.blackScore,blackGain);
@@ -575,9 +575,40 @@ function renderAnalysis(a){
   if(!a||a.type==="none"){els.analysisContent.innerHTML="";return;}
   if(a.type==="jokers"){
     const activePlayer=currentState().activePlayer===1?1:-1;
-    const pair=(d,kind)=>`<div class="joker-glow ${kind}"><div class="joker-label">${kind==="plus"?"チャンス！":"ピンチ！"}</div><div class="dice-pair-block">${renderDie(d[0],activePlayer)}${renderDie(d[1],activePlayer)}</div></div>`;
-    const items=[...(a.joker||[]).map(d=>pair(d,"plus")),...(a.antiJoker||[]).map(d=>pair(d,"minus"))];
-    els.analysisContent.innerHTML=`<div class="analysis-jokers${items.length>6?" is-many":""}">${items.join("")}</div>`;return;
+    const key=d=>{
+      const x=Number(d?.[0]),y=Number(d?.[1]);
+      return Number.isFinite(x)&&Number.isFinite(y)?`${Math.max(x,y)}-${Math.min(x,y)}`:"";
+    };
+    const groupRolls=(rolls,kind)=>{
+      const list=Array.isArray(rolls)?rolls:[];
+      const keys=new Set(list.map(key));
+      const fullFaces=[];
+      for(let face=1;face<=6;face++){
+        let all=true;
+        for(let other=1;other<=6;other++){
+          if(!keys.has(`${Math.max(face,other)}-${Math.min(face,other)}`)){all=false;break;}
+        }
+        if(all) fullFaces.push(face);
+      }
+      const covered=new Set();
+      for(const face of fullFaces){
+        for(let other=1;other<=6;other++) covered.add(`${Math.max(face,other)}-${Math.min(face,other)}`);
+      }
+      const items=fullFaces.map(face=>({kind,face,single:true}));
+      for(const dice of list){
+        if(!covered.has(key(dice))) items.push({kind,dice,single:false});
+      }
+      return items;
+    };
+    const renderItem=item=>{
+      const label=item.kind==="plus"?"チャンス！":"ピンチ！";
+      if(item.single){
+        return `<div class="joker-glow ${item.kind} is-single-face"><div class="joker-label">${label}</div><div class="single-die-block">${renderDie(item.face,activePlayer)}</div></div>`;
+      }
+      return `<div class="joker-glow ${item.kind}"><div class="joker-label">${label}</div><div class="dice-pair-block">${renderDie(item.dice[0],activePlayer)}${renderDie(item.dice[1],activePlayer)}</div></div>`;
+    };
+    const items=[...groupRolls(a.joker,"plus"),...groupRolls(a.antiJoker,"minus")];
+    els.analysisContent.innerHTML=`<div class="analysis-jokers${items.length>6?" is-many":""}">${items.map(renderItem).join("")}</div>`;return;
   }
   const selectedIndex=Number.isInteger(a.playedIndex)?a.playedIndex:-1;
   const all=a.candidates||[];
@@ -606,6 +637,7 @@ function render(){
   els.winBarBlack.classList.toggle("is-zero",b<=0);
   els.winBarWhite.classList.toggle("is-zero",w<=0);
   els.gammonBarBlack.style.width=`${gb}%`;els.gammonBarWhite.style.width=`${gw}%`;
+  els.gammonBarBlack.classList.toggle("is-zero",gb<=0);els.gammonBarWhite.classList.toggle("is-zero",gw<=0);
   els.blackRateText.textContent=`${displayBlack}%`;els.whiteRateText.textContent=`${displayWhite}%`;
   els.blackGammonText.textContent=`G ${Math.round(gb)}%`;els.whiteGammonText.textContent=`G ${Math.round(gw)}%`;
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
