@@ -245,6 +245,19 @@ function finishMovingChecker(positionAfterSource,segment,activePlayer){
   }else if(activePlayer===1)out.blackOff+=1;else out.whiteOff+=1;
   return out;
 }
+function landHitWithoutBar(positionAfterSource,segment,activePlayer){
+  const out=cloneVisualPosition(positionAfterSource),sign=activePlayer===1?1:-1;
+  const p=Number(segment?.destination);
+  if(!Number.isInteger(p)||p<1||p>24)return out;
+  out.points[p]=sign;
+  return out;
+}
+function finishHitToBar(positionAfterLanding,activePlayer){
+  const out=cloneVisualPosition(positionAfterLanding);
+  const hitPlayer=-activePlayer;
+  if(hitPlayer===1)out.blackBar+=1;else out.whiteBar+=1;
+  return out;
+}
 function easeCheckerMove(t){return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
 function animateCheckerBetween(from,to,activePlayer,token){
   return new Promise(resolve=>{
@@ -281,7 +294,20 @@ async function runCheckerAnimation(state,key){
     drawCheckers(withoutSource);
     const completed=await animateCheckerBetween(from,to,state.activePlayer,token);
     if(!completed||token!==moveAnimationToken)return;
-    board=finishMovingChecker(withoutSource,segment,state.activePlayer);
+    if(segment?.hit){
+      const destination=Number(segment.destination);
+      const hitPlayer=-state.activePlayer;
+      const landed=landHitWithoutBar(withoutSource,segment,state.activePlayer);
+      drawCheckers(landed);
+      const q=pointCoord(destination);
+      const afterHit=finishHitToBar(landed,state.activePlayer);
+      const hitTo=barMoveCoord(afterHit,hitPlayer);
+      const hitCompleted=await animateCheckerBetween({x:q.x,y:q.y},hitTo,hitPlayer,token);
+      if(!hitCompleted||token!==moveAnimationToken)return;
+      board=afterHit;
+    }else{
+      board=finishMovingChecker(withoutSource,segment,state.activePlayer);
+    }
     drawCheckers(board);
   }
   if(token!==moveAnimationToken)return;
@@ -638,7 +664,11 @@ function renderAnalysis(a){
       }
       return `<div class="joker-glow ${item.kind}"><div class="joker-label">${label}</div><div class="dice-pair-block">${renderDie(item.dice[0],activePlayer)}${renderDie(item.dice[1],activePlayer)}</div></div>`;
     };
-    const items=[...groupRolls(a.joker,"plus")];
+    // 特定の面を含む6通りすべてが Anti-Joker の場合は、
+    // その他を大量の「チャンス！」として見せず、その悪い面を大きな「ピンチ！」で優先表示する。
+    // 通常の Anti-Joker 候補は従来どおり候補エリアには表示しない。
+    const antiFaceItems=groupRolls(a.antiJoker,"minus").filter(item=>item.single);
+    const items=antiFaceItems.length?antiFaceItems:[...groupRolls(a.joker,"plus")];
     els.analysisContent.innerHTML=`<div class="analysis-jokers${items.length>6?" is-many":""}">${items.map(renderItem).join("")}</div>`;return;
   }
   const selectedIndex=Number.isInteger(a.playedIndex)?a.playedIndex:-1;
@@ -792,6 +822,12 @@ function playbackDelayForIndex(i){
   if(state?.phase==="gameEnd") return SCORE_SEQUENCE_SPEED;
   if(state?.phase==="bigComebackIntro") return BIG_COMEBACK_DIM_SPEED;
   if(state?.phase==="roll" && (state?.rollNotice==="comeback" || state?.rollNotice==="nice")) return BIG_COMEBACK_SPEED;
+  const segments=Array.isArray(state?.moveAnimation?.segments)?state.moveAnimation.segments:[];
+  if(segments.length){
+    const hitCount=segments.reduce((n,s)=>n+(s?.hit?1:0),0);
+    const animationMs=(segments.length+hitCount)*CHECKER_MOVE_DURATION+250;
+    return Math.max(PLAYBACK_SPEED,animationMs);
+  }
   return PLAYBACK_SPEED;
 }
 function stopPagesTimer(){if(pagesTimer){clearTimeout(pagesTimer);pagesTimer=null;}}
