@@ -192,7 +192,7 @@ function renderState(state){
   timeline.max = total - 1;
   timeline.value = Math.min(lastState.index || 0, total - 1);
   stepText.textContent = `${Number(timeline.value) + 1} / ${total}`;
-  playState.textContent = lastState.mode === "manual" ? "MANUAL" : (lastState.playing ? "PLAYING" : "PAUSE");
+  playState.textContent = lastState.mode === "manual" ? "手動" : (lastState.playing ? "再生中" : "一時停止");
   loadedFileName.textContent = lastState.meta.matchFile || "未選択";
   renderGameMarkers();
 

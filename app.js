@@ -496,16 +496,21 @@ function collectHistoryRows(){
         row[event.player]=event;openMoveRow=null;continue;
       }
       if(!leadPlayer)leadPlayer=event.player;
-      if(!openMoveRow||openMoveRow[event.player]){openMoveRow={kind:"actions",black:null,white:null};rows.push(openMoveRow);}
+      const existingEvent=openMoveRow?.[event.player]||null;
+      // 直前のrollで同じセルにダイスだけ入っている場合は、そのセルをムーブで置き換える。
+      // これにより「ロール表示」と「候補手表示」を分けても履歴行は増えない。
+      if(!openMoveRow||(existingEvent&&existingEvent.kind!=="roll")){openMoveRow={kind:"actions",black:null,white:null};rows.push(openMoveRow);}
       openMoveRow[event.player]=event;
       continue;
     }
 
     // ロールした瞬間は、現在行にダイスだけ先に表示する。
-    if(stateIndex===index&&state.phase==="roll"&&Array.isArray(state.dice)){
+    // 初手はpreRollを省略するため、roll自体が先行行の開始にもなる。
+    if(state.phase==="roll"&&Array.isArray(state.dice)){
       const turnPlayer=state.activePlayer===1?"black":(state.activePlayer===-1?"white":null);
       if(turnPlayer){
         if(!leadPlayer)leadPlayer=turnPlayer;
+        if(turnPlayer===leadPlayer&&(!openMoveRow||openMoveRow[turnPlayer])){openMoveRow={kind:"actions",black:null,white:null};rows.push(openMoveRow);}
         if(!openMoveRow||openMoveRow[turnPlayer]){openMoveRow={kind:"actions",black:null,white:null};rows.push(openMoveRow);}
         openMoveRow[turnPlayer]={player:turnPlayer,dice:state.dice,move:"",error:0,kind:"roll"};
       }

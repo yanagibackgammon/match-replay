@@ -599,6 +599,7 @@ function buildTimeline(parsed, sourceFile){
   let lastGammonRate = {black:0,white:0};
   let lastPosition = null;
   let lastCube = {value:1,owner:0};
+  let gameHasCheckerMove = false;
   const prStats = {
     black:{error:0,decisions:0},
     white:{error:0,decisions:0}
@@ -644,6 +645,7 @@ function buildTimeline(parsed, sourceFile){
       lastCube = {value: 2 ** Math.max(0,r.autoDoubles || 0), owner:0};
       lastBlackRate = 50;
       lastGammonRate = {black:0,white:0};
+      gameHasCheckerMove = false;
       pushState({
         phase:'gameStart', gameNumber, score:[...score], activePlayer:0,
         position:lastPosition, dice:null, cube:lastCube,
@@ -719,12 +721,16 @@ function buildTimeline(parsed, sourceFile){
 
         // Pre-roll state: evaluate all 21 distinct rolls from the current board.
         // The actually rolled dice are intentionally not used to decide which rolls are highlighted.
-        const rollAnalysis=analyzeJokerRolls(position,r.activePlayer);
-        pushState({
-          phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
-          position,dice:null,cube,winRate,gammonRate,
-          analysis:{type:'jokers',...rollAnalysis},historyEvent:null
-        });
+        // 各ゲーム初手だけは opening roll 自体を手番開始シーケンスにするため、
+        // 初手直前の No Double 解析レコードから preRoll を生成しない。
+        if(gameHasCheckerMove){
+          const rollAnalysis=analyzeJokerRolls(position,r.activePlayer);
+          pushState({
+            phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
+            position,dice:null,cube,winRate,gammonRate,
+            analysis:{type:'jokers',...rollAnalysis},historyEvent:null
+          });
+        }
         lastCube = cube;
       }
       lastPosition = position;
@@ -760,14 +766,17 @@ function buildTimeline(parsed, sourceFile){
       const selectedPosition = afterPosition;
       const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode)};
 
-      // 1手を4段階で表示する。
-      // 1) 手番交代 + Joker / Anti-Joker
-      // 2) ロール + 候補手 + 最善手の勝率（盤面はムーブ前）
-      // 3) 選択手を金表示 + チェッカー移動 + 選択手の勝率
-      // 4) ロールダイスを消す
-      // XGにpre-roll cube recordが無い場合も空のJoker段階を補う。
+      // 通常手は5段階で表示する。
+      // 1) 手番交代 + Joker / Anti-Joker候補
+      // 2) ロールのみ表示（候補手はまだ出さない）
+      // 3) 候補手表示 + 最善手の勝率
+      // 4) 選択手を金表示 + チェッカー移動 + 選択手の勝率
+      // 5) ロールダイスを消す
+      // 各ゲームの初手だけは、手番開始とロールを同一シーケンスにする。
+      // オープニングロールには事前Joker/Anti-Joker候補を出さない。
+      const isOpeningMove=!gameHasCheckerMove;
       let previous = states[states.length - 1];
-      if(!(previous && previous.phase === 'preRoll' && previous.gameNumber === gameNumber && previous.activePlayer === r.activePlayer)){
+      if(!isOpeningMove && !(previous && previous.phase === 'preRoll' && previous.gameNumber === gameNumber && previous.activePlayer === r.activePlayer)){
         const rollAnalysis=analyzeJokerRolls(beforePosition,r.activePlayer);
         pushState({
           phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
@@ -778,10 +787,16 @@ function buildTimeline(parsed, sourceFile){
         previous=states[states.length-1];
       }
       const actualLuck=Number(r.errLuck);
-      const luckKind=Number.isFinite(actualLuck)?(actualLuck>=JOKER_EQUITY_THRESHOLD?'joker':(actualLuck<=-JOKER_EQUITY_THRESHOLD?'antiJoker':null)):classifyRollLuck(previous?.analysis,r.dice);
+      const luckKind=isOpeningMove?null:(Number.isFinite(actualLuck)?(actualLuck>=JOKER_EQUITY_THRESHOLD?'joker':(actualLuck<=-JOKER_EQUITY_THRESHOLD?'antiJoker':null)):classifyRollLuck(previous?.analysis,r.dice));
 
       pushState({
         phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
+        position:beforePosition,dice:r.dice,cube,
+        winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},luckKind,
+        analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'none'},historyEvent:null
+      });
+      pushState({
+        phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
         position:beforePosition,dice:r.dice,cube,winRate:bestWinRate,gammonRate:bestGammonRate,luckKind,
         analysis:{type:'moves',candidates},historyEvent:null
       });
@@ -800,6 +815,7 @@ function buildTimeline(parsed, sourceFile){
         position:afterPosition,dice:null,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,
         analysis:{type:'none'},historyEvent:null
       });
+      gameHasCheckerMove = true;
       lastPosition = afterPosition;
       lastCube = cube;
       lastBlackRate = selectedWinRate.black;
@@ -828,7 +844,7 @@ function buildTimeline(parsed, sourceFile){
   }
 
   return {
-    schemaVersion:5,
+    schemaVersion:6,
     sourceFile,
     generatedAt:new Date().toISOString(),
     match:{...parsed.match, blackSourcePlayer:parsed.match.player1, whiteSourcePlayer:parsed.match.player2},
