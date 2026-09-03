@@ -359,15 +359,40 @@ function drawCube(cube){
 function drawGameOverlay(state){
   gameOverlayG.innerHTML="";
   if(!state) return;
-  if(state.phase==="gameStart"){
+
+  const addPanel=(x,y,w,h,rx=18)=>{
     const r=document.createElementNS("http://www.w3.org/2000/svg","rect");
-    r.setAttribute("x","246");r.setAttribute("y","232");r.setAttribute("width","210");r.setAttribute("height","82");r.setAttribute("rx","14");
-    r.setAttribute("fill","rgba(0,0,0,.82)");r.setAttribute("stroke","#fff");r.setAttribute("stroke-width","2");
+    r.setAttribute("x",String(x));r.setAttribute("y",String(y));r.setAttribute("width",String(w));r.setAttribute("height",String(h));r.setAttribute("rx",String(rx));
+    r.setAttribute("fill","rgba(0,0,0,.84)");r.setAttribute("stroke","rgba(255,255,255,.9)");r.setAttribute("stroke-width","2");
     gameOverlayG.appendChild(r);
+  };
+  const addText=(y,text,size,color="#fff",weight=800)=>{
     const t=document.createElementNS("http://www.w3.org/2000/svg","text");
-    t.setAttribute("x","351");t.setAttribute("y","286");t.setAttribute("text-anchor","middle");t.setAttribute("fill","#fff");
-    t.setAttribute("font-family","Arial, Helvetica, sans-serif");t.setAttribute("font-size","42");t.setAttribute("font-weight","700");
-    t.textContent=`Game ${state.gameNumber || 1}`;gameOverlayG.appendChild(t);
+    t.setAttribute("x","351");t.setAttribute("y",String(y));t.setAttribute("text-anchor","middle");t.setAttribute("fill",color);
+    t.setAttribute("font-family","Arial, Helvetica, sans-serif");t.setAttribute("font-size",String(size));t.setAttribute("font-weight",String(weight));
+    t.textContent=text;gameOverlayG.appendChild(t);
+  };
+
+  if(state.phase==="matchStart"){
+    addPanel(96,188,510,170,18);
+    addText(246,"試合開始",46,"#fff",900);
+    addText(316,`${meta.blackName} vs ${meta.whiteName}`,34,"#fff",800);
+    return;
+  }
+
+  if(state.phase==="matchEnd"){
+    const winner=state.matchWinner;
+    const winnerName=winner==="black"?meta.blackName:winner==="white"?meta.whiteName:"";
+    addPanel(116,150,470,246,18);
+    addText(212,"試合終了",42,"#fff",900);
+    addText(270,"勝者",30,"#fff",800);
+    addText(344,winnerName,54,"#fff",900);
+    return;
+  }
+
+  if(state.phase==="gameStart"){
+    addPanel(246,232,210,82,14);
+    addText(286,`Game ${state.gameNumber || 1}`,42,"#fff",700);
     return;
   }
   if(state.phase!=="gameEnd" || !state.scoreDelta) return;
@@ -379,17 +404,7 @@ function drawGameOverlay(state){
   const winnerName=winner==="black"?meta.blackName:meta.whiteName;
   const winLabel=winMultiplier>=3?"バックギャモン勝ち":winMultiplier===2?"ギャモン勝ち":"シングル勝ち";
 
-  const r=document.createElementNS("http://www.w3.org/2000/svg","rect");
-  r.setAttribute("x","116");r.setAttribute("y","165");r.setAttribute("width","470");r.setAttribute("height","216");r.setAttribute("rx","18");
-  r.setAttribute("fill","rgba(0,0,0,.84)");r.setAttribute("stroke","rgba(255,255,255,.9)");r.setAttribute("stroke-width","2");
-  gameOverlayG.appendChild(r);
-
-  const addText=(y,text,size,color,weight=800)=>{
-    const t=document.createElementNS("http://www.w3.org/2000/svg","text");
-    t.setAttribute("x","351");t.setAttribute("y",String(y));t.setAttribute("text-anchor","middle");t.setAttribute("fill",color);
-    t.setAttribute("font-family","Arial, Helvetica, sans-serif");t.setAttribute("font-size",String(size));t.setAttribute("font-weight",String(weight));
-    t.textContent=text;gameOverlayG.appendChild(t);
-  };
+  addPanel(116,165,470,216,18);
   addText(220,winnerName,32,"#fff",800);
   addText(300,`＋${points}`,72,"#18b86b",900);
   addText(350,`${winLabel}×${cubeValue}倍`,28,"#fff",800);
@@ -819,7 +834,7 @@ function publishPagesState(extra={}){
 }
 function playbackDelayForIndex(i){
   const state=matchData.states[Math.max(0,Math.min(Number(i)||0,matchData.states.length-1))];
-  if(state?.phase==="gameEnd") return SCORE_SEQUENCE_SPEED;
+  if(state?.phase==="gameEnd" || state?.phase==="matchStart" || state?.phase==="matchEnd") return SCORE_SEQUENCE_SPEED;
   if(state?.phase==="bigComebackIntro") return BIG_COMEBACK_DIM_SPEED;
   if(state?.phase==="roll" && (state?.rollNotice==="comeback" || state?.rollNotice==="nice")) return BIG_COMEBACK_SPEED;
   const segments=Array.isArray(state?.moveAnimation?.segments)?state.moveAnimation.segments:[];

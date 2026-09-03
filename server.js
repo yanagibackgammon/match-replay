@@ -7,6 +7,8 @@ const { parseXgFile } = require("./scripts/xg-parser.cjs");
 const PORT = Number(process.env.PORT || 3000);
 const PLAYBACK_SPEED = 3000;
 const SCORE_SEQUENCE_SPEED = 5000;
+const BIG_COMEBACK_DIM_SPEED = 5000;
+const CHECKER_MOVE_DURATION = 500;
 const ROOT = __dirname;
 const MATCH_DIR = path.join(ROOT, "matches");
 const ADS_DIR = path.join(ROOT, "ads");
@@ -212,7 +214,16 @@ function currentPlaybackDelay(){
     const file=state.meta.matchFile;
     if(!file)return PLAYBACK_SPEED;
     const data=loadMatchData(file);
-    return data.states?.[state.index]?.phase==="gameEnd"?SCORE_SEQUENCE_SPEED:PLAYBACK_SPEED;
+    const current=data.states?.[state.index];
+    if(current?.phase==="gameEnd" || current?.phase==="matchStart" || current?.phase==="matchEnd")return SCORE_SEQUENCE_SPEED;
+    if(current?.phase==="bigComebackIntro")return BIG_COMEBACK_DIM_SPEED;
+    const segments=Array.isArray(current?.moveAnimation?.segments)?current.moveAnimation.segments:[];
+    if(segments.length){
+      const hitCount=segments.reduce((n,s)=>n+(s?.hit?1:0),0);
+      const animationMs=(segments.length+hitCount)*CHECKER_MOVE_DURATION+250;
+      return Math.max(PLAYBACK_SPEED,animationMs);
+    }
+    return PLAYBACK_SPEED;
   }catch{return PLAYBACK_SPEED;}
 }
 function stopTimer(){if(timer){clearTimeout(timer);timer=null;}}

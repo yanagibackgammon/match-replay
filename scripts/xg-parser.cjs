@@ -640,6 +640,7 @@ function buildTimeline(parsed, sourceFile){
   let lastPosition = null;
   let lastCube = {value:1,owner:0};
   let gameHasCheckerMove = false;
+  let matchIntroPushed = false;
   const prStats = {
     black:{error:0,decisions:0},
     white:{error:0,decisions:0}
@@ -686,6 +687,16 @@ function buildTimeline(parsed, sourceFile){
       lastBlackRate = 50;
       lastGammonRate = {black:0,white:0};
       gameHasCheckerMove = false;
+      if(!matchIntroPushed){
+        matchIntroPushed = true;
+        pushState({
+          phase:'matchStart', gameNumber, score:[...score], activePlayer:0,
+          position:lastPosition, dice:null, cube:lastCube,
+          winRate:{black:lastBlackRate,white:100-lastBlackRate},
+          gammonRate:{...lastGammonRate},
+          analysis:{type:'none'}, historyEvent:null
+        });
+      }
       pushState({
         phase:'gameStart', gameNumber, score:[...score], activePlayer:0,
         position:lastPosition, dice:null, cube:lastCube,
@@ -929,11 +940,22 @@ function buildTimeline(parsed, sourceFile){
         position:lastPosition,dice:null,cube:lastCube,
         winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},analysis:{type:'none'},historyEvent:null
       });
+      const matchLength=Math.max(0,Number(parsed.match?.matchLength)||0);
+      const matchFinished=matchLength>0 && (afterScore[0]>=matchLength || afterScore[1]>=matchLength);
+      if(matchFinished){
+        const matchWinner=afterScore[0]>=matchLength?'black':'white';
+        pushState({
+          phase:'matchEnd',gameNumber,score:[...score],activePlayer:0,
+          position:lastPosition,dice:null,cube:lastCube,
+          winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},analysis:{type:'none'},historyEvent:null,
+          matchWinner
+        });
+      }
     }
   }
 
   return {
-    schemaVersion:13,
+    schemaVersion:14,
     sourceFile,
     generatedAt:new Date().toISOString(),
     match:{...parsed.match, blackSourcePlayer:parsed.match.player1, whiteSourcePlayer:parsed.match.player2},
