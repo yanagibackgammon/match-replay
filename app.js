@@ -802,11 +802,11 @@ function render(){
   const whiteGText=`G ${Math.round(gw)}%`;
   const blackBgText=showBgb?`BG ${Math.round(bgb)}%`:"";
   const whiteBgText=showBgw?`BG ${Math.round(bgw)}%`:"";
-  // G率とBG率は半角スペース1つで連結。選手2は右端側から「勝率 → G率 → BG率」になるよう逆順で描画する。
-  els.blackGammonText.textContent=blackBgText?`${blackGText} ${blackBgText}`:blackGText;
-  els.whiteGammonText.textContent=whiteBgText?`${whiteBgText} ${whiteGText}`:whiteGText;
-  if(els.blackBackgammonText)els.blackBackgammonText.textContent="";
-  if(els.whiteBackgammonText)els.whiteBackgammonText.textContent="";
+  // 勝率・G率・BG率は同一行で、約全角スペース1文字分の等間隔に配置する。
+  els.blackGammonText.textContent=blackGText;
+  els.whiteGammonText.textContent=whiteGText;
+  if(els.blackBackgammonText)els.blackBackgammonText.textContent=blackBgText;
+  if(els.whiteBackgammonText)els.whiteBackgammonText.textContent=whiteBgText;
   renderBigComeback(s);
   renderBoardDimOverlay(s);
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);

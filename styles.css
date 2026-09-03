@@ -440,29 +440,40 @@ html,body{
 .backgammon-fill.white{right:0}
 .backgammon-fill.is-zero{width:0!important;border-width:0!important;outline:0!important}
 
-.bar-rate{
+.bar-stats{
   position:absolute;
-  top:50%;
-  transform:translateY(-50%);
+  top:0;
+  bottom:0;
+  z-index:5;
+  display:flex;
+  gap:27px;
+  pointer-events:none;
+  white-space:nowrap;
+}
+.bar-stats-left{left:18px;flex-direction:row}
+.bar-stats-right{right:18px;flex-direction:row-reverse}
+
+.bar-rate{
+  position:relative;
+  display:flex;
+  align-items:center;
+  height:100%;
   font-size:72px;
   font-weight:900;
   line-height:.94;
-  z-index:3;
-  pointer-events:none;
   color:#fff;
   -webkit-text-stroke:2px #000;
   paint-order:stroke fill;
   text-shadow:0 4px 3px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.35);
   white-space:nowrap;
 }
-.bar-rate-left{left:18px;color:#fff}
-.bar-rate-right{right:18px;color:#fff}
 
-.bar-gammon-rate{
-  position:absolute;
-  bottom:8px;
-  z-index:3;
-  pointer-events:none;
+.bar-gammon-rate,
+.bar-backgammon-rate{
+  position:relative;
+  display:flex;
+  align-items:flex-end;
+  padding-bottom:8px;
   font-size:27px;
   font-weight:900;
   line-height:1;
@@ -472,10 +483,7 @@ html,body{
   text-shadow:0 2px 2px rgba(0,0,0,.38);
   white-space:nowrap;
 }
-/* G率とBG率は同一行内で半角スペース1つに連結 */
-.bar-gammon-rate-left{left:205px}
-.bar-gammon-rate-right{right:205px}
-.bar-backgammon-rate{display:none}
+.bar-backgammon-rate:empty{display:none}
 
 .big-comeback{
   position:absolute;

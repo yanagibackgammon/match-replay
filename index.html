@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Backgammon Match Replay</title>
-<link rel="stylesheet" href="./styles.css?v=112">
+<link rel="stylesheet" href="./styles.css?v=116">
 </head>
 <body>
 <div id="stage-wrap">
@@ -33,12 +33,16 @@
             <div id="gammonBarWhite" class="gammon-fill white" style="width:0%"></div>
             <div id="backgammonBarBlack" class="backgammon-fill black" style="width:0%"></div>
             <div id="backgammonBarWhite" class="backgammon-fill white" style="width:0%"></div>
-            <div id="blackRateText" class="bar-rate bar-rate-left">50%</div>
-            <div id="blackGammonText" class="bar-gammon-rate bar-gammon-rate-left">G 0%</div>
-            <div id="blackBackgammonText" class="bar-backgammon-rate bar-backgammon-rate-left">BG 0%</div>
-            <div id="whiteRateText" class="bar-rate bar-rate-right">50%</div>
-            <div id="whiteGammonText" class="bar-gammon-rate bar-gammon-rate-right">G 0%</div>
-            <div id="whiteBackgammonText" class="bar-backgammon-rate bar-backgammon-rate-right">BG 0%</div>
+            <div class="bar-stats bar-stats-left">
+              <div id="blackRateText" class="bar-rate">50%</div>
+              <div id="blackGammonText" class="bar-gammon-rate">G 0%</div>
+              <div id="blackBackgammonText" class="bar-backgammon-rate"></div>
+            </div>
+            <div class="bar-stats bar-stats-right">
+              <div id="whiteRateText" class="bar-rate">50%</div>
+              <div id="whiteGammonText" class="bar-gammon-rate">G 0%</div>
+              <div id="whiteBackgammonText" class="bar-backgammon-rate"></div>
+            </div>
             <div class="winrate-guide" style="left:30%" aria-hidden="true"><span class="guide-spike top"></span><span class="guide-spike bottom"></span></div>
             <div class="winrate-guide" style="left:50%" aria-hidden="true"><span class="guide-spike top"></span><span class="guide-spike bottom"></span></div>
             <div class="winrate-guide" style="left:70%" aria-hidden="true"><span class="guide-spike top"></span><span class="guide-spike bottom"></span></div>
@@ -103,6 +107,6 @@
     </section>
   </main>
 </div>
-<script src="./app.js?v=115"></script>
+<script src="./app.js?v=116"></script>
 </body>
 </html>
