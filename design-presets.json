@@ -9,8 +9,8 @@
         "player2": "#F7F0DE"
       },
       "winRate": {
-        "player1": "#1E513D",
-        "player2": "#E8DDBF"
+        "player1": "#17382C",
+        "player2": "#F7F0DE"
       },
       "board": {
         "surface": "#CDBB91",
@@ -28,8 +28,8 @@
         "player2": "#F4E4C7"
       },
       "winRate": {
-        "player1": "#3B2A20",
-        "player2": "#E9D2AA"
+        "player1": "#2A211B",
+        "player2": "#F4E4C7"
       },
       "board": {
         "surface": "#B98555",
@@ -47,8 +47,8 @@
         "player2": "#F7F9FB"
       },
       "winRate": {
-        "player1": "#173A59",
-        "player2": "#D9E7F2"
+        "player1": "#10283F",
+        "player2": "#F7F9FB"
       },
       "board": {
         "surface": "#D7E1E9",
@@ -66,8 +66,8 @@
         "player2": "#F4E8D9"
       },
       "winRate": {
-        "player1": "#741E2D",
-        "player2": "#E6D4BA"
+        "player1": "#5A1822",
+        "player2": "#F4E8D9"
       },
       "board": {
         "surface": "#C7A87D",

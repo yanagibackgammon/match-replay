@@ -28,7 +28,7 @@ const emptyState={
 const FALLBACK_DESIGN={
   id:"green",name:"グリーン",
   checkers:{player1:"#17382C",player2:"#F7F0DE"},
-  winRate:{player1:"#1E513D",player2:"#E8DDBF"},
+  winRate:{player1:"#17382C",player2:"#F7F0DE"},
   board:{surface:"#CDBB91",pointLight:"#F2E6C6",pointDark:"#3E705B",bar:"#284F3D",line:"#173327"}
 };
 let designPresets=[FALLBACK_DESIGN];

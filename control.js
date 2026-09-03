@@ -135,15 +135,30 @@ function renderThemeColorPreview(){
   themeColorPreview.style.background=/^#[0-9a-fA-F]{6}$/.test(value)?value:"#6B670D";
 }
 
+function getPreviewTextColor(hex){
+  const value=String(hex||"").trim();
+  if(!/^#[0-9a-fA-F]{6}$/.test(value)) return "#111";
+  const r=parseInt(value.slice(1,3),16);
+  const g=parseInt(value.slice(3,5),16);
+  const b=parseInt(value.slice(5,7),16);
+  const luminance=(0.299*r + 0.587*g + 0.114*b) / 255;
+  return luminance > 0.68 ? "#111" : "#fff";
+}
+
 function renderDesignPreview(){
   const preset=designPresets.find(p=>p.id===designPresetSelect.value)||designPresets[0];
   if(!preset){designPresetPreview.innerHTML="";return;}
-  const colors=[
-    preset.checkers?.player1,preset.checkers?.player2,
-    preset.winRate?.player1,preset.winRate?.player2,
-    preset.board?.pointLight,preset.board?.pointDark
-  ].filter(Boolean);
-  designPresetPreview.innerHTML=colors.map(color=>`<span style="background:${color}"></span>`).join("");
+  const items=[
+    {label:"選手1", color:preset.checkers?.player1},
+    {label:"選手2", color:preset.checkers?.player2},
+    {label:"背景", color:preset.board?.surface},
+    {label:"ポイント1", color:preset.board?.pointLight},
+    {label:"ポイント2", color:preset.board?.pointDark}
+  ].filter(item=>item.color);
+  designPresetPreview.innerHTML=items.map(item=>{
+    const textColor=getPreviewTextColor(item.color);
+    return `<span class="design-preview-chip" style="background:${item.color};color:${textColor}">${item.label}</span>`;
+  }).join("");
 }
 function renderDesignOptions(){
   const current=lastState.meta.designPreset||designPresetSelect.value||"green";
@@ -166,7 +181,7 @@ async function loadDesignPresets(){
     designPresets=Array.isArray(data.presets)?data.presets:[];
   }catch(error){
     console.warn("Failed to load design presets",error);
-    designPresets=[{id:"green",name:"グリーン",checkers:{player1:"#17382C",player2:"#F7F0DE"},winRate:{player1:"#1E513D",player2:"#E8DDBF"},board:{surface:"#CDBB91",pointLight:"#F2E6C6",pointDark:"#3E705B",bar:"#284F3D",line:"#173327"}}];
+    designPresets=[{id:"green",name:"グリーン",checkers:{player1:"#17382C",player2:"#F7F0DE"},winRate:{player1:"#17382C",player2:"#F7F0DE"},board:{surface:"#CDBB91",pointLight:"#F2E6C6",pointDark:"#3E705B",bar:"#284F3D",line:"#173327"}}];
   }
   renderDesignOptions();
 }
