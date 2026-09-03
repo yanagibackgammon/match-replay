@@ -1013,12 +1013,15 @@ function buildTimeline(parsed, sourceFile){
         }
       }
       const luckKind=isOpeningMove?null:(Number.isFinite(actualLuck)?(actualLuck>=JOKER_EQUITY_THRESHOLD?'joker':(actualLuck<=-JOKER_EQUITY_THRESHOLD?'antiJoker':null)):classifyRollLuck(previous?.analysis,r.dice));
-      const rollSwing=Math.abs(Number(bestWinRate.black)-Number(lastBlackRate));
+      const preRollBlackRate=Number(lastBlackRate);
+      const preRollWhiteRate=100-preRollBlackRate;
       const postRollBlackRate=Number(bestWinRate.black);
       const postRollWhiteRate=Number(bestWinRate.white);
-      const postRollLeaderRate=Math.max(postRollBlackRate,postRollWhiteRate);
-      // 大逆転: 1ロールで勝率が40pt以上動き、ロール後に優勢側の勝率が70%以上。
-      const isBigComeback=Number.isFinite(rollSwing) && rollSwing>=40 && Number.isFinite(postRollLeaderRate) && postRollLeaderRate>=70;
+      const rollSwing=Math.abs(postRollBlackRate-preRollBlackRate);
+      // 大逆転: 同じ選手の勝率が1ロールで30%以下から70%以上へ逆転したとき。
+      const blackComeback=Number.isFinite(preRollBlackRate) && Number.isFinite(postRollBlackRate) && preRollBlackRate<=30 && postRollBlackRate>=70;
+      const whiteComeback=Number.isFinite(preRollWhiteRate) && Number.isFinite(postRollWhiteRate) && preRollWhiteRate<=30 && postRollWhiteRate>=70;
+      const isBigComeback=blackComeback||whiteComeback;
       // ナイスロール: 1ロールで勝率が20pt以上動く。大逆転条件を満たす場合は大逆転を優先。
       const isNiceRoll=Number.isFinite(rollSwing) && rollSwing>=20 && !isBigComeback;
       const rollNotice=isBigComeback?'comeback':(isNiceRoll?'nice':null);
