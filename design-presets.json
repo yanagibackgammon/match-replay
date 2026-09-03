@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "presets": [
     {
       "id": "green",
@@ -94,6 +94,96 @@
         "pointDark": "#CFCFCF",
         "bar": "#111111",
         "frame": "#000000"
+      }
+    },
+    {
+      "id": "jbs-japan-championship",
+      "name": "JBS 日本選手権",
+      "checkers": {
+        "player1": "#2E3F48",
+        "player2": "#ECECEC"
+      },
+      "winRate": {
+        "player1": "#2E3F48",
+        "player2": "#ECECEC"
+      },
+      "board": {
+        "surface": "#1E1C3F",
+        "frame": "#565A5E",
+        "pointLight": "#B2704F",
+        "pointDark": "#D6D6E3"
+      }
+    },
+    {
+      "id": "jbs-bansei",
+      "name": "JBS 盤聖戦",
+      "checkers": {
+        "player1": "#5D2F47",
+        "player2": "#F9F9F9"
+      },
+      "winRate": {
+        "player1": "#5D2F47",
+        "player2": "#F9F9F9"
+      },
+      "board": {
+        "surface": "#8C2656",
+        "frame": "#5A5457",
+        "pointLight": "#D1D1D1",
+        "pointDark": "#776D2A"
+      }
+    },
+    {
+      "id": "jbs-meijin",
+      "name": "JBS 名人戦",
+      "checkers": {
+        "player1": "#56676C",
+        "player2": "#ECECEC"
+      },
+      "winRate": {
+        "player1": "#56676C",
+        "player2": "#ECECEC"
+      },
+      "board": {
+        "surface": "#C4826C",
+        "frame": "#525860",
+        "pointLight": "#3F5D6B",
+        "pointDark": "#734071"
+      }
+    },
+    {
+      "id": "jbs-oui",
+      "name": "JBS 王位戦",
+      "checkers": {
+        "player1": "#ECECEC",
+        "player2": "#3B3F2F"
+      },
+      "winRate": {
+        "player1": "#ECECEC",
+        "player2": "#3B3F2F"
+      },
+      "board": {
+        "surface": "#79B1AA",
+        "frame": "#9F6679",
+        "pointLight": "#4F5C2D",
+        "pointDark": "#D6D6E3"
+      }
+    },
+    {
+      "id": "jbs-saiou",
+      "name": "JBS 賽王戦",
+      "checkers": {
+        "player1": "#595656",
+        "player2": "#ECECEC"
+      },
+      "winRate": {
+        "player1": "#595656",
+        "player2": "#ECECEC"
+      },
+      "board": {
+        "surface": "#E2DEEC",
+        "frame": "#0A3A5F",
+        "pointLight": "#397AAD",
+        "pointDark": "#606E30"
       }
     }
   ]
