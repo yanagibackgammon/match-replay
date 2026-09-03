@@ -485,6 +485,26 @@ function classifyRollLuck(analysis,dice){
   if((analysis?.antiJoker||[]).some(d=>rollKey(d)===key))return'antiJoker';
   return null;
 }
+function reconcileRollAnalysisWithActualLuck(analysis,dice,actualLuck){
+  // This is an offline replay generated from a completed XG file.  The all-21-roll
+  // forecast remains board-based, but for the roll that was actually played XG's
+  // recorded luck value is the most reliable signal.  Reconcile that one roll in
+  // the pre-roll list so a Joker/Anti-Joker can never appear after the roll without
+  // having been forecast, and a neutral actual roll is not falsely forecast either.
+  const out={...(analysis||{})};
+  out.joker=[...(Array.isArray(analysis?.joker)?analysis.joker:[])];
+  out.antiJoker=[...(Array.isArray(analysis?.antiJoker)?analysis.antiJoker:[])];
+  const key=rollKey(dice);
+  const luck=Number(actualLuck);
+  if(!key||!Number.isFinite(luck))return out;
+  out.joker=out.joker.filter(d=>rollKey(d)!==key);
+  out.antiJoker=out.antiJoker.filter(d=>rollKey(d)!==key);
+  const normalized=[Math.max(Number(dice[0]),Number(dice[1])),Math.min(Number(dice[0]),Number(dice[1]))];
+  if(luck>=JOKER_EQUITY_THRESHOLD)out.joker.push(normalized);
+  else if(luck<=-JOKER_EQUITY_THRESHOLD)out.antiJoker.push(normalized);
+  out.actualRollReconciled=true;
+  return out;
+}
 
 function cubeValueFromCode(code){
   if(!code) return 1;
@@ -868,7 +888,7 @@ function buildTimeline(parsed, sourceFile){
           phase:'cubeResponseSelect',gameNumber,score:[...score],activePlayer:responderActive,
           position,dice:null,cube:cubeAfter,winRate,gammonRate,backgammonRate,
           analysis:{type:'moves',candidates:responseCandidates,playedIndex:responseIndex},
-          historyEvent:{player:responder,dice:null,move:responseMove,error:-Math.abs(Number(r.errTake)||0),kind:'cubeResponse',pairId}
+          historyEvent:{player:responder,dice:null,move:responseMove,error:-Math.abs(Number(r.errTake)||0),kind:'cubeResponse',cubeValue:offeredValue,pairId}
         });
         lastCube=cubeAfter;
       }else{
@@ -972,18 +992,26 @@ function buildTimeline(parsed, sourceFile){
       // 各ゲームの初手だけは、手番開始とロールを同一シーケンスにする。
       // オープニングロールには事前Joker/Anti-Joker候補を出さない。
       const isOpeningMove=!gameHasCheckerMove;
-      let previous = states[states.length - 1];
-      if(!isOpeningMove && !(previous && previous.phase === 'preRoll' && previous.gameNumber === gameNumber && previous.activePlayer === r.activePlayer)){
-        const rollAnalysis=analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate,backgammonRate:lastBackgammonRate});
-        pushState({
-          phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
-          position:beforePosition,dice:null,cube,winRate:{black:lastBlackRate,white:100-lastBlackRate},
-          gammonRate:{...lastGammonRate},backgammonRate:{...lastBackgammonRate},
-          analysis:{type:'jokers',...rollAnalysis},historyEvent:null
-        });
-        previous=states[states.length-1];
-      }
       const actualLuck=Number(r.errLuck);
+      let previous = states[states.length - 1];
+      if(!isOpeningMove){
+        if(previous && previous.phase === 'preRoll' && previous.gameNumber === gameNumber && previous.activePlayer === r.activePlayer){
+          // A pre-roll state is often created by the preceding cube-analysis record.
+          // Once the matching move record reveals XG's actual errLuck, correct that
+          // existing forecast in place instead of leaving the two displays inconsistent.
+          previous.analysis={type:'jokers',...reconcileRollAnalysisWithActualLuck(previous.analysis,r.dice,actualLuck)};
+        }else{
+          const estimatedRollAnalysis=analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate,backgammonRate:lastBackgammonRate});
+          const rollAnalysis=reconcileRollAnalysisWithActualLuck(estimatedRollAnalysis,r.dice,actualLuck);
+          pushState({
+            phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
+            position:beforePosition,dice:null,cube,winRate:{black:lastBlackRate,white:100-lastBlackRate},
+            gammonRate:{...lastGammonRate},backgammonRate:{...lastBackgammonRate},
+            analysis:{type:'jokers',...rollAnalysis},historyEvent:null
+          });
+          previous=states[states.length-1];
+        }
+      }
       const luckKind=isOpeningMove?null:(Number.isFinite(actualLuck)?(actualLuck>=JOKER_EQUITY_THRESHOLD?'joker':(actualLuck<=-JOKER_EQUITY_THRESHOLD?'antiJoker':null)):classifyRollLuck(previous?.analysis,r.dice));
       const rollSwing=Math.abs(Number(bestWinRate.black)-Number(lastBlackRate));
       const postRollBlackRate=Number(bestWinRate.black);
@@ -998,7 +1026,7 @@ function buildTimeline(parsed, sourceFile){
       if(isBigComeback){
         const introAnalysis=isOpeningMove
           ? {type:'jokers',joker:[],antiJoker:[],openingRoll:true}
-          : (previous?.analysis?.type==='jokers' ? previous.analysis : {type:'jokers',...analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate,backgammonRate:lastBackgammonRate})});
+          : (previous?.analysis?.type==='jokers' ? previous.analysis : {type:'jokers',...reconcileRollAnalysisWithActualLuck(analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate,backgammonRate:lastBackgammonRate}),r.dice,actualLuck)});
         pushState({
           phase:'bigComebackIntro',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:null,cube,

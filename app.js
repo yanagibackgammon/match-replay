@@ -553,7 +553,8 @@ function diePlayerClass(player){return player===1||player==="black"?"player1":"p
 function renderDie(face,player){return `<span class="die ${diePlayerClass(player)}">${diePips(face).map(c=>`<span class="die-pip ${c}"></span>`).join("")}</span>`;}
 function renderPair(pair,player){return pair&&pair.length===2?`<div class="dice-pair-inline">${renderDie(pair[0],player)}${renderDie(pair[1],player)}</div>`:'<div class="dice-pair-inline"></div>';}
 function renderHistoryCube(value){
-  const shown=Math.max(2,Number(value)||2);
+  const raw=String(value??"").trim().toUpperCase();
+  const shown=raw==="P"?"P":Math.max(2,Number(value)||2);
   return `<div class="history-cube-pair"><span class="history-icon-spacer"></span><span class="history-cube-icon">${shown}</span></div>`;
 }
 function historyClass(error){
@@ -566,7 +567,11 @@ function candidateErrorClass(error){const value=Number(error);if(value<=-0.080)r
 function historyMoveLabel(move){return move==="Dance"?"Cannot Move":(move||"");}
 function historyCell(event,player){
   if(!event)return '<div class="history-cell"></div>';
-  const icon=event.kind==="cube"?renderHistoryCube(event.cubeValue):renderPair(event.dice,player);
+  const icon=event.kind==="cube"
+    ? renderHistoryCube(event.cubeValue)
+    : event.kind==="cubeResponse"
+      ? renderHistoryCube(event.move==="Pass"?"P":event.cubeValue)
+      : renderPair(event.dice,player);
   return `<div class="history-cell ${historyClass(event.error)}">${icon}<span class="history-move">${historyMoveLabel(event.move)}</span></div>`;
 }
 function collectHistoryRows(){
@@ -612,7 +617,9 @@ function collectHistoryRows(){
       if(event.kind==="cubeResponse"){
         let row=event.pairId?cubeRows.get(event.pairId):null;
         if(!row){row={kind:"actions",black:null,white:null};rows.push(row);if(event.pairId)cubeRows.set(event.pairId,row);}
-        row[event.player]=event;openMoveRow=null;continue;
+        const pairedOffer=row.black?.kind==="cube"?row.black:(row.white?.kind==="cube"?row.white:null);
+        row[event.player]=event.cubeValue?event:{...event,cubeValue:pairedOffer?.cubeValue};
+        openMoveRow=null;continue;
       }
       if(!leadPlayer)leadPlayer=event.player;
       const existingEvent=openMoveRow?.[event.player]||null;
