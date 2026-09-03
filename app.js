@@ -638,7 +638,7 @@ function renderAnalysis(a){
       }
       return `<div class="joker-glow ${item.kind}"><div class="joker-label">${label}</div><div class="dice-pair-block">${renderDie(item.dice[0],activePlayer)}${renderDie(item.dice[1],activePlayer)}</div></div>`;
     };
-    const items=[...groupRolls(a.joker,"plus"),...groupRolls(a.antiJoker,"minus")];
+    const items=[...groupRolls(a.joker,"plus")];
     els.analysisContent.innerHTML=`<div class="analysis-jokers${items.length>6?" is-many":""}">${items.map(renderItem).join("")}</div>`;return;
   }
   const selectedIndex=Number.isInteger(a.playedIndex)?a.playedIndex:-1;
