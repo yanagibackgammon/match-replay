@@ -1118,13 +1118,13 @@ function buildTimeline(parsed, sourceFile){
         const sameEquityBearoff=allInHome(beforePosition,r.activePlayer) && allCandidateEquitiesSame;
         const forcedMove = candidates.length <= 1 || diceMuted || sameEquityBearoff || allCandidatesWithin001;
         if(forcedMove){
-          // 全候補の評価値差が0.01以内なら候補一覧を省略し、実際の選択手をそのまま確定する。
-          // 従来のフォーストムーブ等は表示仕様を維持する。
+          // 全候補の評価値差が0.01以内などで候補表示シーケンスを省略する場合も、
+          // 着手シーケンス上では候補一覧を表示し、実際の選択手を選択済みで見せる。
           addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
           pushState({
             phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
             position:selectedPosition,dice:r.dice,cube,winRate:selectedWinRate,gammonRate:selectedGammonRate,backgammonRate:selectedBackgammonRate,luckKind,diceMuted,
-            analysis:allCandidatesWithin001?{type:'none'}:{type:'moves',candidates,playedIndex:r.playedIndex},
+            analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
             moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
             historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'},
             forcedMove:true,autoSelectedNearEqual:allCandidatesWithin001

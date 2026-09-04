@@ -533,6 +533,9 @@ function renderMeta(state){
   const score=state?.score||[meta.blackScore,meta.whiteScore];
   const blackGain=state?.scoreDelta?.winner==='black'?Number(state.scoreDelta.points)||0:0;
   const whiteGain=state?.scoreDelta?.winner==='white'?Number(state.scoreDelta.points)||0:0;
+  function toFullWidthScore(value){
+    return String(value??'').replace(/[0-9]/g,d=>String.fromCharCode(d.charCodeAt(0)+0xFEE0));
+  }
   function renderScoreValue(el,value,gain){
     if(!el)return;
     const gainNow=gain>0;
@@ -543,12 +546,12 @@ function renderMeta(state){
       if(el.dataset.scoreGainKey!==key){
         el.dataset.scoreGainKey=key;
         el.classList.add('is-score-transition');
-        el.innerHTML=`<span class="score-number score-number-old">${oldScore}</span><span class="score-number score-number-gain">＋${gain}</span><span class="score-number score-number-new">${newScore}</span>`;
+        el.innerHTML=`<span class="score-number score-number-old">${toFullWidthScore(oldScore)}</span><span class="score-number score-number-gain">＋${toFullWidthScore(gain)}</span><span class="score-number score-number-new">${toFullWidthScore(newScore)}</span>`;
       }
     }else{
       el.dataset.scoreGainKey='';
       el.classList.remove('is-score-transition');
-      el.textContent=value;
+      el.textContent=toFullWidthScore(value);
     }
   }
   renderScoreValue(els.blackScore,score[0]??meta.blackScore,blackGain);
