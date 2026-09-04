@@ -174,7 +174,7 @@ html,body{
   color:#fff;
   letter-spacing:.012em;
   text-shadow:0 2px 5px rgba(0,0,0,.52),0 0 1px rgba(0,0,0,.45);
-  transform:translateY(9px);
+  transform:translateY(12px);
 }
 .headline-name.left{justify-content:flex-start;text-align:left;padding-left:10px;padding-right:0}
 .headline-name.right{justify-content:flex-end;text-align:right;padding-right:10px;padding-left:0}
@@ -190,7 +190,7 @@ html,body{
   min-width:0;
   padding:5px 12px 7px;
   text-align:center;
-  transform:translateY(9px);
+  transform:translateY(12px);
   overflow:hidden;
   background:none;
   border:0;
