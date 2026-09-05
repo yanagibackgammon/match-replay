@@ -444,7 +444,7 @@ function drawGameOverlay(state){
 
   addPanel(116,165,470,216,18);
   addText(220,winnerName,32,"#fff",800);
-  addText(300,`＋${points}`,72,"#18b86b",900);
+  addText(300,`＋${toFullWidthScore(points)}`,72,"#18b86b",900);
   addText(350,`${winLabel}・キューブ${cubeValue}倍`,28,"#fff",800);
 }
 trianglePoints();

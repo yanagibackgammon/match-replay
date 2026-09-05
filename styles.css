@@ -1011,6 +1011,14 @@ html,body{
 .history-cell.error-red .history-move{color:#c43b3b}
 
 #boardBase{stroke:var(--board-line)!important}
+/* 盤枠はポイント・駒・サイコロ・キューブより前面に描画する。 */
+#boardFrameOverlay{
+  stroke:var(--board-line);
+}
+#boardFrameOverlay .board-frame-fill{
+  fill:var(--board-line);
+}
+
 
 /* v45: PR header alignment, cube icon, history error colors */
 .history-player-name{

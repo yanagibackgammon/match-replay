@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Backgammon Match Replay</title>
-<link rel="stylesheet" href="./styles.css?v=160">
+<link rel="stylesheet" href="./styles.css?v=163">
 </head>
 <body>
 <div id="stage-wrap">
@@ -76,6 +76,15 @@
           <g id="checkers"></g>
           <g id="dice"></g>
           <g id="cube"></g>
+          <g id="boardFrameOverlay" stroke-linejoin="round" pointer-events="none" aria-hidden="true">
+            <rect class="board-frame-outline" x="11" y="28" width="680" height="490" fill="none" stroke-width="4"/>
+            <line x1="58.5" y1="28" x2="58.5" y2="518" stroke-width="4"/>
+            <line x1="326.5" y1="28" x2="326.5" y2="518" stroke-width="4"/>
+            <line x1="374.5" y1="28" x2="374.5" y2="518" stroke-width="4"/>
+            <line x1="644.5" y1="28" x2="644.5" y2="518" stroke-width="4"/>
+            <rect class="board-frame-fill" x="10.5" y="247" width="48" height="53" stroke-width="0"/>
+            <rect class="board-frame-fill" x="645.5" y="247" width="46" height="53" stroke-width="0"/>
+          </g>
         </svg>
         <div id="boardDimOverlay" class="board-dim-overlay" aria-hidden="true"></div>
       </section>
@@ -107,6 +116,6 @@
     </section>
   </main>
 </div>
-<script src="./app.js?v=160"></script>
+<script src="./app.js?v=163"></script>
 </body>
 </html>
