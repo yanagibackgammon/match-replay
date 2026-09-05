@@ -553,6 +553,16 @@ function classifyRollLuck(analysis,dice){
   if((analysis?.antiJoker||[]).some(d=>rollKey(d)===key))return'antiJoker';
   return null;
 }
+function classifyActualRollLuck(errLuck){
+  // 盤面上のチャンス／ピンチは、事前予測ではなくXGが記録した実際の
+  // ロール・ラック（その出目のエクイティが平均的な出目からどれだけ
+  // 上下したか）で判定する。候補エリアの1〜6面予測とは独立させる。
+  const equityDelta=Number(errLuck);
+  if(!Number.isFinite(equityDelta))return null;
+  if(equityDelta>=JOKER_EQUITY_THRESHOLD)return'joker';
+  if(equityDelta<=-JOKER_EQUITY_THRESHOLD)return'antiJoker';
+  return null;
+}
 function hasRollAlerts(analysis){
   return Boolean(analysis?.jokerFace || analysis?.antiJokerFace || (analysis?.joker||[]).length || (analysis?.antiJoker||[]).length);
 }
@@ -1068,24 +1078,21 @@ function buildTimeline(parsed, sourceFile){
           }
         }
       }
-      // ロール後の光り方も、事前の盤面予測と同じ判定を使用する。
-      const luckKind=isOpeningMove?null:classifyRollLuck(previous?.analysis,r.dice);
+      // 盤面上の光り方は予測面ではなく、実際のXGエクイティ（errLuck）で判定する。
+      // 候補エリアのチャンス／ピンチ予測は従来どおり analyzeJokerRolls() を使用する。
+      const luckKind=classifyActualRollLuck(r.errLuck);
       const preRollBlackRate=Number(lastBlackRate);
       const preRollWhiteRate=100-preRollBlackRate;
       const postRollBlackRate=Number(bestWinRate.black);
       const postRollWhiteRate=Number(bestWinRate.white);
-      const rollerPreRate=r.activePlayer===1?preRollBlackRate:preRollWhiteRate;
-      const rollerPostRate=r.activePlayer===1?postRollBlackRate:postRollWhiteRate;
-      const rollerSwing=rollerPostRate-rollerPreRate;
+      const rollSwing=Math.abs(postRollBlackRate-preRollBlackRate);
       // 大逆転: 同じ選手の勝率が1ロールで30%以下から70%以上へ逆転したとき。
       const blackComeback=Number.isFinite(preRollBlackRate) && Number.isFinite(postRollBlackRate) && preRollBlackRate<=30 && postRollBlackRate>=70;
       const whiteComeback=Number.isFinite(preRollWhiteRate) && Number.isFinite(postRollWhiteRate) && preRollWhiteRate<=30 && postRollWhiteRate>=70;
       const isBigComeback=blackComeback||whiteComeback;
-      // ロール演出は「振った本人」の勝率変化で判定する。
-      // +20pt以上ならナイスロール、-20pt以下ならバッドロール。大逆転を最優先する。
-      const isNiceRoll=Number.isFinite(rollerSwing) && rollerSwing>=20 && !isBigComeback;
-      const isBadRoll=Number.isFinite(rollerSwing) && rollerSwing<=-20 && !isBigComeback;
-      const rollNotice=isBigComeback?'comeback':(isNiceRoll?'nice':(isBadRoll?'bad':null));
+      // ナイスロール: 1ロールで勝率が20pt以上動く。大逆転条件を満たす場合は大逆転を優先。
+      const isNiceRoll=Number.isFinite(rollSwing) && rollSwing>=20 && !isBigComeback;
+      const rollNotice=isBigComeback?'comeback':(isNiceRoll?'nice':null);
 
       if(isBigComeback){
         const introAnalysis=isOpeningMove

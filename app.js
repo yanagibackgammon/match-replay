@@ -391,7 +391,7 @@ function drawCube(cube){
   r.setAttribute("x","332.5");r.setAttribute("y",String(y));r.setAttribute("width","36");r.setAttribute("height","36");r.setAttribute("rx","3");
   r.setAttribute("fill","#fff");r.setAttribute("stroke","#000");r.setAttribute("stroke-width","1.5");cubeG.appendChild(r);
   const t=document.createElementNS("http://www.w3.org/2000/svg","text");
-  t.setAttribute("x","350.5");t.setAttribute("y",String(y+25));t.setAttribute("text-anchor","middle");t.setAttribute("fill","#000");
+  t.setAttribute("x","350.5");t.setAttribute("y",String(y+18));t.setAttribute("text-anchor","middle");t.setAttribute("dominant-baseline","central");t.setAttribute("alignment-baseline","central");t.setAttribute("fill","#000");
   t.setAttribute("font-family",'Noto Sans JP, Noto Sans CJK JP, Yu Gothic, Meiryo, sans-serif');t.setAttribute("font-size","25");t.setAttribute("font-weight","900");t.textContent=value;cubeG.appendChild(t);
 }
 function drawGameOverlay(state){

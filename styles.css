@@ -957,8 +957,8 @@ html,body{
   width:100%;
   aspect-ratio:16 / 9;
   max-height:100%;
-  border:1px solid var(--line);
-  background:#f9f9f9;
+  border:0;
+  background:transparent;
   display:flex;
   align-items:center;
   justify-content:center;
