@@ -660,6 +660,8 @@ html,body{
   border-radius:3px;
   background:transparent;
 }
+.history-player-name:first-child::after{left:calc(50% - 7px)}
+.history-player-name + .history-player-name::after{left:calc(50% + 7px)}
 .history-player-name.active-turn::after{background:#d00000}
 
 .history-list{
