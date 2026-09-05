@@ -1,6 +1,6 @@
 const connectionEl = document.getElementById("connection");
 const stepText = document.getElementById("stepText");
-const playState = document.getElementById("playState");
+const gamePosition = document.getElementById("gamePosition");
 const timeline = document.getElementById("timeline");
 const pauseBtn = document.getElementById("pauseBtn");
 const prevBtn = document.getElementById("prevBtn");
@@ -248,7 +248,14 @@ function renderState(state){
   timeline.max = total - 1;
   timeline.value = Math.min(lastState.index || 0, total - 1);
   stepText.textContent = `${Number(timeline.value) + 1} / ${total}`;
-  playState.textContent = lastState.mode === "manual" ? "手動" : (lastState.playing ? "再生中" : "一時停止");
+  const starts = Array.isArray(lastState.gameStarts) ? lastState.gameStarts : [];
+  const currentIndex = Number(timeline.value) || 0;
+  let currentGame = 0;
+  starts.forEach((g, i) => {
+    if((Number(g.index) || 0) <= currentIndex) currentGame = Number(g.gameNumber) || (i + 1);
+  });
+  if(!currentGame && starts.length) currentGame = Number(starts[0].gameNumber) || 1;
+  gamePosition.textContent = starts.length ? `${currentGame} / ${starts.length}` : `0 / 0`;
   loadedFileName.textContent = lastState.meta.matchFile || "未選択";
   renderGameMarkers();
 
