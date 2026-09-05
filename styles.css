@@ -744,24 +744,24 @@ html,body{
 .die.player2{background:var(--die-player2);border-color:var(--die-border)}
 .die.player2 .die-pip{background:var(--die-player2-pip)}
 
-.dice-pair-inline{gap:10px}
+.dice-pair-inline{gap:4px}
 .dice-pair-inline .die{
-  --die-size:36px;
-  --pip-size:6.8px;
-  border-width:1.5px;
-  border-radius:4px;
+  --die-size:50px;
+  --pip-size:9.44px;
+  border-width:2.08px;
+  border-radius:5.56px;
   box-shadow:none;
 }
 .dice-pair-inline .die-pip{box-shadow:none}
-.dice-pair-inline .die-pip.p1{left:6.6px;top:6.6px}
-.dice-pair-inline .die-pip.p2{left:50%;top:6.6px;transform:translateX(-50%)}
-.dice-pair-inline .die-pip.p3{right:6.6px;top:6.6px}
-.dice-pair-inline .die-pip.p4{left:6.6px;top:50%;transform:translateY(-50%)}
+.dice-pair-inline .die-pip.p1{left:9.17px;top:9.17px}
+.dice-pair-inline .die-pip.p2{left:50%;top:9.17px;transform:translateX(-50%)}
+.dice-pair-inline .die-pip.p3{right:9.17px;top:9.17px}
+.dice-pair-inline .die-pip.p4{left:9.17px;top:50%;transform:translateY(-50%)}
 .dice-pair-inline .die-pip.p5{left:50%;top:50%;transform:translate(-50%,-50%)}
-.dice-pair-inline .die-pip.p6{right:6.6px;top:50%;transform:translateY(-50%)}
-.dice-pair-inline .die-pip.p7{left:6.6px;bottom:6.6px}
-.dice-pair-inline .die-pip.p8{left:50%;bottom:6.6px;transform:translateX(-50%)}
-.dice-pair-inline .die-pip.p9{right:6.6px;bottom:6.6px}
+.dice-pair-inline .die-pip.p6{right:9.17px;top:50%;transform:translateY(-50%)}
+.dice-pair-inline .die-pip.p7{left:9.17px;bottom:9.17px}
+.dice-pair-inline .die-pip.p8{left:50%;bottom:9.17px;transform:translateX(-50%)}
+.dice-pair-inline .die-pip.p9{right:9.17px;bottom:9.17px}
 .analysis-jokers .die{
   --die-size:72px;
   --pip-size:13.6px;
@@ -1050,18 +1050,18 @@ html,body{
   font-weight:900;
 }
 .history-cube-pair{
-  width:96px;
-  height:44px;
+  width:104px;
+  height:50px;
   display:flex;
   align-items:center;
-  gap:8px;
+  gap:4px;
   flex:0 0 auto;
 }
-.history-icon-spacer{width:44px;height:44px;flex:0 0 44px}
+.history-icon-spacer{width:50px;height:50px;flex:0 0 50px}
 .history-cube-icon{
-  width:44px;
-  height:44px;
-  flex:0 0 44px;
+  width:50px;
+  height:50px;
+  flex:0 0 50px;
   display:flex;
   align-items:center;
   justify-content:center;
