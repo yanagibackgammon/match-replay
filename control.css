@@ -89,9 +89,9 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .design-preset-preview{
   margin-top:9px;
   display:grid;
-  grid-template-columns:repeat(6,minmax(0,1fr));
+  grid-template-columns:repeat(8,minmax(0,1fr));
   gap:0;
-  height:18px;
+  height:34px;
   border:1px solid #111;
   overflow:hidden;
 }
@@ -100,20 +100,24 @@ button:disabled{opacity:.35;cursor:not-allowed}
   align-items:center;
   justify-content:center;
   min-width:0;
-  min-height:16px;
+  min-height:32px;
   padding:0 1px;
   border:0;
   border-right:1px solid rgba(17,17,17,.45);
-  font-size:8px;
+  font-size:7px;
   font-weight:900;
-  letter-spacing:0;
+  letter-spacing:-.02em;
   text-align:center;
-  line-height:1;
+  line-height:1.05;
   text-shadow:none;
-  white-space:nowrap;
+  white-space:normal;
+  word-break:keep-all;
   overflow:hidden;
 }
 .design-preview-chip:last-child{border-right:0}
+.design-preview-chip.is-none{
+  background:repeating-linear-gradient(135deg,#f4f4f4 0 4px,#e6e6e6 4px 8px);
+}
 
 
 .theme-color-preview{
@@ -144,7 +148,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .timeline-wrap{padding-top:34px}
 
 .mode-card{padding-top:12px;padding-bottom:12px}
-.playback-buttons{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px}
+.playback-buttons{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
 .playback-buttons button{min-width:0;min-height:50px;padding:0 8px;font-size:16px;white-space:nowrap}
 .playback-buttons button.active{background:#111;color:#fff}
 
@@ -152,7 +156,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
   .control-header h1,.control-header h1 span{font-size:22px}
   .status-summary{flex-wrap:wrap}
   .status-summary .status-divider{margin-left:10px}
-  .playback-buttons{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .playback-buttons{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 
 /* v49 button hover / press feedback */
@@ -208,5 +212,5 @@ button.active .button-ripple{opacity:.25}
 }
 
 @media(max-width:760px){
-  .design-preview-chip{font-size:7px}
+  .design-preview-chip{font-size:6px}
 }

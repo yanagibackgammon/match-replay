@@ -8,8 +8,6 @@ const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const autoModeBtn = document.getElementById("autoModeBtn");
 const manualModeBtn = document.getElementById("manualModeBtn");
-const normalSpeedBtn = document.getElementById("normalSpeedBtn");
-const doubleSpeedBtn = document.getElementById("doubleSpeedBtn");
 
 const tournamentLine1Input = document.getElementById("tournamentLine1Input");
 const tournamentLine2Input = document.getElementById("tournamentLine2Input");
@@ -31,8 +29,7 @@ let lastState = {
   index:0,
   totalSteps:1,
   playing:false,
-  speed:6000,
-  playbackRate:1,
+  speed:3000,
   mode:"auto",
   gameStarts:[],
   meta:{
@@ -151,17 +148,33 @@ function getPreviewTextColor(hex){
 function renderDesignPreview(){
   const preset=designPresets.find(p=>p.id===designPresetSelect.value)||designPresets[0];
   if(!preset){designPresetPreview.innerHTML="";return;}
+  const boardFrame=preset.board?.frame;
+  const normalizePreviewColor=(value,fallback)=>{
+    if(value===undefined) return fallback;
+    if(value===null) return "";
+    const raw=String(value).trim();
+    if(!raw) return "";
+    const lower=raw.toLowerCase();
+    if(lower==="none"||lower==="transparent") return "";
+    return raw;
+  };
   const items=[
-    {label:"選手1", color:preset.checkers?.player1},
-    {label:"選手2", color:preset.checkers?.player2},
-    {label:"メイン", color:preset.board?.surface},
-    {label:"枠", color:preset.board?.frame},
-    {label:"マス1", color:preset.board?.pointLight},
-    {label:"マス2", color:preset.board?.pointDark}
-  ].filter(item=>item.color);
+    {label:"盤面", color:normalizePreviewColor(preset.board?.surface, boardFrame)},
+    {label:"盤枠", color:normalizePreviewColor(boardFrame, "#111111")},
+    {label:"升１", color:normalizePreviewColor(preset.board?.pointLight, boardFrame)},
+    {label:"升２", color:normalizePreviewColor(preset.board?.pointDark, boardFrame)},
+    {label:"升枠", color:normalizePreviewColor(preset.board?.pointBorder, boardFrame), allowNone:true},
+    {label:"駒１", color:normalizePreviewColor(preset.checkers?.player1, boardFrame)},
+    {label:"駒２", color:normalizePreviewColor(preset.checkers?.player2, boardFrame)},
+    {label:"駒枠", color:normalizePreviewColor(preset.checkers?.border, boardFrame), allowNone:true}
+  ];
   designPresetPreview.innerHTML=items.map(item=>{
-    const textColor=getPreviewTextColor(item.color);
-    return `<span class="design-preview-chip" style="background:${item.color};color:${textColor}">${item.label}</span>`;
+    const hasColor=Boolean(item.color);
+    const textColor=hasColor?getPreviewTextColor(item.color):"#111";
+    const cls=`design-preview-chip${hasColor?"":" is-none"}`;
+    const label=hasColor?item.label:`${item.label}<br>なし`;
+    const style=hasColor?`background:${item.color};color:${textColor}`:`color:${textColor}`;
+    return `<span class="${cls}" style="${style}">${label}</span>`;
   }).join("");
 }
 function renderDesignOptions(){
@@ -185,7 +198,7 @@ async function loadDesignPresets(){
     designPresets=Array.isArray(data.presets)?data.presets:[];
   }catch(error){
     console.warn("Failed to load design presets",error);
-    designPresets=[{id:"green",name:"グリーン",checkers:{player1:"#17382C",player2:"#F7F0DE"},winRate:{player1:"#17382C",player2:"#F7F0DE"},board:{surface:"#CDBB91",frame:"#173327",pointLight:"#F2E6C6",pointDark:"#3E705B",bar:"#284F3D"}}];
+    designPresets=[{id:"green",name:"グリーン",checkers:{player1:"#17382C",player2:"#F7F0DE",border:"#173327"},winRate:{player1:"#17382C",player2:"#F7F0DE"},board:{surface:"#CDBB91",frame:"#173327",pointLight:"#F2E6C6",pointDark:"#3E705B",pointBorder:"#173327",bar:"#284F3D"}}];
   }
   renderDesignOptions();
 }
@@ -204,9 +217,7 @@ function renderGameMarkers(){
 }
 
 function renderState(state){
-  lastState = {...lastState, ...state};
-  lastState.playbackRate = Number(lastState.playbackRate)===2?2:1;
-  lastState.speed = lastState.playbackRate===2?3000:6000;
+  lastState = {...lastState, ...state, speed:3000};
   lastState.meta = {...(lastState.meta || {}), ...((state && state.meta) || {})};
 
   const total = Math.max(1, lastState.totalSteps || 1);
@@ -220,8 +231,6 @@ function renderState(state){
   const manual=lastState.mode === "manual";
   autoModeBtn.classList.toggle("active",!manual);
   manualModeBtn.classList.toggle("active",manual);
-  normalSpeedBtn.classList.toggle("active",lastState.playbackRate!==2);
-  doubleSpeedBtn.classList.toggle("active",lastState.playbackRate===2);
   playBtn.disabled=manual;
   pauseBtn.disabled=manual;
 
@@ -382,7 +391,7 @@ async function applyMeta(){
       if(fileChanged) lastState.index=0;
       else lastState.index=Math.min(lastState.index,lastState.totalSteps-1);
       const revision=writePagesMeta(lastState.meta);
-      localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:lastState.playbackRate===2?3000:6000,playbackRate:lastState.playbackRate||1,mode:lastState.mode||"auto"}));
+      localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:3000,mode:lastState.mode||"auto"}));
       if(pageChannel)pageChannel.postMessage({type:"meta",meta:lastState.meta,revision});
       renderState(lastState);
     }
@@ -445,8 +454,6 @@ if(pageChannel){
 
 autoModeBtn.addEventListener("click", () => sendCommand("setMode","auto"));
 manualModeBtn.addEventListener("click", () => sendCommand("setMode","manual"));
-normalSpeedBtn.addEventListener("click", () => sendCommand("speed",1));
-doubleSpeedBtn.addEventListener("click", () => sendCommand("speed",2));
 playBtn.addEventListener("click", () => sendCommand("play"));
 pauseBtn.addEventListener("click", () => sendCommand("pause"));
 prevBtn.addEventListener("click", () => sendCommand("prev"));
