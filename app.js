@@ -675,6 +675,18 @@ function renderAnalysis(a){
   if(!a||a.type==="none"){els.analysisContent.innerHTML="";return;}
   if(a.type==="jokers"){
     const activePlayer=currentState().activePlayer===1?1:-1;
+    // 新ロジックはチャンス／ピンチを各1面だけ表示する。
+    // 旧生成データでは従来の出目配列表示へフォールバックする。
+    if(Number(a.jokerFace)||Number(a.antiJokerFace)){
+      const items=[];
+      if(Number(a.jokerFace))items.push({kind:"plus",face:Number(a.jokerFace)});
+      if(Number(a.antiJokerFace))items.push({kind:"minus",face:Number(a.antiJokerFace)});
+      const html=items.map(item=>{
+        const label=item.kind==="plus"?"チャンス！":"ピンチ！";
+        return `<div class="joker-glow ${item.kind} is-single-face"><div class="joker-label">${label}</div><div class="single-die-block">${renderDie(item.face,activePlayer)}</div></div>`;
+      }).join("");
+      els.analysisContent.innerHTML=`<div class="analysis-jokers">${html}</div>`;return;
+    }
     const rollOrder=[
       [6,6],[6,5],[6,4],[6,3],[6,2],[6,1],
       [5,5],[5,4],[5,3],[5,2],[5,1],

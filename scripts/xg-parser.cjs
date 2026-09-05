@@ -449,22 +449,19 @@ function postRollEquityProxy(position,player,basePosition,context){
     -0.05*(nextExposure.blots-baseExposure.blots);
 }
 const jokerRollCache=new Map();
-function directBarEntryHitFaces(position,player){
-  // 盤面予測だけで判定するための戦術補正。
-  // バーに1枚だけあり、特定の面で「エンターと同時にヒット」できる場合は、
-  // その面を含む全出目が大きなチャンスになりやすい。
-  if(barCount(position,player)!==1)return [];
-  const opponent=-player;
-  const beforeOppBar=barCount(position,opponent);
-  const faces=[];
-  for(let die=1;die<=6;die++){
-    const moves=singleDieMoves(position,player,die);
-    const canEnterAndHit=moves.some(next=>
-      barCount(next,player)===0 && barCount(next,opponent)>beforeOppBar
-    );
-    if(canEnterAndHit)faces.push(die);
-  }
-  return faces;
+const FACE_ALERT_MIN_DIFF_POINTS=8;
+const FACE_ALERT_MIN_GAP_POINTS=3;
+const FACE_CHANCE_MIN_WINRATE=30;
+const FACE_PINCH_MAX_WINRATE=70;
+function clampPercent(value){return Math.max(0,Math.min(100,Number(value)||0));}
+function activeWinRateFromContext(context,player){
+  const value=Number(player===1?context?.winRate?.black:context?.winRate?.white);
+  return Number.isFinite(value)?clampPercent(value):50;
+}
+function faceRelatedRolls(face){
+  const rolls=[];
+  for(let other=1;other<=6;other++)rolls.push([Math.max(face,other),Math.min(face,other)]);
+  return rolls;
 }
 function isOutcomeLockedForJoker(context){
   const black=Number(context?.winRate?.black);
@@ -476,15 +473,16 @@ function isOutcomeLockedForJoker(context){
   return winLocked&&gammonFlat;
 }
 function analyzeJokerRolls(position,activePlayer,context=null){
-  // XGの実勝率がほぼ100/0（または0/100）で、双方のG率もほぼ0なら、
-  // 出目による実質的なエクイティ差はないものとして候補表示を抑止する。
-  // 簡易PIP評価がベアオフ枚数の差を「チャンス」と誤認するのを防ぐ。
+  // 「良い出目が多い」ではなく、1〜6の各面を含む11/36通りの平均を比較する。
+  // チャンス／ピンチは最大1面ずつだけ表示し、単に「超悪い→少し悪い」になる面は
+  // チャンス扱いしないよう、推定勝率の絶対条件も併用する。
   if(isOutcomeLockedForJoker(context)){
-    return {joker:[],antiJoker:[],thresholdEquity:JOKER_EQUITY_THRESHOLD,averageEquityProxy:null,source:'xg-outcome-locked'};
+    return {joker:[],antiJoker:[],jokerFace:null,antiJokerFace:null,averageEquityProxy:null,source:'xg-outcome-locked'};
   }
   const contextKey=context?`${Number(context?.winRate?.black??NaN).toFixed(3)}|${Number(context?.gammonRate?.black??0).toFixed(3)}|${Number(context?.gammonRate?.white??0).toFixed(3)}|${Number(context?.backgammonRate?.black??0).toFixed(3)}|${Number(context?.backgammonRate?.white??0).toFixed(3)}`:'na';
-  const key=`${positionKey(position,activePlayer)}|${contextKey}`;
+  const key=`${positionKey(position,activePlayer)}|${contextKey}|face-v1`;
   if(jokerRollCache.has(key))return jokerRollCache.get(key);
+
   const rolls=[];
   let weighted=0,totalWeight=0;
   for(let hi=1;hi<=6;hi++)for(let lo=1;lo<=hi;lo++){
@@ -496,46 +494,69 @@ function analyzeJokerRolls(position,activePlayer,context=null){
     rolls.push({dice:[hi,lo],equity:best,weight});weighted+=best*weight;totalWeight+=weight;
   }
   const average=totalWeight?weighted/totalWeight:postRollEquityProxy(position,activePlayer,position,context);
-  for(const r of rolls)r.luck=r.equity-average;
-  let joker=rolls.filter(r=>r.luck>=JOKER_EQUITY_THRESHOLD).sort((a,b)=>b.luck-a.luck).map(r=>r.dice);
-  let antiJoker=rolls.filter(r=>r.luck<=-JOKER_EQUITY_THRESHOLD).sort((a,b)=>a.luck-b.luck).map(r=>r.dice);
-
-  // 戦術補正も「直後の実際のロール」ではなく、現在の盤面だけから判定する。
-  // バーに1枚だけあり、ある面でエンターしながら相手ブロットを直接ヒットできる場合、
-  // その面を含む全6種類の出目をチャンス候補に含める。
-  // バーに2枚以上ある場合は、1枚だけ入って残りがバーに残るケースを一括で良い目にしない。
-  const tacticalHitFaces=directBarEntryHitFaces(position,activePlayer);
-  if(tacticalHitFaces.length){
-    const jokerKeys=new Set(joker.map(rollKey));
-    const antiKeys=new Set(antiJoker.map(rollKey));
-    for(const face of tacticalHitFaces){
-      for(let other=1;other<=6;other++){
-        const dice=[Math.max(face,other),Math.min(face,other)];
-        const k=rollKey(dice);
-        antiKeys.delete(k);
-        if(!jokerKeys.has(k)){joker.push(dice);jokerKeys.add(k);}
-      }
-    }
-    antiJoker=antiJoker.filter(d=>antiKeys.has(rollKey(d)));
+  const activeWinRate=activeWinRateFromContext(context,activePlayer);
+  const byKey=new Map(rolls.map(r=>[rollKey(r.dice),r]));
+  const faceStats=[];
+  for(let face=1;face<=6;face++){
+    const related=faceRelatedRolls(face).map(d=>byKey.get(rollKey(d))).filter(Boolean);
+    const faceWeight=related.reduce((sum,r)=>sum+r.weight,0);
+    const faceAverage=faceWeight?related.reduce((sum,r)=>sum+r.equity*r.weight,0)/faceWeight:average;
+    const diffPoints=(faceAverage-average)*50;
+    const estimatedWinRate=clampPercent(activeWinRate+diffPoints);
+    faceStats.push({face,averageEquity:faceAverage,diffPoints,estimatedWinRate});
   }
+  const bestOrder=[...faceStats].sort((a,b)=>b.averageEquity-a.averageEquity||b.face-a.face);
+  const worstOrder=[...faceStats].sort((a,b)=>a.averageEquity-b.averageEquity||b.face-a.face);
+  const best=bestOrder[0],secondBest=bestOrder[1];
+  const worst=worstOrder[0],secondWorst=worstOrder[1];
+  const bestGapPoints=(best.averageEquity-secondBest.averageEquity)*50;
+  const worstGapPoints=(secondWorst.averageEquity-worst.averageEquity)*50;
 
-  const result={joker,antiJoker,thresholdEquity:JOKER_EQUITY_THRESHOLD,averageEquityProxy:average,source:'standalone-roll-evaluator',tacticalBarEntryHitFaces:tacticalHitFaces};
+  const jokerFace=(best.diffPoints>=FACE_ALERT_MIN_DIFF_POINTS && bestGapPoints>=FACE_ALERT_MIN_GAP_POINTS && best.estimatedWinRate>=FACE_CHANCE_MIN_WINRATE)?best.face:null;
+  const antiJokerFace=(-worst.diffPoints>=FACE_ALERT_MIN_DIFF_POINTS && worstGapPoints>=FACE_ALERT_MIN_GAP_POINTS && worst.estimatedWinRate<=FACE_PINCH_MAX_WINRATE)?worst.face:null;
+  const joker=jokerFace?faceRelatedRolls(jokerFace):[];
+  const antiJoker=antiJokerFace?faceRelatedRolls(antiJokerFace):[];
+  const rollLuckByKey={};
+  for(const r of rolls)rollLuckByKey[rollKey(r.dice)]=(r.equity-average)*50;
+
+  const result={
+    joker,antiJoker,jokerFace,antiJokerFace,
+    averageEquityProxy:average,
+    averageWinRateProxy:activeWinRate,
+    faceStats:faceStats.map(v=>({face:v.face,diffPoints:Number(v.diffPoints.toFixed(3)),estimatedWinRate:Number(v.estimatedWinRate.toFixed(3))})),
+    rollLuckByKey,
+    thresholds:{minDiffPoints:FACE_ALERT_MIN_DIFF_POINTS,minGapPoints:FACE_ALERT_MIN_GAP_POINTS,chanceMinWinRate:FACE_CHANCE_MIN_WINRATE,pinchMaxWinRate:FACE_PINCH_MAX_WINRATE},
+    source:'single-face-roll-evaluator'
+  };
   jokerRollCache.set(key,result);return result;
 }
 function rollKey(dice){if(!Array.isArray(dice)||dice.length<2)return'';const a=Number(dice[0]),b=Number(dice[1]);return `${Math.max(a,b)}-${Math.min(a,b)}`;}
 function classifyRollLuck(analysis,dice){
   const key=rollKey(dice);if(!key)return null;
+  const face1=Number(dice?.[0]),face2=Number(dice?.[1]);
+  const chanceFace=Number(analysis?.jokerFace)||null;
+  const pinchFace=Number(analysis?.antiJokerFace)||null;
+  if(chanceFace||pinchFace){
+    const hasChance=Boolean(chanceFace&&(face1===chanceFace||face2===chanceFace));
+    const hasPinch=Boolean(pinchFace&&(face1===pinchFace||face2===pinchFace));
+    if(hasChance&&!hasPinch)return'joker';
+    if(hasPinch&&!hasChance)return'antiJoker';
+    if(hasChance&&hasPinch){
+      const pairDiff=Number(analysis?.rollLuckByKey?.[key]);
+      if(Number.isFinite(pairDiff)&&pairDiff>0)return'joker';
+      if(Number.isFinite(pairDiff)&&pairDiff<0)return'antiJoker';
+    }
+    return null;
+  }
+  // 古い生成データとの互換性。
   if((analysis?.joker||[]).some(d=>rollKey(d)===key))return'joker';
   if((analysis?.antiJoker||[]).some(d=>rollKey(d)===key))return'antiJoker';
   return null;
 }
 function hasRollAlerts(analysis){
-  return Boolean((analysis?.joker||[]).length || (analysis?.antiJoker||[]).length);
+  return Boolean(analysis?.jokerFace || analysis?.antiJokerFace || (analysis?.joker||[]).length || (analysis?.antiJoker||[]).length);
 }
 function shouldShowPreRoll(analysis,upcomingDice=null){
-  // 予告内容はあくまで盤面予測だけで作る。
-  // 表示するのは候補が存在する場合、または次の実ロールがその盤面予測候補に該当する場合のみ。
-  // 後者は候補自体を書き換えず、表示シーケンスの有無だけに使用する。
   return hasRollAlerts(analysis) || Boolean(classifyRollLuck(analysis,upcomingDice));
 }
 function cubeValueFromCode(code){
