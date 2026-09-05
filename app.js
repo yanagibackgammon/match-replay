@@ -16,6 +16,8 @@ let moveAnimationToken=0;
 let moveAnimationRunning=false;
 let lastMoveAnimationKey="";
 const BASE_CHECKER_MOVE_DURATION=500;
+const BASE_CUBE_MOVE_DURATION=1400;
+let lastCubeVisualTarget=null;
 
 const defaultMeta={
   tournamentTitleLine1:"",
@@ -381,18 +383,73 @@ function drawDice(vals,activePlayer,{luckKind=null,muted=false}={}){
   const xs=player1?[468.5,514.5]:[151.5,197.5];
   diceG.appendChild(die(xs[0],254,vals[0]));diceG.appendChild(die(xs[1],254,vals[1]));
 }
-function drawCube(cube){
-  cubeG.innerHTML="";
-  const value=Math.max(1,Number(cube?.value)||1);
+function cubeOwnerTarget(cube){
   const owner=cube?.owner||0;
-  // 添付SVG準拠: センターはバー中央、白所有は上端、黒所有は下端。
-  const y=owner==="white"?35:(owner==="black"?475:255);
+  const isWhite=owner==="white"||owner===-1;
+  const isBlack=owner==="black"||owner===1;
+  return {x:332.5,y:isWhite?35:(isBlack?475:255)};
+}
+function cubeOffererForState(state){
+  const phase=state?.phase||"";
+  if(phase==="cubeOffer"||phase==="cubeOfferSelect") return state?.activePlayer===-1?-1:1;
+  if(phase==="cubeResponse"||phase==="cubeResponseSelect") return state?.activePlayer===1?-1:1;
+  return 0;
+}
+function cubeVisualTarget(state,cube){
+  const phase=state?.phase||"";
+  const responseMove=String(state?.historyEvent?.move||"");
+  const showOfferedPosition=(phase==="cubeOfferSelect"&&responseMove==="Double")||phase==="cubeResponse"||(phase==="cubeResponseSelect"&&responseMove==="Pass");
+  if(showOfferedPosition){
+    const offerer=cubeOffererForState(state);
+    // Player 1: center of the right board half. Player 2: center of the left board half.
+    return {x:offerer===1?491.5:174.5,y:255};
+  }
+  return cubeOwnerTarget(cube);
+}
+function resetCubeMotion(){
+  lastCubeVisualTarget=null;
+}
+function appendCubeMotion(node,attributeName,fromValue,toValue,durationMs){
+  if(Math.abs(Number(fromValue)-Number(toValue))<0.001) return;
+  const animation=document.createElementNS("http://www.w3.org/2000/svg","animate");
+  animation.setAttribute("attributeName",attributeName);
+  animation.setAttribute("from",String(fromValue));
+  animation.setAttribute("to",String(toValue));
+  animation.setAttribute("dur",`${durationMs}ms`);
+  animation.setAttribute("calcMode","spline");
+  animation.setAttribute("keyTimes","0;1");
+  animation.setAttribute("keySplines",".22 .61 .36 1");
+  node.appendChild(animation);
+}
+function drawCube(cube,state=currentState()){
+  cubeG.innerHTML="";
+  cubeG.removeAttribute("transform");
+  cubeG.style.transform="";
+  const value=Math.max(1,Number(cube?.value)||1);
+  const target=cubeVisualTarget(state,cube);
+  const previous=lastCubeVisualTarget;
+  const cubePhase=["cubeOffer","cubeOfferSelect","cubeResponse","cubeResponseSelect"].includes(state?.phase);
+  const shouldAnimate=Boolean(previous&&cubePhase&&(previous.x!==target.x||previous.y!==target.y));
+  const duration=Math.max(300,Math.round(BASE_CUBE_MOVE_DURATION/currentPlaybackRate()));
+
   const r=document.createElementNS("http://www.w3.org/2000/svg","rect");
-  r.setAttribute("x","332.5");r.setAttribute("y",String(y));r.setAttribute("width","36");r.setAttribute("height","36");r.setAttribute("rx","3");
-  r.setAttribute("fill","#fff");r.setAttribute("stroke","#000");r.setAttribute("stroke-width","1.5");cubeG.appendChild(r);
+  r.setAttribute("x",String(target.x));r.setAttribute("y",String(target.y));r.setAttribute("width","36");r.setAttribute("height","36");r.setAttribute("rx","3");
+  r.setAttribute("fill","#fff");r.setAttribute("stroke","#000");r.setAttribute("stroke-width","1.5");
+  if(shouldAnimate){
+    appendCubeMotion(r,"x",previous.x,target.x,duration);
+    appendCubeMotion(r,"y",previous.y,target.y,duration);
+  }
+  cubeG.appendChild(r);
+
   const t=document.createElementNS("http://www.w3.org/2000/svg","text");
-  t.setAttribute("x","350.5");t.setAttribute("y",String(y+18));t.setAttribute("text-anchor","middle");t.setAttribute("dominant-baseline","central");t.setAttribute("alignment-baseline","central");t.setAttribute("fill","#000");
-  t.setAttribute("font-family",'Noto Sans JP, Noto Sans CJK JP, Yu Gothic, Meiryo, sans-serif');t.setAttribute("font-size","25");t.setAttribute("font-weight","900");t.textContent=value;cubeG.appendChild(t);
+  t.setAttribute("x",String(target.x+18));t.setAttribute("y",String(target.y+18));t.setAttribute("text-anchor","middle");t.setAttribute("dominant-baseline","central");t.setAttribute("alignment-baseline","central");t.setAttribute("fill","#000");
+  t.setAttribute("font-family",'Noto Sans JP, Noto Sans CJK JP, Yu Gothic, Meiryo, sans-serif');t.setAttribute("font-size","25");t.setAttribute("font-weight","900");t.textContent=value;
+  if(shouldAnimate){
+    appendCubeMotion(t,"x",previous.x+18,target.x+18,duration);
+    appendCubeMotion(t,"y",previous.y+18,target.y+18,duration);
+  }
+  cubeG.appendChild(t);
+  lastCubeVisualTarget={...target};
 }
 function toFullWidthScore(value){
   return String(value??'').replace(/[0-9]/g,d=>String.fromCharCode(d.charCodeAt(0)+0xFEE0));
@@ -894,12 +951,13 @@ function render(){
   renderBoardDimOverlay(s);
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
   els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);
-  drawPointLabels(s.activePlayer);drawPipInfo(s.position);renderAnimatedCheckers(s);drawDice(s.dice,s.activePlayer,{luckKind:s.luckKind||null,muted:Boolean(s.diceMuted)});drawCube(s.cube);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
+  drawPointLabels(s.activePlayer);drawPipInfo(s.position);renderAnimatedCheckers(s);drawDice(s.dice,s.activePlayer,{luckKind:s.luckKind||null,muted:Boolean(s.diceMuted)});drawCube(s.cube,s);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
 }
 
 async function fetchManifest(){try{const u=new URL("./matches/manifest.json",location.href);u.searchParams.set("t",Date.now());const r=await fetch(u,{cache:"no-store"});return r.ok?await r.json():{};}catch{return {};}}
 async function loadMatch(file,{force=false,resetIndex=false}={}){
   if(!file){
+    resetCubeMotion();
     loadedMatchFile="";
     matchData={states:[emptyState]};
     index=0;
@@ -926,6 +984,8 @@ async function loadMatch(file,{force=false,resetIndex=false}={}){
     if(!r.ok) throw new Error(`HTTP ${r.status}`);
     const data=await r.json();
     if(!Array.isArray(data.states)||!data.states.length) throw new Error("No replay states");
+    const cubeMatchChanged=file!==loadedMatchFile;
+    if(cubeMatchChanged) resetCubeMotion();
     matchData=data;
     loadedMatchFile=file;
     if(resetIndex) index=0;
@@ -939,6 +999,7 @@ async function loadMatch(file,{force=false,resetIndex=false}={}){
     return true;
   }catch(error){
     console.error("Failed to load match",error);
+    resetCubeMotion();
     loadedMatchFile="";
     matchData={states:[emptyState]};
     index=0;
