@@ -491,7 +491,9 @@ function applyDesignPreset(id){
   root.style.setProperty("--win-player2",winPlayer2);
   root.style.setProperty("--gammon-player1",gammonTone(winPlayer1));
   root.style.setProperty("--gammon-player2",gammonTone(winPlayer2));
-  root.style.setProperty("--board-surface",normalizeHex(next.board?.surface,"#FFFFFF"));
+  const boardSurface=normalizeHex(next.board?.surface,"#FFFFFF");
+  root.style.setProperty("--board-surface",boardSurface);
+  root.style.setProperty("--board-info-text",contrastText(boardSurface));
   root.style.setProperty("--point-light",normalizeHex(next.board?.pointLight,"#FFFFFF"));
   root.style.setProperty("--point-dark",normalizeHex(next.board?.pointDark,"#CFCFCF"));
   root.style.setProperty("--board-bar",normalizeHex(next.board?.bar,"#111111"));
@@ -503,9 +505,9 @@ function applyDesignPreset(id){
   root.style.setProperty("--checker-border",checkerBorder);
 
   const directBg=boardSvg.firstElementChild;
-  if(directBg&&directBg.tagName.toLowerCase()==="rect") directBg.setAttribute("fill",normalizeHex(next.board?.surface,"#FFFFFF"));
+  if(directBg&&directBg.tagName.toLowerCase()==="rect") directBg.setAttribute("fill",boardSurface);
   const baseRects=[...document.querySelectorAll("#boardBase rect")];
-  if(baseRects[0]) baseRects[0].setAttribute("fill",normalizeHex(next.board?.surface,"#FFFFFF"));
+  if(baseRects[0]) baseRects[0].setAttribute("fill",boardSurface);
   if(baseRects[1]) baseRects[1].setAttribute("fill",boardFrame);
   if(baseRects[2]) baseRects[2].setAttribute("fill",boardFrame);
   // 外周・中央バー周り・左右端など、盤面の区切り線はすべて frame で統一する。
