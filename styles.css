@@ -29,6 +29,7 @@
   --board-line:#000000;
   --point-border:#000000;
   --checker-border:#000000;
+  --checker-border-width:1.2;
   --line:#d6e2d6;
   --sequence-duration:6s;
   --winrate-frame-color:color-mix(in srgb,var(--theme-color) 26%,#111);
@@ -955,8 +956,8 @@ html,body{
 }
 
 .point{stroke:var(--point-border);stroke-width:1;stroke-linejoin:round}
-.checker-piece-black{fill:var(--checker-player1);stroke:var(--checker-border);stroke-width:1.2}
-.checker-piece-white{fill:var(--checker-player2);stroke:var(--checker-border);stroke-width:1.2}
+.checker-piece-black{fill:var(--checker-player1);stroke:var(--checker-border);stroke-width:var(--checker-border-width)}
+.checker-piece-white{fill:var(--checker-player2);stroke:var(--checker-border);stroke-width:var(--checker-border-width)}
 .point-label{font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;fill:var(--board-info-text);text-anchor:middle}
 .checker-text{font-size:19px;font-weight:900;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
 .pip-label{

@@ -146,9 +146,22 @@ function trianglePoints(){
   drawPointLabels(1);
 }
 function pointCoord(p){const c=[81.75,126.25,170.75,215.25,259.75,304.25,397.75,442.25,486.75,531.25,575.75,620.25];return p<=12?{x:c[12-p],y:493,dir:-1}:{x:c[p-13],y:53,dir:1};}
+const CHECKER_STACK_PITCH=43;
+const CHECKER_MAX_RADIUS=CHECKER_STACK_PITCH/2;
+const CHECKER_BORDER_WIDTH=1.2;
+function checkerBorderEnabled(design=currentDesign){
+  const value=design?.checkers?.border;
+  if(value===undefined) return true;
+  if(value===null) return false;
+  const text=String(value).trim().toLowerCase();
+  return Boolean(text)&&text!=="none"&&text!=="transparent";
+}
+function checkerCircleRadius(){
+  return CHECKER_MAX_RADIUS-(checkerBorderEnabled()?CHECKER_BORDER_WIDTH/2:0);
+}
 function addStack(x,y,dir,n,klass){
   if(!n)return;const max=Math.min(n,5);
-  for(let i=0;i<max;i++){const c=document.createElementNS("http://www.w3.org/2000/svg","circle");c.setAttribute("cx",x);c.setAttribute("cy",y+dir*i*43);c.setAttribute("r","21.1");c.setAttribute("class",klass);checkersG.appendChild(c);}
+  for(let i=0;i<max;i++){const c=document.createElementNS("http://www.w3.org/2000/svg","circle");c.setAttribute("cx",x);c.setAttribute("cy",y+dir*i*CHECKER_STACK_PITCH);c.setAttribute("r",String(checkerCircleRadius()));c.setAttribute("class",klass);checkersG.appendChild(c);}
   if(n>5){const t=document.createElementNS("http://www.w3.org/2000/svg","text");t.setAttribute("x",x);t.setAttribute("y",y+dir*4*43);t.setAttribute("class","checker-text");const checkerFill=klass.includes("black")?(currentDesign?.checkers?.player1||"#111111"):(currentDesign?.checkers?.player2||"#FFFFFF");
     t.setAttribute("fill",contrastText(checkerFill));t.textContent=n;checkersG.appendChild(t);}
 }
@@ -163,7 +176,7 @@ function addBarStack(centerY,n,klass){
     const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
     c.setAttribute("cx","350.5");
     c.setAttribute("cy",String(firstY+spacing*i));
-    c.setAttribute("r","21.1");
+    c.setAttribute("r",String(checkerCircleRadius()));
     c.setAttribute("class",klass);
     checkersG.appendChild(c);
   }
@@ -182,9 +195,10 @@ function addBearOffStack(count,klass,upper){
   const g=BEAR_OFF_GEOMETRY;
   for(let i=0;i<n;i++){
     const r=document.createElementNS("http://www.w3.org/2000/svg","rect");
-    r.setAttribute("x",String(g.x));
-    r.setAttribute("y",String(bearOffRectY(i,upper)));
-    r.setAttribute("width",String(g.w));r.setAttribute("height",String(g.h));r.setAttribute("rx","4");
+    const inset=checkerBorderEnabled()?CHECKER_BORDER_WIDTH/2:0;
+    r.setAttribute("x",String(g.x+inset));
+    r.setAttribute("y",String(bearOffRectY(i,upper)+inset));
+    r.setAttribute("width",String(g.w-inset*2));r.setAttribute("height",String(g.h-inset*2));r.setAttribute("rx",String(Math.max(0,4-inset)));
     r.setAttribute("class",klass);checkersG.appendChild(r);
   }
 }
@@ -212,7 +226,7 @@ function ownCountAt(position,point,activePlayer){
 }
 function stackTopCoord(point,count){
   const q=pointCoord(point),i=Math.max(0,Math.min(Math.max(1,count),5)-1);
-  return {x:q.x,y:q.y+q.dir*i*43};
+  return {x:q.x,y:q.y+q.dir*i*CHECKER_STACK_PITCH};
 }
 function barMoveCoord(position,activePlayer){
   const count=Math.max(1,Number(activePlayer===1?position?.blackBar:position?.whiteBar)||1);
@@ -245,7 +259,7 @@ function destinationMoveCoord(positionAfterSource,segment,activePlayer){
     const v=Number(positionAfterSource?.points?.[p]||0);
     const opponentBlot=activePlayer===1?v===-1:v===1;
     const i=opponentBlot?0:Math.min(own,4);
-    return {x:q.x,y:q.y+q.dir*i*43};
+    return {x:q.x,y:q.y+q.dir*i*CHECKER_STACK_PITCH};
   }
   return bearOffMoveCoord(positionAfterSource,activePlayer);
 }
@@ -286,7 +300,7 @@ function animateCheckerBetween(from,to,activePlayer,token){
   return new Promise(resolve=>{
     if(token!==moveAnimationToken){resolve(false);return;}
     const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
-    c.setAttribute("cx",String(from.x));c.setAttribute("cy",String(from.y));c.setAttribute("r","21.1");
+    c.setAttribute("cx",String(from.x));c.setAttribute("cy",String(from.y));c.setAttribute("r",String(checkerCircleRadius()));
     c.setAttribute("class",moveCheckerClass(activePlayer));
     moveAnimationG.appendChild(c);
     const started=performance.now();
@@ -499,10 +513,12 @@ function applyDesignPreset(id){
   root.style.setProperty("--board-bar",normalizeHex(next.board?.bar,"#111111"));
   const boardFrame=normalizeHex(next.board?.frame,"#000000");
   const pointBorder=normalizeOptionalDesignColor(next.board?.pointBorder,next.board?.frame||"#000000");
+  const hasCheckerBorder=checkerBorderEnabled(next);
   const checkerBorder=normalizeOptionalDesignColor(next.checkers?.border,next.board?.frame||"#000000");
   root.style.setProperty("--board-line",boardFrame);
   root.style.setProperty("--point-border",pointBorder);
   root.style.setProperty("--checker-border",checkerBorder);
+  root.style.setProperty("--checker-border-width",hasCheckerBorder?String(CHECKER_BORDER_WIDTH):"0");
 
   const directBg=boardSvg.firstElementChild;
   if(directBg&&directBg.tagName.toLowerCase()==="rect") directBg.setAttribute("fill",boardSurface);
