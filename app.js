@@ -392,7 +392,7 @@ function drawCube(cube){
   r.setAttribute("fill","#fff");r.setAttribute("stroke","#000");r.setAttribute("stroke-width","1.5");cubeG.appendChild(r);
   const t=document.createElementNS("http://www.w3.org/2000/svg","text");
   t.setAttribute("x","350.5");t.setAttribute("y",String(y+25));t.setAttribute("text-anchor","middle");t.setAttribute("fill","#000");
-  t.setAttribute("font-family","Arial, Helvetica, sans-serif");t.setAttribute("font-size","23");t.textContent=value;cubeG.appendChild(t);
+  t.setAttribute("font-family","Arial, Helvetica, sans-serif");t.setAttribute("font-size","25");t.textContent=value;cubeG.appendChild(t);
 }
 function drawGameOverlay(state){
   gameOverlayG.innerHTML="";
@@ -413,8 +413,8 @@ function drawGameOverlay(state){
 
   if(state.phase==="matchStart"){
     addPanel(96,188,510,170,18);
-    addText(246,"試合開始",46,"#fff",900);
-    addText(316,`${meta.blackName} vs ${meta.whiteName}`,34,"#fff",800);
+    addText(246,"試合開始",50,"#fff",900);
+    addText(316,`${meta.blackName} vs ${meta.whiteName}`,35,"#fff",800);
     return;
   }
 
@@ -422,15 +422,15 @@ function drawGameOverlay(state){
     const winner=state.matchWinner;
     const winnerName=winner==="black"?meta.blackName:winner==="white"?meta.whiteName:"";
     addPanel(116,150,470,246,18);
-    addText(212,"試合終了",42,"#fff",900);
+    addText(212,"試合終了",50,"#fff",900);
     addText(270,"勝者",30,"#fff",800);
-    addText(344,winnerName,54,"#fff",900);
+    addText(344,winnerName,55,"#fff",900);
     return;
   }
 
   if(state.phase==="gameStart"){
     addPanel(246,232,210,82,14);
-    addText(286,`Game ${state.gameNumber || 1}`,42,"#fff",700);
+    addText(286,`Game ${state.gameNumber || 1}`,50,"#fff",700);
     return;
   }
   if(state.phase!=="gameEnd" || !state.scoreDelta) return;
@@ -443,9 +443,9 @@ function drawGameOverlay(state){
   const winLabel=winMultiplier>=3?"バックギャモン勝ち":winMultiplier===2?"ギャモン勝ち":"シングル勝ち";
 
   addPanel(116,165,470,216,18);
-  addText(220,winnerName,32,"#fff",800);
-  addText(300,`＋${points}`,72,"#18b86b",900);
-  addText(350,`${winLabel}・キューブ${cubeValue}倍`,28,"#fff",800);
+  addText(220,winnerName,35,"#fff",800);
+  addText(300,`＋${points}`,70,"#18b86b",900);
+  addText(350,`${winLabel}・キューブ${cubeValue}倍`,30,"#fff",800);
 }
 trianglePoints();
 
