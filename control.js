@@ -2,13 +2,11 @@ const connectionEl = document.getElementById("connection");
 const stepText = document.getElementById("stepText");
 const playState = document.getElementById("playState");
 const timeline = document.getElementById("timeline");
-const playBtn = document.getElementById("playBtn");
 const pauseBtn = document.getElementById("pauseBtn");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const autoNormalModeBtn = document.getElementById("autoNormalModeBtn");
 const autoDoubleModeBtn = document.getElementById("autoDoubleModeBtn");
-const manualModeBtn = document.getElementById("manualModeBtn");
 
 const tournamentLine1Input = document.getElementById("tournamentLine1Input");
 const tournamentLine2Input = document.getElementById("tournamentLine2Input");
@@ -47,6 +45,7 @@ let lastState = {
     designPreset:"green"
   }
 };
+let selectedPlaybackButton="pause";
 
 let designPresets=[];
 
@@ -254,11 +253,13 @@ function renderState(state){
   renderGameMarkers();
 
   const manual=lastState.mode === "manual";
-  autoNormalModeBtn.classList.toggle("active",!manual&&lastState.playbackRate!==2);
-  autoDoubleModeBtn.classList.toggle("active",!manual&&lastState.playbackRate===2);
-  manualModeBtn.classList.toggle("active",manual);
-  playBtn.disabled=manual;
-  pauseBtn.disabled=manual;
+  if(lastState.playing && !manual){
+    selectedPlaybackButton=lastState.playbackRate===2?"auto2":"auto1";
+  }else if(!manual){
+    selectedPlaybackButton="pause";
+  }
+  const activeButton={auto1:autoNormalModeBtn,auto2:autoDoubleModeBtn,prev:prevBtn,next:nextBtn,pause:pauseBtn}[selectedPlaybackButton]||pauseBtn;
+  [autoNormalModeBtn,autoDoubleModeBtn,prevBtn,nextBtn,pauseBtn].forEach(button=>button.classList.toggle("active",button===activeButton));
 
   syncMetaEditorsFromState();
 }
@@ -484,17 +485,27 @@ if(pageChannel){
   });
 }
 
-function selectAutoPlayback(rate){
+function setPlaybackSelection(selection){
+  selectedPlaybackButton=selection;
+  const activeButton={auto1:autoNormalModeBtn,auto2:autoDoubleModeBtn,prev:prevBtn,next:nextBtn,pause:pauseBtn}[selection]||pauseBtn;
+  [autoNormalModeBtn,autoDoubleModeBtn,prevBtn,nextBtn,pauseBtn].forEach(button=>button.classList.toggle("active",button===activeButton));
+}
+function startAutoPlayback(rate){
+  setPlaybackSelection(rate===2?"auto2":"auto1");
   sendCommand("setMode","auto");
   sendCommand("speed",rate);
+  sendCommand("play");
 }
-autoNormalModeBtn.addEventListener("click", () => selectAutoPlayback(1));
-autoDoubleModeBtn.addEventListener("click", () => selectAutoPlayback(2));
-manualModeBtn.addEventListener("click", () => sendCommand("setMode","manual"));
-playBtn.addEventListener("click", () => sendCommand("play"));
-pauseBtn.addEventListener("click", () => sendCommand("pause"));
-prevBtn.addEventListener("click", () => sendCommand("prev"));
-nextBtn.addEventListener("click", () => sendCommand("next"));
+function manualStep(direction){
+  setPlaybackSelection(direction);
+  sendCommand("setMode","manual");
+  sendCommand(direction);
+}
+autoNormalModeBtn.addEventListener("click", () => startAutoPlayback(1));
+autoDoubleModeBtn.addEventListener("click", () => startAutoPlayback(2));
+pauseBtn.addEventListener("click", () => {setPlaybackSelection("pause");sendCommand("pause");});
+prevBtn.addEventListener("click", () => manualStep("prev"));
+nextBtn.addEventListener("click", () => manualStep("next"));
 function jumpToGameMarker(marker){
   if(!marker)return;
   const targetIndex=Number(marker.dataset.index);

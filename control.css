@@ -188,17 +188,16 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .timeline-wrap{padding-top:30px}
 
 .mode-card{padding-top:8px;padding-bottom:8px}
-.playback-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 2px repeat(4,minmax(0,1fr));gap:8px;align-items:center}
+.playback-buttons{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-items:center}
 .playback-buttons button{min-width:0;min-height:45px;height:45px;padding:0 8px;font-size:16px;white-space:nowrap}
 .playback-buttons button.active{background:#111;color:#fff}
-.playback-divider{display:block;width:2px;height:45px;background:#aaa;justify-self:center;align-self:center}
 
 @media(max-width:760px){
   .control-header h1,.control-header h1 span{font-size:22px}
   .status-summary{flex-wrap:wrap}
   .status-summary .status-divider{margin-left:10px}
-  .playback-buttons{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .playback-divider{display:none}
+  .playback-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .playback-buttons button:last-child{grid-column:1/-1}
 }
 
 /* v49 button hover / press feedback */
