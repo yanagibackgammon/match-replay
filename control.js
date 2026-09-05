@@ -6,10 +6,9 @@ const playBtn = document.getElementById("playBtn");
 const pauseBtn = document.getElementById("pauseBtn");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
-const autoModeBtn = document.getElementById("autoModeBtn");
+const autoNormalModeBtn = document.getElementById("autoNormalModeBtn");
+const autoDoubleModeBtn = document.getElementById("autoDoubleModeBtn");
 const manualModeBtn = document.getElementById("manualModeBtn");
-const normalSpeedBtn = document.getElementById("normalSpeedBtn");
-const doubleSpeedBtn = document.getElementById("doubleSpeedBtn");
 
 const tournamentLine1Input = document.getElementById("tournamentLine1Input");
 const tournamentLine2Input = document.getElementById("tournamentLine2Input");
@@ -233,10 +232,9 @@ function renderState(state){
   renderGameMarkers();
 
   const manual=lastState.mode === "manual";
-  autoModeBtn.classList.toggle("active",!manual);
+  autoNormalModeBtn.classList.toggle("active",!manual&&lastState.playbackRate!==2);
+  autoDoubleModeBtn.classList.toggle("active",!manual&&lastState.playbackRate===2);
   manualModeBtn.classList.toggle("active",manual);
-  normalSpeedBtn.classList.toggle("active",lastState.playbackRate!==2);
-  doubleSpeedBtn.classList.toggle("active",lastState.playbackRate===2);
   playBtn.disabled=manual;
   pauseBtn.disabled=manual;
 
@@ -458,10 +456,13 @@ if(pageChannel){
   });
 }
 
-autoModeBtn.addEventListener("click", () => sendCommand("setMode","auto"));
+function selectAutoPlayback(rate){
+  sendCommand("setMode","auto");
+  sendCommand("speed",rate);
+}
+autoNormalModeBtn.addEventListener("click", () => selectAutoPlayback(1));
+autoDoubleModeBtn.addEventListener("click", () => selectAutoPlayback(2));
 manualModeBtn.addEventListener("click", () => sendCommand("setMode","manual"));
-normalSpeedBtn.addEventListener("click", () => sendCommand("speed",1));
-doubleSpeedBtn.addEventListener("click", () => sendCommand("speed",2));
 playBtn.addEventListener("click", () => sendCommand("play"));
 pauseBtn.addEventListener("click", () => sendCommand("pause"));
 prevBtn.addEventListener("click", () => sendCommand("prev"));

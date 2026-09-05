@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Match Replay Control</title>
-<link rel="stylesheet" href="./control.css?v=135">
+<link rel="stylesheet" href="./control.css?v=150">
 </head>
 <body>
 <main class="control-shell">
@@ -46,10 +46,10 @@
 
   <section class="mode-card">
     <div class="playback-buttons">
-      <button id="autoModeBtn" class="active">自動</button>
+      <button id="autoNormalModeBtn" class="active">自動1倍</button>
+      <button id="autoDoubleModeBtn">自動2倍</button>
       <button id="manualModeBtn">手動</button>
-      <button id="normalSpeedBtn" class="active">1倍</button>
-      <button id="doubleSpeedBtn">2倍</button>
+      <span class="playback-divider" aria-hidden="true"></span>
       <button id="playBtn" class="primary">▶ 再生</button>
       <button id="pauseBtn">Ⅱ 停止</button>
       <button id="prevBtn">◀ 前へ</button>
@@ -99,6 +99,6 @@
     <code>/matches/</code>
   </section>
 </main>
-<script src="./control.js?v=130"></script>
+<script src="./control.js?v=150"></script>
 </body>
 </html>
