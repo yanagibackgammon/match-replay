@@ -97,17 +97,17 @@ html,body{
   background:
     radial-gradient(120% 104% at 0% 50%,
       transparent 58%,
-      color-mix(in srgb,var(--theme-color) 60%,#ffffff) 58.8% 64.6%,
-      transparent 65.4%),
+      color-mix(in srgb,var(--theme-color) 60%,#ffffff) 58.15% 64.6%,
+      transparent 64.75%),
     radial-gradient(108% 94% at 0% 52%,
       transparent 67%,
-      color-mix(in srgb,var(--theme-color) 76%,#ffffff) 67.8% 72.2%,
-      transparent 73%),
+      color-mix(in srgb,var(--theme-color) 76%,#ffffff) 67.15% 72.2%,
+      transparent 72.35%),
     radial-gradient(94% 82% at 2% 56%,
       transparent 75%,
-      color-mix(in srgb,var(--theme-color) 90%,#111111) 75.8% 79.4%,
-      transparent 80.2%);
-  opacity:.30;
+      color-mix(in srgb,var(--theme-color) 90%,#111111) 75.15% 79.4%,
+      transparent 79.55%);
+  opacity:.52;
 }
 .top-area::after{
   content:"";
@@ -121,17 +121,17 @@ html,body{
   background:
     radial-gradient(120% 104% at 100% 50%,
       transparent 58%,
-      color-mix(in srgb,var(--theme-color) 60%,#ffffff) 58.8% 64.6%,
-      transparent 65.4%),
+      color-mix(in srgb,var(--theme-color) 60%,#ffffff) 58.15% 64.6%,
+      transparent 64.75%),
     radial-gradient(108% 94% at 100% 52%,
       transparent 67%,
-      color-mix(in srgb,var(--theme-color) 76%,#ffffff) 67.8% 72.2%,
-      transparent 73%),
+      color-mix(in srgb,var(--theme-color) 76%,#ffffff) 67.15% 72.2%,
+      transparent 72.35%),
     radial-gradient(94% 82% at 98% 56%,
       transparent 75%,
-      color-mix(in srgb,var(--theme-color) 90%,#111111) 75.8% 79.4%,
-      transparent 80.2%);
-  opacity:.30;
+      color-mix(in srgb,var(--theme-color) 90%,#111111) 75.15% 79.4%,
+      transparent 79.55%);
+  opacity:.52;
 }
 
 .headline-row{
