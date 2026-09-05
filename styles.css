@@ -586,7 +586,7 @@ html,body{
   width:840px;
   height:840px;
   display:grid;
-  grid-template-rows:285px 285px 270px;
+  grid-template-rows:300px 300px 240px;
   background:#fff;
   overflow:hidden;
 }
@@ -594,14 +594,14 @@ html,body{
 .history-area{
   position:relative;
   width:840px;
-  height:285px;
+  height:300px;
   display:grid;
-  grid-template-rows:57px 228px;
+  grid-template-rows:60px 240px;
   padding:0 14px;
   box-sizing:border-box;
   overflow:hidden;
   border-bottom:0;
-  box-shadow:inset 0 -3px 0 var(--line);
+  box-shadow:inset 0 -5px 0 var(--line);
   background:#fff;
 }
 .history-area::after{
@@ -626,7 +626,7 @@ html,body{
 }
 
 .history-player-name{
-  height:57px;
+  height:60px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -654,7 +654,7 @@ html,body{
 .history-list{
   position:relative;
   z-index:1;
-  height:228px;
+  height:240px;
   display:flex;
   flex-direction:column;
   gap:0;
@@ -662,8 +662,8 @@ html,body{
 }
 
 .history-timeline-row{
-  flex:0 0 57px;
-  height:57px;
+  flex:0 0 60px;
+  height:60px;
   display:grid;
   grid-template-columns:1fr 1fr;
   min-width:0;
@@ -686,6 +686,7 @@ html,body{
   padding-left:14px;
 }
 .history-cell:first-child{padding-right:14px}
+.history-cell.is-current{background:color-mix(in srgb,var(--gold) 18%,#fff)}
 
 .history-game-row{
   position:relative;
@@ -701,7 +702,7 @@ html,body{
   align-items:center;
   justify-content:center;
   width:100%;
-  height:57px;
+  height:60px;
   font-size:25px;
   font-weight:900;
   letter-spacing:.04em;
@@ -746,23 +747,23 @@ html,body{
 
 .analysis-area{
   width:840px;
-  height:285px;
+  height:300px;
   overflow:hidden;
   border-bottom:0;
-  box-shadow:inset 0 -3px 0 var(--line);
+  box-shadow:inset 0 -5px 0 var(--line);
   background:#fff;
 }
 
 .analysis-content{
   width:840px;
-  height:285px;
+  height:300px;
   padding:0;
   overflow:hidden;
 }
 
 .analysis-jokers{
   width:100%;
-  height:285px;
+  height:300px;
   display:flex;
   flex-wrap:wrap;
   align-content:center;
@@ -878,14 +879,14 @@ html,body{
 
 .analysis-moves{
   width:840px;
-  height:285px;
+  height:300px;
   margin:0;
   overflow:hidden;
 }
 
 .analysis-row{
   width:840px;
-  height:57px;
+  height:60px;
   display:grid;
   grid-template-columns:1fr 110px;
   align-items:center;
@@ -922,7 +923,7 @@ html,body{
 
 .ad-area{
   width:840px;
-  height:270px;
+  height:240px;
   overflow:hidden;
   background:#fff;
   padding:12px 14px;

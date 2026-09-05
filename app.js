@@ -618,14 +618,14 @@ function historyClass(error){
 }
 function candidateErrorClass(error){const value=Number(error);if(value<=-0.080)return"error-purple";if(value<=-0.020)return"error-red";return"";}
 function historyMoveLabel(move){return move==="Dance"?"Cannot Move":(move||"");}
-function historyCell(event,player){
-  if(!event)return '<div class="history-cell"></div>';
+function historyCell(event,player,isCurrent=false){
+  if(!event)return `<div class="history-cell${isCurrent?" is-current":""}"></div>`;
   const icon=event.kind==="cube"
     ? renderHistoryCube(event.cubeValue)
     : event.kind==="cubeResponse"
       ? renderHistoryCube(event.move==="Pass"?"P":event.cubeValue)
       : renderPair(event.dice,player);
-  return `<div class="history-cell ${historyClass(event.error)}">${icon}<span class="history-move">${historyMoveLabel(event.move)}</span></div>`;
+  return `<div class="history-cell ${historyClass(event.error)}${isCurrent?" is-current":""}">${icon}<span class="history-move">${historyMoveLabel(event.move)}</span></div>`;
 }
 function collectHistoryRows(){
   const rows=[];
@@ -703,10 +703,21 @@ function renderHistory(){
   // 世代が一時的にずれても描画全体を止めないよう新旧DOMの両方に対応する。
   if(els.historyList){
     const padded=[...Array(Math.max(0,4-rows.length)).fill(null),...rows].slice(-4);
-    els.historyList.innerHTML=padded.map(row=>{
+    const state=currentState();
+    const currentPlayer=state?.activePlayer===1?"black":(state?.activePlayer===-1?"white":null);
+    const highlightEnabled=currentPlayer&&!['gameStart','gameEnd','matchStart','matchEnd','empty'].includes(state?.phase);
+    let currentRowIndex=-1;
+    if(highlightEnabled){
+      for(let i=padded.length-1;i>=0;i--){
+        if(padded[i]?.kind==="actions"){currentRowIndex=i;break;}
+      }
+    }
+    els.historyList.innerHTML=padded.map((row,rowIndex)=>{
       if(!row)return `<div class="history-timeline-row history-empty-row">${historyCell(null,"black")}${historyCell(null,"white")}</div>`;
       if(row.kind==="game")return `<div class="history-timeline-row history-game-row"><div class="history-game-label">Game ${row.gameNumber}</div></div>`;
-      return `<div class="history-timeline-row">${historyCell(row.black,"black")}${historyCell(row.white,"white")}</div>`;
+      const blackCurrent=rowIndex===currentRowIndex&&currentPlayer==="black";
+      const whiteCurrent=rowIndex===currentRowIndex&&currentPlayer==="white";
+      return `<div class="history-timeline-row">${historyCell(row.black,"black",blackCurrent)}${historyCell(row.white,"white",whiteCurrent)}</div>`;
     }).join("");
     return;
   }
