@@ -826,11 +826,17 @@ html,body{
 .joker-glow.minus .joker-label{color:#c43b3b}
 .joker-glow.plus,
 .joker-glow.minus{animation:none;filter:none}
-.joker-glow.plus .die,
-.joker-glow.minus .die{animation:jokerDieBlink 1.15s ease-in-out infinite}
-@keyframes jokerDieBlink{
-  0%,100%{opacity:1}
-  50%{opacity:.38}
+.joker-glow.plus .joker-label,
+.joker-glow.minus .joker-label{filter:none;text-shadow:none}
+.joker-glow.plus .die{animation:jokerShadowGold 1.15s ease-in-out infinite}
+.joker-glow.minus .die{animation:jokerShadowRed 1.15s ease-in-out infinite}
+@keyframes jokerShadowGold{
+  0%,100%{filter:drop-shadow(0 0 1px rgba(213,166,46,.18)) drop-shadow(0 0 3px rgba(213,166,46,.12))}
+  50%{filter:drop-shadow(0 0 7px rgba(213,166,46,.95)) drop-shadow(0 0 15px rgba(213,166,46,.72))}
+}
+@keyframes jokerShadowRed{
+  0%,100%{filter:drop-shadow(0 0 1px rgba(196,59,59,.18)) drop-shadow(0 0 3px rgba(196,59,59,.12))}
+  50%{filter:drop-shadow(0 0 7px rgba(196,59,59,.95)) drop-shadow(0 0 15px rgba(196,59,59,.72))}
 }
 
 #dice.is-muted{
@@ -843,17 +849,24 @@ html,body{
 #dice.is-antijoker-glow{
   transform-box:fill-box;
   transform-origin:center;
-  filter:none;
-  animation:boardJokerDieBlink 1.15s ease-in-out infinite;
+  opacity:1;
 }
-@keyframes boardJokerDieBlink{
-  0%,100%{opacity:1}
-  50%{opacity:.38}
+#dice.is-joker-glow{animation:boardJokerShadowGold 1.15s ease-in-out infinite}
+#dice.is-antijoker-glow{animation:boardJokerShadowRed 1.15s ease-in-out infinite}
+@keyframes boardJokerShadowGold{
+  0%,100%{filter:drop-shadow(0 0 1px rgba(213,166,46,.18)) drop-shadow(0 0 3px rgba(213,166,46,.12))}
+  50%{filter:drop-shadow(0 0 7px rgba(213,166,46,.95)) drop-shadow(0 0 15px rgba(213,166,46,.72))}
+}
+@keyframes boardJokerShadowRed{
+  0%,100%{filter:drop-shadow(0 0 1px rgba(196,59,59,.18)) drop-shadow(0 0 3px rgba(196,59,59,.12))}
+  50%{filter:drop-shadow(0 0 7px rgba(196,59,59,.95)) drop-shadow(0 0 15px rgba(196,59,59,.72))}
 }
 @media (prefers-reduced-motion:reduce){
   .joker-glow.plus,.joker-glow.minus{animation:none;filter:none}
-  .joker-glow.plus .die,.joker-glow.minus .die{animation:none}
-  #dice.is-joker-glow,#dice.is-antijoker-glow{animation:none;filter:none;opacity:1}
+  .joker-glow.plus .die{animation:none;filter:drop-shadow(0 0 7px rgba(213,166,46,.75))}
+  .joker-glow.minus .die{animation:none;filter:drop-shadow(0 0 7px rgba(196,59,59,.75))}
+  #dice.is-joker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(213,166,46,.75));opacity:1}
+  #dice.is-antijoker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(196,59,59,.75));opacity:1}
   .big-comeback.is-active{animation:none!important;opacity:1;transform:translate(-50%,-50%)}
   .board-dim-overlay.is-active{animation:none;opacity:1}
   .score-value.is-score-transition .score-number-old,
