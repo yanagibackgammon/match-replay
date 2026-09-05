@@ -392,7 +392,7 @@ function drawCube(cube){
   r.setAttribute("fill","#fff");r.setAttribute("stroke","#000");r.setAttribute("stroke-width","1.5");cubeG.appendChild(r);
   const t=document.createElementNS("http://www.w3.org/2000/svg","text");
   t.setAttribute("x","350.5");t.setAttribute("y",String(y+25));t.setAttribute("text-anchor","middle");t.setAttribute("fill","#000");
-  t.setAttribute("font-family","Arial, Helvetica, sans-serif");t.setAttribute("font-size","23");t.textContent=value;cubeG.appendChild(t);
+  t.setAttribute("font-family",'Noto Sans JP, Noto Sans CJK JP, Yu Gothic, Meiryo, sans-serif');t.setAttribute("font-size","23");t.textContent=value;cubeG.appendChild(t);
 }
 function drawGameOverlay(state){
   gameOverlayG.innerHTML="";
@@ -407,7 +407,7 @@ function drawGameOverlay(state){
   const addText=(y,text,size,color="#fff",weight=800)=>{
     const t=document.createElementNS("http://www.w3.org/2000/svg","text");
     t.setAttribute("x","351");t.setAttribute("y",String(y));t.setAttribute("text-anchor","middle");t.setAttribute("fill",color);
-    t.setAttribute("font-family","Arial, Helvetica, sans-serif");t.setAttribute("font-size",String(size));t.setAttribute("font-weight",String(weight));
+    t.setAttribute("font-family",'Noto Sans JP, Noto Sans CJK JP, Yu Gothic, Meiryo, sans-serif');t.setAttribute("font-size",String(size));t.setAttribute("font-weight",String(weight));
     t.textContent=text;gameOverlayG.appendChild(t);
   };
 
