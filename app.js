@@ -392,7 +392,7 @@ function drawCube(cube){
   r.setAttribute("fill","#fff");r.setAttribute("stroke","#000");r.setAttribute("stroke-width","1.5");cubeG.appendChild(r);
   const t=document.createElementNS("http://www.w3.org/2000/svg","text");
   t.setAttribute("x","350.5");t.setAttribute("y",String(y+25));t.setAttribute("text-anchor","middle");t.setAttribute("fill","#000");
-  t.setAttribute("font-family","Arial, Helvetica, sans-serif");t.setAttribute("font-size","25");t.textContent=value;cubeG.appendChild(t);
+  t.setAttribute("font-family","Arial, Helvetica, sans-serif");t.setAttribute("font-size","23");t.textContent=value;cubeG.appendChild(t);
 }
 function drawGameOverlay(state){
   gameOverlayG.innerHTML="";
@@ -413,8 +413,8 @@ function drawGameOverlay(state){
 
   if(state.phase==="matchStart"){
     addPanel(96,188,510,170,18);
-    addText(246,"試合開始",50,"#fff",900);
-    addText(316,`${meta.blackName} vs ${meta.whiteName}`,35,"#fff",800);
+    addText(246,"試合開始",46,"#fff",900);
+    addText(316,`${meta.blackName} vs ${meta.whiteName}`,34,"#fff",800);
     return;
   }
 
@@ -422,15 +422,15 @@ function drawGameOverlay(state){
     const winner=state.matchWinner;
     const winnerName=winner==="black"?meta.blackName:winner==="white"?meta.whiteName:"";
     addPanel(116,150,470,246,18);
-    addText(212,"試合終了",50,"#fff",900);
+    addText(212,"試合終了",42,"#fff",900);
     addText(270,"勝者",30,"#fff",800);
-    addText(344,winnerName,55,"#fff",900);
+    addText(344,winnerName,54,"#fff",900);
     return;
   }
 
   if(state.phase==="gameStart"){
     addPanel(246,232,210,82,14);
-    addText(286,`Game ${state.gameNumber || 1}`,50,"#fff",700);
+    addText(286,`Game ${state.gameNumber || 1}`,42,"#fff",700);
     return;
   }
   if(state.phase!=="gameEnd" || !state.scoreDelta) return;
@@ -443,9 +443,9 @@ function drawGameOverlay(state){
   const winLabel=winMultiplier>=3?"バックギャモン勝ち":winMultiplier===2?"ギャモン勝ち":"シングル勝ち";
 
   addPanel(116,165,470,216,18);
-  addText(220,winnerName,35,"#fff",800);
-  addText(300,`＋${points}`,70,"#18b86b",900);
-  addText(350,`${winLabel}・キューブ${cubeValue}倍`,30,"#fff",800);
+  addText(220,winnerName,32,"#fff",800);
+  addText(300,`＋${points}`,72,"#18b86b",900);
+  addText(350,`${winLabel}・キューブ${cubeValue}倍`,28,"#fff",800);
 }
 trianglePoints();
 
@@ -478,7 +478,7 @@ function gammonTone(hex){
   const rgb=[0,2,4].map(i=>parseInt(color.slice(i,i+2),16));
   const lum=(rgb[0]*299+rgb[1]*587+rgb[2]*114)/1000;
   const target=lum>=150?0:255;
-  const ratio=0.34;
+  const ratio=0.22;
   const mixed=rgb.map(v=>Math.round(v*(1-ratio)+target*ratio));
   return `#${mixed.map(v=>v.toString(16).padStart(2,"0")).join("")}`;
 }
@@ -598,9 +598,12 @@ function renderMeta(state){
   renderScoreValue(els.blackScore,score[0]??meta.blackScore,blackGain);
   renderScoreValue(els.whiteScore,score[1]??meta.whiteScore,whiteGain);
 }
-function diePips(face){return {1:["p5"],2:["p1","p9"],3:["p1","p5","p9"],4:["p1","p3","p7","p9"],5:["p1","p3","p5","p7","p9"],6:["p1","p3","p4","p6","p7","p9"]}[face]||[];}
+function diePips(face){return {1:[[18,18]],2:[[10,10],[26,26]],3:[[10,10],[18,18],[26,26]],4:[[10,10],[26,10],[10,26],[26,26]],5:[[10,10],[26,10],[18,18],[10,26],[26,26]],6:[[10,9],[26,9],[10,18],[26,18],[10,27],[26,27]]}[face]||[];}
 function diePlayerClass(player){return player===1||player==="black"?"player1":"player2";}
-function renderDie(face,player){return `<span class="die ${diePlayerClass(player)}">${diePips(face).map(c=>`<span class="die-pip ${c}"></span>`).join("")}</span>`;}
+function renderDie(face,player){
+  const dots=diePips(face).map(([cx,cy])=>`<circle class="die-svg-pip" cx="${cx}" cy="${cy}" r="3.4"></circle>`).join("");
+  return `<svg class="die ${diePlayerClass(player)}" viewBox="0 0 36 36" aria-hidden="true"><rect class="die-face" x="0.75" y="0.75" width="34.5" height="34.5" rx="4"></rect>${dots}</svg>`;
+}
 function renderPair(pair,player){return pair&&pair.length===2?`<div class="dice-pair-inline">${renderDie(pair[0],player)}${renderDie(pair[1],player)}</div>`:'<div class="dice-pair-inline"></div>';}
 function renderHistoryCube(value){
   const raw=String(value??"").trim().toUpperCase();
@@ -823,17 +826,16 @@ function renderBoardDimOverlay(state){
 function renderBigComeback(state){
   const el=els.bigComebackText;if(!el)return;
   const notice=state?.phase==="roll" ? state?.rollNotice : null;
-  const isVisible=notice==="comeback" || notice==="nice" || notice==="bad";
+  const isVisible=notice==="comeback" || notice==="nice";
   if(!isVisible){
     lastBigComebackKey="";
-    el.classList.remove("is-active","is-comeback","is-nice","is-bad");
+    el.classList.remove("is-active","is-comeback","is-nice");
     el.setAttribute("aria-hidden","true");
     return;
   }
-  el.textContent=notice==="comeback"?"大逆転！":(notice==="bad"?"バッドロール…":"ナイスロール！");
+  el.textContent=notice==="comeback"?"大逆転！":"ナイスロール！";
   el.classList.toggle("is-comeback",notice==="comeback");
   el.classList.toggle("is-nice",notice==="nice");
-  el.classList.toggle("is-bad",notice==="bad");
   const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}:${notice}`;
   el.setAttribute("aria-hidden","false");
   if(key===lastBigComebackKey) return;
