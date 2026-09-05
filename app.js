@@ -837,16 +837,17 @@ function renderBoardDimOverlay(state){
 function renderBigComeback(state){
   const el=els.bigComebackText;if(!el)return;
   const notice=state?.phase==="roll" ? state?.rollNotice : null;
-  const isVisible=notice==="comeback" || notice==="nice";
+  const isVisible=notice==="comeback" || notice==="nice" || notice==="bad";
   if(!isVisible){
     lastBigComebackKey="";
-    el.classList.remove("is-active","is-comeback","is-nice");
+    el.classList.remove("is-active","is-comeback","is-nice","is-bad");
     el.setAttribute("aria-hidden","true");
     return;
   }
-  el.textContent=notice==="comeback"?"大逆転！":"ナイスロール！";
+  el.textContent=notice==="comeback"?"大逆転！":(notice==="bad"?"バッドロール…":"ナイスロール！");
   el.classList.toggle("is-comeback",notice==="comeback");
   el.classList.toggle("is-nice",notice==="nice");
+  el.classList.toggle("is-bad",notice==="bad");
   const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}:${notice}`;
   el.setAttribute("aria-hidden","false");
   if(key===lastBigComebackKey) return;
