@@ -27,6 +27,7 @@
   --board-bar:#111111;
   --board-line:#000000;
   --line:#d6e2d6;
+  --sequence-duration:6s;
   --winrate-frame-color:color-mix(in srgb,var(--theme-color) 26%,#111);
 }
 
@@ -336,9 +337,9 @@ html,body{
   align-items:center;
   justify-content:center;
 }
-.score-value.is-score-transition .score-number-old{animation:scoreOldTravel 5s cubic-bezier(.18,.72,.22,1) both}
-.score-value.is-score-transition .score-number-gain{animation:scoreGainTravel 5s cubic-bezier(.18,.72,.22,1) both;color:#18b86b;font-size:72px}
-.score-value.is-score-transition .score-number-new{animation:scoreNewTravel 5s cubic-bezier(.18,.72,.22,1) both}
+.score-value.is-score-transition .score-number-old{animation:scoreOldTravel var(--sequence-duration) cubic-bezier(.18,.72,.22,1) both}
+.score-value.is-score-transition .score-number-gain{animation:scoreGainTravel var(--sequence-duration) cubic-bezier(.18,.72,.22,1) both;color:#18b86b;font-size:72px}
+.score-value.is-score-transition .score-number-new{animation:scoreNewTravel var(--sequence-duration) cubic-bezier(.18,.72,.22,1) both}
 @keyframes scoreOldTravel{
   0%,18%{transform:translateY(0);opacity:1}
   25%,100%{transform:translateY(-92px);opacity:0}
@@ -504,8 +505,8 @@ html,body{
 }
 .big-comeback.is-comeback{color:#e53935}
 .big-comeback.is-nice{color:#ffd33d}
-.big-comeback.is-active.is-comeback{animation:bigComebackRed 3s ease-in-out both}
-.big-comeback.is-active.is-nice{animation:niceRollGold 3s ease-in-out both}
+.big-comeback.is-active.is-comeback{animation:bigComebackRed var(--sequence-duration) ease-in-out both}
+.big-comeback.is-active.is-nice{animation:niceRollGold var(--sequence-duration) ease-in-out both}
 @keyframes bigComebackRed{
   0%{opacity:0;transform:translate(-50%,48px);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(229,57,53,.30)}
   14%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 8px rgba(229,57,53,.92),0 0 16px rgba(229,57,53,.58)}
@@ -552,7 +553,7 @@ html,body{
   pointer-events:none;
   z-index:6;
 }
-.board-dim-overlay.is-active{animation:boardDimBeforeComeback 5s linear both}
+.board-dim-overlay.is-active{animation:boardDimBeforeComeback var(--sequence-duration) linear both}
 @keyframes boardDimBeforeComeback{
   0%{opacity:0}
   100%{opacity:1}

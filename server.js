@@ -5,14 +5,15 @@ const { WebSocketServer, WebSocket } = require("ws");
 const { parseXgFile } = require("./scripts/xg-parser.cjs");
 
 const PORT = Number(process.env.PORT || 3000);
-const PLAYBACK_SPEED = 3000;
-const PRE_ROLL_SPEED = 5000;
-const ROLL_SPEED = 5000;
-const CANDIDATE_SPEED = 5000;
-const MOVE_SPEED = 5000;
-const CUBE_SPEED = 5000;
-const SCORE_SEQUENCE_SPEED = 5000;
-const BIG_COMEBACK_DIM_SPEED = 5000;
+const SEQUENCE_SPEED = 6000;
+const PLAYBACK_SPEED = SEQUENCE_SPEED;
+const PRE_ROLL_SPEED = SEQUENCE_SPEED;
+const ROLL_SPEED = SEQUENCE_SPEED;
+const CANDIDATE_SPEED = SEQUENCE_SPEED;
+const MOVE_SPEED = SEQUENCE_SPEED;
+const CUBE_SPEED = SEQUENCE_SPEED;
+const SCORE_SEQUENCE_SPEED = SEQUENCE_SPEED;
+const BIG_COMEBACK_DIM_SPEED = SEQUENCE_SPEED;
 const CHECKER_MOVE_DURATION = 500;
 const ROOT = __dirname;
 const MATCH_DIR = path.join(ROOT, "matches");
@@ -121,7 +122,7 @@ function safePath(urlPath){
 }
 
 ensureDirs();
-let state = {index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED,mode:"auto",gameStarts:[],meta:loadConfig(),matchError:""};
+let state = {index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED,playbackRate:1,mode:"auto",gameStarts:[],meta:loadConfig(),matchError:""};
 let timer = null;
 
 function syncSelectedMatch(resetIndex=false){
@@ -214,30 +215,33 @@ function broadcastState(){
   const payload=JSON.stringify({type:"state",...state});
   for(const client of wss.clients) if(client.readyState===WebSocket.OPEN) client.send(payload);
 }
+function normalizedPlaybackRate(value){return Number(value)===2?2:1;}
+function scaledDelay(ms){return Math.max(1,Math.round(ms/normalizedPlaybackRate(state.playbackRate)));}
 function currentPlaybackDelay(){
   try{
     const file=state.meta.matchFile;
-    if(!file)return PLAYBACK_SPEED;
+    if(!file)return scaledDelay(PLAYBACK_SPEED);
     const data=loadMatchData(file);
     const current=data.states?.[state.index];
-    if(current?.phase==="gameEnd" || current?.phase==="matchStart" || current?.phase==="matchEnd")return SCORE_SEQUENCE_SPEED;
-    if(current?.phase==="bigComebackIntro")return BIG_COMEBACK_DIM_SPEED;
-    if(current?.phase==="preRoll")return PRE_ROLL_SPEED;
-    if(["cubeOffer","cubeOfferSelect","cubeResponse","cubeResponseSelect"].includes(current?.phase))return CUBE_SPEED;
+    if(current?.phase==="gameEnd" || current?.phase==="matchStart" || current?.phase==="matchEnd")return scaledDelay(SCORE_SEQUENCE_SPEED);
+    if(current?.phase==="bigComebackIntro")return scaledDelay(BIG_COMEBACK_DIM_SPEED);
+    if(current?.phase==="preRoll")return scaledDelay(PRE_ROLL_SPEED);
+    if(["cubeOffer","cubeOfferSelect","cubeResponse","cubeResponseSelect"].includes(current?.phase))return scaledDelay(CUBE_SPEED);
     const segments=Array.isArray(current?.moveAnimation?.segments)?current.moveAnimation.segments:[];
+    const checkerMoveDuration=CHECKER_MOVE_DURATION/normalizedPlaybackRate(state.playbackRate);
     if(current?.phase==="roll"&&current?.noContactCombined){
       const hitCount=segments.reduce((n,s)=>n+(s?.hit?1:0),0);
-      const animationMs=segments.length?(segments.length+hitCount)*CHECKER_MOVE_DURATION+250:0;
-      return Math.max(ROLL_SPEED,animationMs);
+      const animationMs=segments.length?(segments.length+hitCount)*checkerMoveDuration+250/normalizedPlaybackRate(state.playbackRate):0;
+      return Math.max(scaledDelay(ROLL_SPEED),animationMs);
     }
-    if(current?.phase==="roll")return ROLL_SPEED;
+    if(current?.phase==="roll")return scaledDelay(ROLL_SPEED);
     const hitCount=segments.reduce((n,s)=>n+(s?.hit?1:0),0);
-    const animationMs=segments.length?(segments.length+hitCount)*CHECKER_MOVE_DURATION+250:0;
-    if(current?.phase==="analysis" || (current?.phase==="candidates"&&current?.forcedMove))return Math.max(MOVE_SPEED,animationMs);
-    if(current?.phase==="candidates")return CANDIDATE_SPEED;
-    if(segments.length)return Math.max(PLAYBACK_SPEED,animationMs);
-    return PLAYBACK_SPEED;
-  }catch{return PLAYBACK_SPEED;}
+    const animationMs=segments.length?(segments.length+hitCount)*checkerMoveDuration+250/normalizedPlaybackRate(state.playbackRate):0;
+    if(current?.phase==="analysis" || (current?.phase==="candidates"&&current?.forcedMove))return Math.max(scaledDelay(MOVE_SPEED),animationMs);
+    if(current?.phase==="candidates")return scaledDelay(CANDIDATE_SPEED);
+    if(segments.length)return Math.max(scaledDelay(PLAYBACK_SPEED),animationMs);
+    return scaledDelay(PLAYBACK_SPEED);
+  }catch{return scaledDelay(PLAYBACK_SPEED);}
 }
 function stopTimer(){if(timer){clearTimeout(timer);timer=null;}}
 function startTimer(){
@@ -281,14 +285,18 @@ function handleCommand(m){
       state.playing=false;stopTimer();
       break;
     case"play":
-      state.speed=PLAYBACK_SPEED;
+      state.speed=scaledDelay(PLAYBACK_SPEED);
       if(state.mode==="auto"){state.playing=true;startTimer();}
       break;
     case"pause":state.playing=false;stopTimer();break;
     case"prev":state.playing=false;stopTimer();setIndex(state.index-1);break;
     case"next":state.playing=false;stopTimer();setIndex(state.index+1);break;
     case"seek":state.playing=false;stopTimer();setIndex(m.value);break;
-    case"speed":state.speed=PLAYBACK_SPEED;if(state.playing&&state.mode==="auto")startTimer();break;
+    case"speed":
+      state.playbackRate=normalizedPlaybackRate(m.value);
+      state.speed=scaledDelay(PLAYBACK_SPEED);
+      if(state.playing&&state.mode==="auto")startTimer();
+      break;
     case"setMeta":applyMetaPatch(m.value||{});break;
   }
   broadcastState();

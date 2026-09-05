@@ -15,7 +15,7 @@ boardSvg.appendChild(moveAnimationG);
 let moveAnimationToken=0;
 let moveAnimationRunning=false;
 let lastMoveAnimationKey="";
-const CHECKER_MOVE_DURATION=500;
+const BASE_CHECKER_MOVE_DURATION=500;
 
 const defaultMeta={
   tournamentTitleLine1:"JBS第31期名人戦 準々決勝",
@@ -42,21 +42,31 @@ let index=0,meta={...defaultMeta},matchData={states:[emptyState]},loadedMatchFil
 let adFiles=[],adIndex=0,adTimer=null;
 let lastBigComebackKey="";
 let lastBoardDimKey="";
-const BIG_COMEBACK_SPEED=5000;
-const BIG_COMEBACK_DIM_SPEED=5000;
+const SEQUENCE_SPEED=6000;
+const BIG_COMEBACK_SPEED=SEQUENCE_SPEED;
+const BIG_COMEBACK_DIM_SPEED=SEQUENCE_SPEED;
 let pagesTimer=null;
-const PLAYBACK_SPEED=3000;
-const PRE_ROLL_SPEED=5000;
-const ROLL_SPEED=5000;
-const CANDIDATE_SPEED=5000;
-const MOVE_SPEED=5000;
-const CUBE_SPEED=5000;
-const SCORE_SEQUENCE_SPEED=5000;
-let pagesState={index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED,mode:"auto"};
+const PLAYBACK_SPEED=SEQUENCE_SPEED;
+const PRE_ROLL_SPEED=SEQUENCE_SPEED;
+const ROLL_SPEED=SEQUENCE_SPEED;
+const CANDIDATE_SPEED=SEQUENCE_SPEED;
+const MOVE_SPEED=SEQUENCE_SPEED;
+const CUBE_SPEED=SEQUENCE_SPEED;
+const SCORE_SEQUENCE_SPEED=SEQUENCE_SPEED;
+let localPlaybackRate=1;
+let pagesState={index:0,totalSteps:1,playing:false,speed:PLAYBACK_SPEED,playbackRate:1,mode:"auto"};
 const isLocal=()=>location.hostname==="localhost"||location.hostname==="127.0.0.1";
 const pageChannel=(!isLocal()&&"BroadcastChannel" in window)?new BroadcastChannel("match-replay-control"):null;
 let pagesMetaRevision="";
 let pagesMetaPoller=null;
+function normalizedPlaybackRate(value){return Number(value)===2?2:1;}
+function currentPlaybackRate(){return isLocal()?normalizedPlaybackRate(localPlaybackRate):normalizedPlaybackRate(pagesState.playbackRate);}
+function scaledSequenceDelay(ms){return Math.max(1,Math.round(ms/currentPlaybackRate()));}
+function checkerMoveDuration(){return BASE_CHECKER_MOVE_DURATION/currentPlaybackRate();}
+function applyPlaybackTiming(){
+  const duration=scaledSequenceDelay(SEQUENCE_SPEED);
+  document.documentElement.style.setProperty("--sequence-duration",`${duration}ms`);
+}
 
 const els={
   stageWrap:document.getElementById("stage-wrap"),stage:document.getElementById("stage"),
@@ -282,7 +292,7 @@ function animateCheckerBetween(from,to,activePlayer,token){
     const started=performance.now();
     const frame=now=>{
       if(token!==moveAnimationToken){c.remove();resolve(false);return;}
-      const t=Math.min(1,(now-started)/CHECKER_MOVE_DURATION),e=easeCheckerMove(t);
+      const t=Math.min(1,(now-started)/checkerMoveDuration()),e=easeCheckerMove(t);
       c.setAttribute("cx",String(from.x+(to.x-from.x)*e));
       c.setAttribute("cy",String(from.y+(to.y-from.y)*e));
       if(t>=1){c.remove();resolve(true);return;}
@@ -891,6 +901,8 @@ async function loadMatch(file,{force=false,resetIndex=false}={}){
 }
 async function applyStateMessage(message){
   if(typeof message.index==="number") index=message.index;
+  if(message.playbackRate!=null) localPlaybackRate=normalizedPlaybackRate(message.playbackRate);
+  applyPlaybackTiming();
   const old=meta.matchFile;
   if(message.meta) meta={...meta,...message.meta};
   if(meta.matchFile!==old||meta.matchFile!==loadedMatchFile) await loadMatch(meta.matchFile,{force:true,resetIndex:meta.matchFile!==old});
@@ -905,25 +917,25 @@ function publishPagesState(extra={}){
 }
 function playbackDelayForIndex(i){
   const state=matchData.states[Math.max(0,Math.min(Number(i)||0,matchData.states.length-1))];
-  if(state?.phase==="gameEnd" || state?.phase==="matchStart" || state?.phase==="matchEnd") return SCORE_SEQUENCE_SPEED;
-  if(state?.phase==="bigComebackIntro") return BIG_COMEBACK_DIM_SPEED;
-  if(state?.phase==="preRoll") return PRE_ROLL_SPEED;
-  if(["cubeOffer","cubeOfferSelect","cubeResponse","cubeResponseSelect"].includes(state?.phase)) return CUBE_SPEED;
+  if(state?.phase==="gameEnd" || state?.phase==="matchStart" || state?.phase==="matchEnd") return scaledSequenceDelay(SCORE_SEQUENCE_SPEED);
+  if(state?.phase==="bigComebackIntro") return scaledSequenceDelay(BIG_COMEBACK_DIM_SPEED);
+  if(state?.phase==="preRoll") return scaledSequenceDelay(PRE_ROLL_SPEED);
+  if(["cubeOffer","cubeOfferSelect","cubeResponse","cubeResponseSelect"].includes(state?.phase)) return scaledSequenceDelay(CUBE_SPEED);
   const segments=Array.isArray(state?.moveAnimation?.segments)?state.moveAnimation.segments:[];
   if(state?.phase==="roll"&&state?.noContactCombined){
     const hitCount=segments.reduce((n,s)=>n+(s?.hit?1:0),0);
-    const animationMs=segments.length?(segments.length+hitCount)*CHECKER_MOVE_DURATION+250:0;
-    return Math.max(ROLL_SPEED,animationMs);
+    const animationMs=segments.length?(segments.length+hitCount)*checkerMoveDuration()+250/currentPlaybackRate():0;
+    return Math.max(scaledSequenceDelay(ROLL_SPEED),animationMs);
   }
-  if(state?.phase==="roll") return ROLL_SPEED;
+  if(state?.phase==="roll") return scaledSequenceDelay(ROLL_SPEED);
   const hitCount=segments.reduce((n,s)=>n+(s?.hit?1:0),0);
-  const animationMs=segments.length?(segments.length+hitCount)*CHECKER_MOVE_DURATION+250:0;
+  const animationMs=segments.length?(segments.length+hitCount)*checkerMoveDuration()+250/currentPlaybackRate():0;
   if(state?.phase==="analysis" || (state?.phase==="candidates"&&state?.forcedMove)){
-    return Math.max(MOVE_SPEED,animationMs);
+    return Math.max(scaledSequenceDelay(MOVE_SPEED),animationMs);
   }
-  if(state?.phase==="candidates") return CANDIDATE_SPEED;
-  if(segments.length) return Math.max(PLAYBACK_SPEED,animationMs);
-  return PLAYBACK_SPEED;
+  if(state?.phase==="candidates") return scaledSequenceDelay(CANDIDATE_SPEED);
+  if(segments.length) return Math.max(scaledSequenceDelay(PLAYBACK_SPEED),animationMs);
+  return scaledSequenceDelay(PLAYBACK_SPEED);
 }
 function stopPagesTimer(){if(pagesTimer){clearTimeout(pagesTimer);pagesTimer=null;}}
 function startPagesTimer(){
@@ -940,7 +952,6 @@ function startPagesTimer(){
   },playbackDelayForIndex(pagesState.index));
 }
 function handlePagesCommand(command,value){
-  pagesState.speed=PLAYBACK_SPEED;
   switch(command){
     case "setMode":
       pagesState.mode=value==="manual"?"manual":"auto";
@@ -953,7 +964,14 @@ function handlePagesCommand(command,value){
     case "prev": pagesState.playing=false;stopPagesTimer();pagesState.index=Math.max(0,pagesState.index-1);break;
     case "next": pagesState.playing=false;stopPagesTimer();pagesState.index=Math.min(Math.max(0,pagesState.totalSteps-1),pagesState.index+1);break;
     case "seek": pagesState.playing=false;stopPagesTimer();pagesState.index=Math.max(0,Math.min(Math.max(0,pagesState.totalSteps-1),Number(value)||0));break;
+    case "speed":
+      pagesState.playbackRate=normalizedPlaybackRate(value);
+      pagesState.speed=scaledSequenceDelay(PLAYBACK_SPEED);
+      applyPlaybackTiming();
+      if(pagesState.playing&&pagesState.mode==="auto")startPagesTimer();
+      break;
   }
+  pagesState.speed=scaledSequenceDelay(PLAYBACK_SPEED);
   index=pagesState.index;render();publishPagesState();
 }
 
@@ -994,8 +1012,10 @@ async function loadInitialPagesMeta(){
   if(isLocal())return;
   try{const r=await fetch(new URL("./stream-config.json",location.href),{cache:"no-store"});if(r.ok)meta={...meta,...await r.json()};}catch{}
   try{const s=localStorage.getItem("matchReplayMeta");if(s)meta={...meta,...JSON.parse(s)};pagesMetaRevision=localStorage.getItem("matchReplayMetaRevision")||"";}catch{}
-  try{const s=localStorage.getItem("matchReplayPlaybackState");if(s){const p=JSON.parse(s);pagesState={...pagesState,...p,speed:PLAYBACK_SPEED};index=Number(p.index)||0;}}catch{}
-  pagesState.speed=PLAYBACK_SPEED;
+  try{const s=localStorage.getItem("matchReplayPlaybackState");if(s){const p=JSON.parse(s);pagesState={...pagesState,...p};index=Number(p.index)||0;}}catch{}
+  pagesState.playbackRate=normalizedPlaybackRate(pagesState.playbackRate);
+  pagesState.speed=scaledSequenceDelay(PLAYBACK_SPEED);
+  applyPlaybackTiming();
   await loadMatch(meta.matchFile,{force:true});
   pagesState.index=Math.max(0,Math.min(index,pagesState.totalSteps-1));
   index=pagesState.index;
@@ -1048,4 +1068,4 @@ async function cycleAds(){
 }
 function startAdRotation(){if(adTimer)clearInterval(adTimer);cycleAds();adTimer=setInterval(cycleAds,60000);}
 function scaleStage(){const vw=document.documentElement.clientWidth||innerWidth||1920,s=vw/1920;els.stage.style.transform=`scale(${s})`;els.stageWrap.style.height=`${Math.ceil(1080*s)}px`;}
-addEventListener("resize",scaleStage);scaleStage();render();loadDesignPresets();startAdRotation();loadInitialPagesMeta();startPagesMetaPolling();connectWebSocket();
+addEventListener("resize",scaleStage);scaleStage();applyPlaybackTiming();render();loadDesignPresets();startAdRotation();loadInitialPagesMeta();startPagesMetaPolling();connectWebSocket();

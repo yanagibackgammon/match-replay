@@ -8,6 +8,8 @@ const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const autoModeBtn = document.getElementById("autoModeBtn");
 const manualModeBtn = document.getElementById("manualModeBtn");
+const normalSpeedBtn = document.getElementById("normalSpeedBtn");
+const doubleSpeedBtn = document.getElementById("doubleSpeedBtn");
 
 const tournamentLine1Input = document.getElementById("tournamentLine1Input");
 const tournamentLine2Input = document.getElementById("tournamentLine2Input");
@@ -29,7 +31,8 @@ let lastState = {
   index:0,
   totalSteps:1,
   playing:false,
-  speed:3000,
+  speed:6000,
+  playbackRate:1,
   mode:"auto",
   gameStarts:[],
   meta:{
@@ -201,7 +204,9 @@ function renderGameMarkers(){
 }
 
 function renderState(state){
-  lastState = {...lastState, ...state, speed:3000};
+  lastState = {...lastState, ...state};
+  lastState.playbackRate = Number(lastState.playbackRate)===2?2:1;
+  lastState.speed = lastState.playbackRate===2?3000:6000;
   lastState.meta = {...(lastState.meta || {}), ...((state && state.meta) || {})};
 
   const total = Math.max(1, lastState.totalSteps || 1);
@@ -215,6 +220,8 @@ function renderState(state){
   const manual=lastState.mode === "manual";
   autoModeBtn.classList.toggle("active",!manual);
   manualModeBtn.classList.toggle("active",manual);
+  normalSpeedBtn.classList.toggle("active",lastState.playbackRate!==2);
+  doubleSpeedBtn.classList.toggle("active",lastState.playbackRate===2);
   playBtn.disabled=manual;
   pauseBtn.disabled=manual;
 
@@ -375,7 +382,7 @@ async function applyMeta(){
       if(fileChanged) lastState.index=0;
       else lastState.index=Math.min(lastState.index,lastState.totalSteps-1);
       const revision=writePagesMeta(lastState.meta);
-      localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:3000,mode:lastState.mode||"auto"}));
+      localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:lastState.playbackRate===2?3000:6000,playbackRate:lastState.playbackRate||1,mode:lastState.mode||"auto"}));
       if(pageChannel)pageChannel.postMessage({type:"meta",meta:lastState.meta,revision});
       renderState(lastState);
     }
@@ -438,6 +445,8 @@ if(pageChannel){
 
 autoModeBtn.addEventListener("click", () => sendCommand("setMode","auto"));
 manualModeBtn.addEventListener("click", () => sendCommand("setMode","manual"));
+normalSpeedBtn.addEventListener("click", () => sendCommand("speed",1));
+doubleSpeedBtn.addEventListener("click", () => sendCommand("speed",2));
 playBtn.addEventListener("click", () => sendCommand("play"));
 pauseBtn.addEventListener("click", () => sendCommand("pause"));
 prevBtn.addEventListener("click", () => sendCommand("prev"));
