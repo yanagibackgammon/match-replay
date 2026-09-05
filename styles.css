@@ -731,7 +731,7 @@ html,body{
 .die.player2 .die-pip{background:var(--die-player2-pip)}
 
 .dice-pair-inline .die{--die-size:44px;--pip-size:8px}
-.analysis-jokers .die{--die-size:58px;--pip-size:10px}
+.analysis-jokers .die{--die-size:36px;--pip-size:7px}
 
 .die-pip{
   position:absolute;
@@ -828,18 +828,16 @@ html,body{
   align-items:center;
   justify-content:center;
 }
-.analysis-jokers .joker-glow.is-single-face .die{--die-size:78px;--pip-size:13px}
+.analysis-jokers .joker-glow.is-single-face .die{--die-size:36px;--pip-size:7px}
 .joker-glow.plus .joker-label{color:var(--joker-gold)}
 .joker-glow.minus .joker-label{color:#c43b3b}
-.joker-glow.plus{animation:jokerPulseGold 1.15s ease-in-out infinite}
-.joker-glow.minus{animation:jokerPulseRed 1.15s ease-in-out infinite}
-@keyframes jokerPulseGold{
-  0%,100%{filter:drop-shadow(0 0 2px rgba(213,166,46,.28)) drop-shadow(0 0 5px rgba(213,166,46,.22))}
-  50%{filter:drop-shadow(0 0 5px rgba(213,166,46,.92)) drop-shadow(0 0 10px rgba(213,166,46,.58)) drop-shadow(0 0 14px rgba(213,166,46,.28))}
-}
-@keyframes jokerPulseRed{
-  0%,100%{filter:drop-shadow(0 0 2px rgba(196,59,59,.26)) drop-shadow(0 0 5px rgba(196,59,59,.22))}
-  50%{filter:drop-shadow(0 0 5px rgba(196,59,59,.88)) drop-shadow(0 0 10px rgba(196,59,59,.56)) drop-shadow(0 0 14px rgba(196,59,59,.30))}
+.joker-glow.plus,
+.joker-glow.minus{animation:none;filter:none}
+.joker-glow.plus .die,
+.joker-glow.minus .die{animation:jokerDieBlink 1.15s ease-in-out infinite}
+@keyframes jokerDieBlink{
+  0%,100%{opacity:1}
+  50%{opacity:.38}
 }
 
 #dice.is-muted{
@@ -864,8 +862,8 @@ html,body{
   50%{filter:drop-shadow(0 0 6px rgba(196,59,59,.94)) drop-shadow(0 0 12px rgba(196,59,59,.64)) drop-shadow(0 0 18px rgba(196,59,59,.36))}
 }
 @media (prefers-reduced-motion:reduce){
-  .joker-glow.plus{animation:none;filter:drop-shadow(0 0 6px rgba(213,166,46,.88)) drop-shadow(0 0 10px rgba(213,166,46,.28))}
-  .joker-glow.minus{animation:none;filter:drop-shadow(0 0 6px rgba(196,59,59,.86)) drop-shadow(0 0 10px rgba(196,59,59,.26))}
+  .joker-glow.plus,.joker-glow.minus{animation:none;filter:none}
+  .joker-glow.plus .die,.joker-glow.minus .die{animation:none}
   #dice.is-joker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(213,166,46,.88)) drop-shadow(0 0 12px rgba(213,166,46,.30))}
   #dice.is-antijoker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(196,59,59,.86)) drop-shadow(0 0 12px rgba(196,59,59,.28))}
   .big-comeback.is-active{animation:none!important;opacity:1;transform:translate(-50%,-50%)}
