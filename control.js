@@ -1,6 +1,7 @@
 const connectionEl = document.getElementById("connection");
 const stepText = document.getElementById("stepText");
 const gamePosition = document.getElementById("gamePosition");
+const remainingTime = document.getElementById("remainingTime");
 const timeline = document.getElementById("timeline");
 const pauseBtn = document.getElementById("pauseBtn");
 const prevBtn = document.getElementById("prevBtn");
@@ -46,6 +47,11 @@ let lastState = {
   }
 };
 let selectedPlaybackButton="pause";
+let timingMatchFile="";
+let timingStates=[];
+let remainingAnchorMs=0;
+let remainingAnchorAt=performance.now();
+let remainingCounting=false;
 
 let designPresets=[];
 
@@ -222,6 +228,85 @@ async function loadDesignPresets(){
 }
 
 
+
+function cacheTimingStates(file, states){
+  timingMatchFile=String(file||"");
+  timingStates=Array.isArray(states)?states:[];
+}
+
+function playbackRateForRemaining(){
+  return Number(lastState.playbackRate)===2?2:1;
+}
+
+function timingDelayForState(state, rate=1){
+  const safeRate=Number(rate)===2?2:1;
+  const sequenceMs=6000/safeRate;
+  const checkerMoveMs=500/safeRate;
+  if(!state) return sequenceMs;
+  if(["gameEnd","matchStart","matchEnd","bigComebackIntro","preRoll","cubeOffer","cubeOfferSelect","cubeResponse","cubeResponseSelect"].includes(state.phase)) return sequenceMs;
+  const segments=Array.isArray(state?.moveAnimation?.segments)?state.moveAnimation.segments:[];
+  const hitCount=segments.reduce((n,segment)=>n+(segment?.hit?1:0),0);
+  const animationMs=segments.length?(segments.length+hitCount)*checkerMoveMs+250/safeRate:0;
+  if(state.phase==="roll"&&state.noContactCombined) return Math.max(sequenceMs,animationMs);
+  if(state.phase==="roll") return sequenceMs;
+  if(state.phase==="analysis"||(state.phase==="candidates"&&state.forcedMove)) return Math.max(sequenceMs,animationMs);
+  if(state.phase==="candidates") return sequenceMs;
+  if(segments.length) return Math.max(sequenceMs,animationMs);
+  return sequenceMs;
+}
+
+function calculateRemainingMs(){
+  const total=Math.max(1,Number(lastState.totalSteps)||1);
+  const current=Math.max(0,Math.min(total-1,Number(lastState.index)||0));
+  const rate=playbackRateForRemaining();
+  if(!String(lastState.meta?.matchFile||"").trim()) return 0;
+  if(timingMatchFile===String(lastState.meta.matchFile||"")&&timingStates.length){
+    let ms=0;
+    const end=Math.min(total,timingStates.length);
+    for(let i=current;i<end;i++) ms+=timingDelayForState(timingStates[i],rate);
+    return ms;
+  }
+  return Math.max(0,total-current)*6000/rate;
+}
+
+function formatRemainingTime(ms){
+  const totalSeconds=Math.max(0,Math.ceil((Number(ms)||0)/1000));
+  const minutes=Math.floor(totalSeconds/60);
+  const seconds=totalSeconds%60;
+  return `${minutes}:${String(seconds).padStart(2,"0")}`;
+}
+
+function updateRemainingTimeDisplay(){
+  if(!remainingTime) return;
+  let ms=remainingAnchorMs;
+  if(remainingCounting) ms=Math.max(0,ms-(performance.now()-remainingAnchorAt));
+  remainingTime.textContent=formatRemainingTime(ms);
+}
+
+function resetRemainingTimeAnchor(){
+  remainingAnchorMs=calculateRemainingMs();
+  remainingAnchorAt=performance.now();
+  remainingCounting=Boolean(lastState.playing&&lastState.mode==="auto");
+  updateRemainingTimeDisplay();
+}
+
+async function ensureTimingStates(file){
+  const target=String(file||"");
+  if(!target){
+    cacheTimingStates("",[]);
+    resetRemainingTimeAnchor();
+    return;
+  }
+  if(timingMatchFile===target&&timingStates.length) return;
+  try{
+    if(isLocalRuntime()) await getLocalMatchInfo(target);
+    else await getPagesMatchInfo(target);
+    resetRemainingTimeAnchor();
+  }catch(error){
+    console.warn("Failed to load timing states",error);
+  }
+}
+
 function renderGameMarkers(){
   const total=Math.max(1,Number(lastState.totalSteps)||1);
   const starts=Array.isArray(lastState.gameStarts)?lastState.gameStarts:[];
@@ -256,6 +341,8 @@ function renderState(state){
   });
   if(!currentGame && starts.length) currentGame = Number(starts[0].gameNumber) || 1;
   gamePosition.textContent = starts.length ? `${currentGame} / ${starts.length}` : `0 / 0`;
+  resetRemainingTimeAnchor();
+  ensureTimingStates(lastState.meta.matchFile);
   loadedFileName.textContent = lastState.meta.matchFile || "未選択";
   renderGameMarkers();
 
@@ -325,7 +412,7 @@ async function fetchPagesManifest(){
   }catch{return {};}
 }
 
-function extractMatchInfo(data){
+function extractMatchInfo(data,file=""){
   if(!Array.isArray(data?.states)||!data.states.length) throw new Error("棋譜データに再生ステートがありません");
   const gameStarts=[];
   data.states.forEach((state,index)=>{
@@ -334,6 +421,7 @@ function extractMatchInfo(data){
   const match=data.match||{};
   const blackName=String(match.blackSourcePlayer||match.player1||"").trim();
   const whiteName=String(match.whiteSourcePlayer||match.player2||"").trim();
+  if(file) cacheTimingStates(file,data.states);
   return {totalSteps:data.states.length,gameStarts,blackName,whiteName};
 }
 
@@ -345,7 +433,7 @@ async function getLocalMatchInfo(file){
   const r=await fetch(u,{cache:"no-store"});
   const data=await r.json().catch(()=>({}));
   if(!r.ok) throw new Error(data.error||`棋譜データを取得できません (HTTP ${r.status})`);
-  return extractMatchInfo(data);
+  return extractMatchInfo(data,file);
 }
 
 async function getPagesMatchInfo(file){
@@ -356,7 +444,7 @@ async function getPagesMatchInfo(file){
   const r=await fetch(u,{cache:"no-store"});
   if(!r.ok) throw new Error(`棋譜データを取得できません (HTTP ${r.status})`);
   const data=await r.json();
-  return extractMatchInfo(data);
+  return extractMatchInfo(data,file);
 }
 
 async function loadPagesInitialState(){
@@ -580,6 +668,7 @@ function installButtonFeedback(){
   });
 }
 installButtonFeedback();
+setInterval(updateRemainingTimeDisplay,250);
 renderState(lastState);
 renderThemeColorPreview();
 loadDesignPresets();
