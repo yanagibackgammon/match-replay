@@ -107,6 +107,237 @@
       }
     },
     {
+      "id": "galaxy-earth",
+      "name": "Galaxy Earth",
+      "checkers": {
+        "player1": "#104E49",
+        "player2": "#E8EAFE",
+        "border": "none"
+      },
+      "winRate": {
+        "player1": "#104E49",
+        "player2": "#E8EAFE"
+      },
+      "board": {
+        "surface": "#54926D",
+        "pointLight": "#457C5C",
+        "pointDark": "#72A588",
+        "bar": "#2B231C",
+        "frame": "#2B231C",
+        "pointBorder": "none"
+      }
+    },
+    {
+      "id": "galaxy-uranus",
+      "name": "Galaxy Uranus",
+      "checkers": {
+        "player1": "#0A3E4C",
+        "player2": "#E8EAFE",
+        "border": "none"
+      },
+      "winRate": {
+        "player1": "#0A3E4C",
+        "player2": "#E8EAFE"
+      },
+      "board": {
+        "surface": "#288286",
+        "pointLight": "#25767B",
+        "pointDark": "#4B999F",
+        "bar": "#060023",
+        "frame": "#060023",
+        "pointBorder": "none"
+      }
+    },
+    {
+      "id": "galaxy-neptune",
+      "name": "Galaxy Neptune",
+      "checkers": {
+        "player1": "#2C2EA8",
+        "player2": "#E1E8F6",
+        "border": "none"
+      },
+      "winRate": {
+        "player1": "#2C2EA8",
+        "player2": "#E1E8F6"
+      },
+      "board": {
+        "surface": "#427BDD",
+        "pointLight": "#3A6AD1",
+        "pointDark": "#6693E4",
+        "bar": "#000000",
+        "frame": "#000000",
+        "pointBorder": "none"
+      }
+    },
+    {
+      "id": "galaxy-nebula",
+      "name": "Galaxy Nebula",
+      "checkers": {
+        "player1": "#4A266D",
+        "player2": "#E8EAFE",
+        "border": "none"
+      },
+      "winRate": {
+        "player1": "#4A266D",
+        "player2": "#E8EAFE"
+      },
+      "board": {
+        "surface": "#8452AF",
+        "pointLight": "#6D3B98",
+        "pointDark": "#9A73BE",
+        "bar": "#060023",
+        "frame": "#060023",
+        "pointBorder": "none"
+      }
+    },
+    {
+      "id": "galaxy-carinia",
+      "name": "Galaxy Carinia",
+      "checkers": {
+        "player1": "#6B286B",
+        "player2": "#E8EAFE",
+        "border": "none"
+      },
+      "winRate": {
+        "player1": "#6B286B",
+        "player2": "#E8EAFE"
+      },
+      "board": {
+        "surface": "#AF71AB",
+        "pointLight": "#A264A1",
+        "pointDark": "#BD8CBB",
+        "bar": "#060023",
+        "frame": "#060023",
+        "pointBorder": "none"
+      }
+    },
+    {
+      "id": "galaxy-mars",
+      "name": "Galaxy Mars",
+      "checkers": {
+        "player1": "#681722",
+        "player2": "#D5BD97",
+        "border": "none"
+      },
+      "winRate": {
+        "player1": "#681722",
+        "player2": "#D5BD97"
+      },
+      "board": {
+        "surface": "#A74539",
+        "pointLight": "#8F3731",
+        "pointDark": "#C46950",
+        "bar": "#060023",
+        "frame": "#060023",
+        "pointBorder": "none"
+      }
+    },
+    {
+      "id": "galaxy-dune",
+      "name": "Galaxy Dune",
+      "checkers": {
+        "player1": "#5F412E",
+        "player2": "#E8EAFE",
+        "border": "none"
+      },
+      "winRate": {
+        "player1": "#5F412E",
+        "player2": "#E8EAFE"
+      },
+      "board": {
+        "surface": "#BD945D",
+        "pointLight": "#A98250",
+        "pointDark": "#C7A576",
+        "bar": "#060023",
+        "frame": "#060023",
+        "pointBorder": "none"
+      }
+    },
+    {
+      "id": "galaxy-toxic",
+      "name": "Galaxy Toxic",
+      "checkers": {
+        "player1": "#4F6A3C",
+        "player2": "#EFFFD2",
+        "border": "none"
+      },
+      "winRate": {
+        "player1": "#4F6A3C",
+        "player2": "#EFFFD2"
+      },
+      "board": {
+        "surface": "#ADB560",
+        "pointLight": "#94A152",
+        "pointDark": "#BFCB6C",
+        "bar": "#060023",
+        "frame": "#060023",
+        "pointBorder": "none"
+      }
+    },
+    {
+      "id": "galaxy-pluto",
+      "name": "Galaxy Pluto",
+      "checkers": {
+        "player1": "#4E6EA5",
+        "player2": "#E8EAFE",
+        "border": "none"
+      },
+      "winRate": {
+        "player1": "#4E6EA5",
+        "player2": "#E8EAFE"
+      },
+      "board": {
+        "surface": "#99AED4",
+        "pointLight": "#88A0CD",
+        "pointDark": "#ACBCDD",
+        "bar": "#060023",
+        "frame": "#060023",
+        "pointBorder": "none"
+      }
+    },
+    {
+      "id": "galaxy-moon",
+      "name": "Galaxy Moon",
+      "checkers": {
+        "player1": "#403F5B",
+        "player2": "#E8EAFE",
+        "border": "none"
+      },
+      "winRate": {
+        "player1": "#403F5B",
+        "player2": "#E8EAFE"
+      },
+      "board": {
+        "surface": "#6C7A90",
+        "pointLight": "#626E84",
+        "pointDark": "#8893A7",
+        "bar": "#060023",
+        "frame": "#060023",
+        "pointBorder": "none"
+      }
+    },
+    {
+      "id": "galaxy-monte-calro",
+      "name": "Galaxy Monte calro",
+      "checkers": {
+        "player1": "#0D0D14",
+        "player2": "#FFFFFF",
+        "border": "none"
+      },
+      "winRate": {
+        "player1": "#0D0D14",
+        "player2": "#FFFFFF"
+      },
+      "board": {
+        "surface": "#4C633C",
+        "pointLight": "#C8B799",
+        "pointDark": "#F84E30",
+        "bar": "#413123",
+        "frame": "#413123",
+        "pointBorder": "none"
+      }
+    },
+    {
       "id": "jbs-japan-championship",
       "name": "JBS 日本選手権",
       "checkers": {
