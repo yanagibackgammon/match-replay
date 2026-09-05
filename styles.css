@@ -630,7 +630,7 @@ html,body{
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:24px;
+  font-size:25px;
   font-weight:900;
   white-space:nowrap;
   position:relative;
@@ -676,7 +676,7 @@ html,body{
   align-items:center;
   gap:12px;
   padding:0 0;
-  font-size:24px;
+  font-size:25px;
   font-weight:900;
   line-height:1;
   overflow:hidden;
@@ -744,24 +744,24 @@ html,body{
 .die.player2{background:var(--die-player2);border-color:var(--die-border)}
 .die.player2 .die-pip{background:var(--die-player2-pip)}
 
-.dice-pair-inline{gap:10px}
+.dice-pair-inline{gap:4px}
 .dice-pair-inline .die{
-  --die-size:36px;
-  --pip-size:6.8px;
-  border-width:1.5px;
-  border-radius:4px;
+  --die-size:52px;
+  --pip-size:9.8px;
+  border-width:2.2px;
+  border-radius:6px;
   box-shadow:none;
 }
 .dice-pair-inline .die-pip{box-shadow:none}
-.dice-pair-inline .die-pip.p1{left:6.6px;top:6.6px}
-.dice-pair-inline .die-pip.p2{left:50%;top:6.6px;transform:translateX(-50%)}
-.dice-pair-inline .die-pip.p3{right:6.6px;top:6.6px}
-.dice-pair-inline .die-pip.p4{left:6.6px;top:50%;transform:translateY(-50%)}
+.dice-pair-inline .die-pip.p1{left:9.5px;top:9.5px}
+.dice-pair-inline .die-pip.p2{left:50%;top:9.5px;transform:translateX(-50%)}
+.dice-pair-inline .die-pip.p3{right:9.5px;top:9.5px}
+.dice-pair-inline .die-pip.p4{left:9.5px;top:50%;transform:translateY(-50%)}
 .dice-pair-inline .die-pip.p5{left:50%;top:50%;transform:translate(-50%,-50%)}
-.dice-pair-inline .die-pip.p6{right:6.6px;top:50%;transform:translateY(-50%)}
-.dice-pair-inline .die-pip.p7{left:6.6px;bottom:6.6px}
-.dice-pair-inline .die-pip.p8{left:50%;bottom:6.6px;transform:translateX(-50%)}
-.dice-pair-inline .die-pip.p9{right:6.6px;bottom:6.6px}
+.dice-pair-inline .die-pip.p6{right:9.5px;top:50%;transform:translateY(-50%)}
+.dice-pair-inline .die-pip.p7{left:9.5px;bottom:9.5px}
+.dice-pair-inline .die-pip.p8{left:50%;bottom:9.5px;transform:translateX(-50%)}
+.dice-pair-inline .die-pip.p9{right:9.5px;bottom:9.5px}
 .analysis-jokers .die{
   --die-size:54px;
   --pip-size:10.2px;
@@ -850,7 +850,7 @@ html,body{
   width:124px;
   transform:translateX(-50%);
   text-align:center;
-  font-size:26px;
+  font-size:25px;
   line-height:28px;
   font-weight:900;
   letter-spacing:-.06em;
@@ -932,7 +932,7 @@ html,body{
   align-items:center;
   gap:12px;
   padding:0 14px;
-  font-size:24px;
+  font-size:25px;
   font-weight:900;
   line-height:1;
   box-shadow:inset 0 1px 0 #ddd8cd,inset 0 -1px 0 #ddd8cd;
@@ -1034,7 +1034,7 @@ html,body{
   display:block;
   width:108px;
   text-align:center;
-  font-size:21px;
+  font-size:25px;
   font-weight:900;
   font-variant-numeric:tabular-nums;
   white-space:nowrap;
@@ -1046,7 +1046,7 @@ html,body{
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
-  font-size:24px;
+  font-size:25px;
   font-weight:900;
 }
 .history-cube-pair{
@@ -1070,7 +1070,7 @@ html,body{
   background:#fff;
   color:#111;
   font-family:Arial,Helvetica,sans-serif;
-  font-size:24px;
+  font-size:25px;
   font-weight:900;
   line-height:1;
   box-shadow:0 2px 5px rgba(0,0,0,.10);
