@@ -520,7 +520,7 @@ html,body{
   46%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(229,57,53,.96),0 0 17px rgba(229,57,53,.62)}
   62%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(229,57,53,.36),0 0 9px rgba(229,57,53,.28)}
   78%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(229,57,53,.94),0 0 17px rgba(229,57,53,.60)}
-  100%{opacity:0;transform:translate(-50%,-88px);text-shadow:0 3px 4px rgba(0,0,0,.36),0 0 4px rgba(229,57,53,.22)}
+  100%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 7px rgba(229,57,53,.72),0 0 13px rgba(229,57,53,.42)}
 }
 @keyframes niceRollGold{
   0%{opacity:0;transform:translate(-50%,48px);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(255,211,61,.30)}
@@ -529,7 +529,7 @@ html,body{
   46%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(255,211,61,.98),0 0 17px rgba(255,211,61,.64)}
   62%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(255,211,61,.38),0 0 9px rgba(255,211,61,.28)}
   78%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(255,211,61,.96),0 0 17px rgba(255,211,61,.62)}
-  100%{opacity:0;transform:translate(-50%,-88px);text-shadow:0 3px 4px rgba(0,0,0,.36),0 0 4px rgba(255,211,61,.22)}
+  100%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 7px rgba(255,211,61,.72),0 0 13px rgba(255,211,61,.42)}
 }
 @keyframes badRollPurple{
   0%{opacity:0;transform:translate(-50%,48px);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(181,108,255,.30)}
@@ -538,7 +538,7 @@ html,body{
   46%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(181,108,255,.98),0 0 17px rgba(181,108,255,.64)}
   62%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(181,108,255,.38),0 0 9px rgba(181,108,255,.28)}
   78%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(181,108,255,.96),0 0 17px rgba(181,108,255,.62)}
-  100%{opacity:0;transform:translate(-50%,-88px);text-shadow:0 3px 4px rgba(0,0,0,.36),0 0 4px rgba(181,108,255,.22)}
+  100%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 7px rgba(181,108,255,.72),0 0 13px rgba(181,108,255,.42)}
 }
 
 .main-area{
@@ -840,20 +840,20 @@ html,body{
 }
 .analysis-jokers .joker-glow.is-single-face .die{--die-size:72px}
 .joker-glow.plus .joker-label{color:var(--joker-gold)}
-.joker-glow.minus .joker-label{color:#c43b3b}
+.joker-glow.minus .joker-label{color:#b56cff}
 .joker-glow.plus,
 .joker-glow.minus{animation:none;filter:none}
 .joker-glow.plus .joker-label,
 .joker-glow.minus .joker-label{filter:none;text-shadow:none}
 .joker-glow.plus .die{animation:jokerShadowGold 1.15s ease-in-out infinite}
-.joker-glow.minus .die{animation:jokerShadowRed 1.15s ease-in-out infinite}
+.joker-glow.minus .die{animation:jokerShadowPurple 1.15s ease-in-out infinite}
 @keyframes jokerShadowGold{
   0%,100%{filter:drop-shadow(0 0 1px rgba(213,166,46,.18)) drop-shadow(0 0 3px rgba(213,166,46,.12))}
   50%{filter:drop-shadow(0 0 7px rgba(213,166,46,.95)) drop-shadow(0 0 15px rgba(213,166,46,.72))}
 }
-@keyframes jokerShadowRed{
-  0%,100%{filter:drop-shadow(0 0 1px rgba(196,59,59,.18)) drop-shadow(0 0 3px rgba(196,59,59,.12))}
-  50%{filter:drop-shadow(0 0 7px rgba(196,59,59,.95)) drop-shadow(0 0 15px rgba(196,59,59,.72))}
+@keyframes jokerShadowPurple{
+  0%,100%{filter:drop-shadow(0 0 1px rgba(181,108,255,.18)) drop-shadow(0 0 3px rgba(181,108,255,.12))}
+  50%{filter:drop-shadow(0 0 7px rgba(181,108,255,.95)) drop-shadow(0 0 15px rgba(181,108,255,.72))}
 }
 
 #dice.is-muted{
@@ -866,15 +866,15 @@ html,body{
   animation:boardMutedJokerShadowGold 1.15s ease-in-out infinite!important;
 }
 #dice.is-muted.is-antijoker-glow{
-  animation:boardMutedJokerShadowRed 1.15s ease-in-out infinite!important;
+  animation:boardMutedJokerShadowPurple 1.15s ease-in-out infinite!important;
 }
 @keyframes boardMutedJokerShadowGold{
   0%,100%{filter:brightness(.22) saturate(.25) drop-shadow(0 0 3px rgba(213,166,46,.55)) drop-shadow(0 0 7px rgba(213,166,46,.35))}
   50%{filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(213,166,46,1)) drop-shadow(0 0 28px rgba(213,166,46,.95))}
 }
-@keyframes boardMutedJokerShadowRed{
-  0%,100%{filter:brightness(.22) saturate(.25) drop-shadow(0 0 3px rgba(196,59,59,.55)) drop-shadow(0 0 7px rgba(196,59,59,.35))}
-  50%{filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(196,59,59,1)) drop-shadow(0 0 28px rgba(196,59,59,.95))}
+@keyframes boardMutedJokerShadowPurple{
+  0%,100%{filter:brightness(.22) saturate(.25) drop-shadow(0 0 3px rgba(181,108,255,.55)) drop-shadow(0 0 7px rgba(181,108,255,.35))}
+  50%{filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(181,108,255,1)) drop-shadow(0 0 28px rgba(181,108,255,.95))}
 }
 
 #dice.is-joker-glow,
@@ -884,23 +884,23 @@ html,body{
   opacity:1;
 }
 #dice.is-joker-glow{animation:boardJokerShadowGold 1.15s ease-in-out infinite}
-#dice.is-antijoker-glow{animation:boardJokerShadowRed 1.15s ease-in-out infinite}
+#dice.is-antijoker-glow{animation:boardJokerShadowPurple 1.15s ease-in-out infinite}
 @keyframes boardJokerShadowGold{
   0%,100%{filter:drop-shadow(0 0 1px rgba(213,166,46,.18)) drop-shadow(0 0 3px rgba(213,166,46,.12))}
   50%{filter:drop-shadow(0 0 7px rgba(213,166,46,.95)) drop-shadow(0 0 15px rgba(213,166,46,.72))}
 }
-@keyframes boardJokerShadowRed{
-  0%,100%{filter:drop-shadow(0 0 1px rgba(196,59,59,.18)) drop-shadow(0 0 3px rgba(196,59,59,.12))}
-  50%{filter:drop-shadow(0 0 7px rgba(196,59,59,.95)) drop-shadow(0 0 15px rgba(196,59,59,.72))}
+@keyframes boardJokerShadowPurple{
+  0%,100%{filter:drop-shadow(0 0 1px rgba(181,108,255,.18)) drop-shadow(0 0 3px rgba(181,108,255,.12))}
+  50%{filter:drop-shadow(0 0 7px rgba(181,108,255,.95)) drop-shadow(0 0 15px rgba(181,108,255,.72))}
 }
 @media (prefers-reduced-motion:reduce){
   .joker-glow.plus,.joker-glow.minus{animation:none;filter:none}
   .joker-glow.plus .die{animation:none;filter:drop-shadow(0 0 7px rgba(213,166,46,.75))}
-  .joker-glow.minus .die{animation:none;filter:drop-shadow(0 0 7px rgba(196,59,59,.75))}
+  .joker-glow.minus .die{animation:none;filter:drop-shadow(0 0 7px rgba(181,108,255,.75))}
   #dice.is-joker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(213,166,46,.75));opacity:1}
-  #dice.is-antijoker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(196,59,59,.75));opacity:1}
+  #dice.is-antijoker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(181,108,255,.75));opacity:1}
   #dice.is-muted.is-joker-glow{animation:none!important;filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(213,166,46,.9));opacity:.22}
-  #dice.is-muted.is-antijoker-glow{animation:none!important;filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(196,59,59,.9));opacity:.22}
+  #dice.is-muted.is-antijoker-glow{animation:none!important;filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(181,108,255,.9));opacity:.22}
   .big-comeback.is-active{animation:none!important;opacity:1;transform:translate(-50%,-50%)}
   .board-dim-overlay.is-active{animation:none;opacity:1}
   .score-value.is-score-transition .score-number-old,

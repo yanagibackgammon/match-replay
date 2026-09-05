@@ -894,7 +894,9 @@ function renderBoardDimOverlay(state){
 }
 function renderBigComeback(state){
   const el=els.bigComebackText;if(!el)return;
-  const notice=state?.phase==="roll" ? state?.rollNotice : null;
+  // ロールで発生した演出は、その手番の候補表示・着手完了まで維持する。
+  // bigComebackIntro はロール前なので、文字は実際のロールから表示する。
+  const notice=state?.phase!=="bigComebackIntro" ? state?.rollNotice : null;
   const isVisible=notice==="comeback" || notice==="nice" || notice==="bad";
   if(!isVisible){
     lastBigComebackKey="";
@@ -906,7 +908,7 @@ function renderBigComeback(state){
   el.classList.toggle("is-comeback",notice==="comeback");
   el.classList.toggle("is-nice",notice==="nice");
   el.classList.toggle("is-bad",notice==="bad");
-  const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}:${notice}`;
+  const key=`${state.gameNumber||0}:${state.activePlayer||0}:${notice}`;
   el.setAttribute("aria-hidden","false");
   if(key===lastBigComebackKey) return;
   lastBigComebackKey=key;

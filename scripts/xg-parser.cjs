@@ -990,21 +990,8 @@ function buildTimeline(parsed, sourceFile){
           addPrDecision(r.activePlayer,r.errCube,cubeOfferCounts(r));
         }
 
-        // Pre-roll state: evaluate all 21 distinct rolls from the current board.
-        // The actually rolled dice are intentionally not used to decide which rolls are highlighted.
-        // 各ゲーム初手だけは opening roll 自体を手番開始シーケンスにするため、
-        // 初手直前の No Double 解析レコードから preRoll を生成しない。
-        if(gameHasCheckerMove){
-          const rollAnalysis=analyzeJokerRolls(position,r.activePlayer,{winRate,gammonRate,backgammonRate});
-          const preRollAnalysis={type:'jokers',...rollAnalysis};
-          if(shouldShowPreRoll(preRollAnalysis)){
-            pushState({
-              phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
-              position,dice:null,cube,winRate,gammonRate,backgammonRate,
-              analysis:preRollAnalysis,historyEvent:null
-            });
-          }
-        }
+        // ロール前のチャンス／ピンチ予測は廃止。
+        // 推測ベースの preRoll 状態は生成せず、実際のロールへ直接進む。
         lastCube = cube;
       }
       lastPosition = position;
@@ -1051,35 +1038,9 @@ function buildTimeline(parsed, sourceFile){
       const diceMuted = r.move === 'Cannot Move' || r.move === 'Dance' || !(Array.isArray(r.appliedSegments) && r.appliedSegments.length);
       const noContact = isNoContact(beforePosition);
 
-      // 通常手は4段階で表示する。
-      // 1) 手番交代 + Joker / Anti-Joker候補
-      // 2) ロールのみ表示（候補手はまだ出さない）+ 最善手の勝率へバー推移
-      // 3) 候補手表示（勝率バーはそのまま）
-      // 4) 選択手を金表示 + チェッカー移動 + 選択手の勝率
-      // 各ゲームの初手だけは、手番開始とロールを同一シーケンスにする。
-      // オープニングロールには事前Joker/Anti-Joker候補を出さない。
+      // ロール前のチャンス／ピンチ予測は廃止。
+      // 盤面上の光り方だけを、実際のXGエクイティ（errLuck）で判定する。
       const isOpeningMove=!gameHasCheckerMove;
-      let previous = states[states.length - 1];
-      if(!isOpeningMove){
-        if(previous && previous.phase === 'preRoll' && previous.gameNumber === gameNumber && previous.activePlayer === r.activePlayer){
-          // 既存のpreRollは盤面予測そのものを維持する。
-          // 直後に実際に出た目のerrLuckで候補を上書きしない。
-        }else{
-          const rollAnalysis=analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate,backgammonRate:lastBackgammonRate});
-          const preRollAnalysis={type:'jokers',...rollAnalysis};
-          if(shouldShowPreRoll(preRollAnalysis,r.dice)){
-            pushState({
-              phase:'preRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
-              position:beforePosition,dice:null,cube,winRate:{black:lastBlackRate,white:100-lastBlackRate},
-              gammonRate:{...lastGammonRate},backgammonRate:{...lastBackgammonRate},
-              analysis:preRollAnalysis,historyEvent:null
-            });
-            previous=states[states.length-1];
-          }
-        }
-      }
-      // 盤面上の光り方は予測面ではなく、実際のXGエクイティ（errLuck）で判定する。
-      // 候補エリアのチャンス／ピンチ予測は従来どおり analyzeJokerRolls() を使用する。
       const luckKind=classifyActualRollLuck(r.errLuck);
       const preRollBlackRate=Number(lastBlackRate);
       const preRollWhiteRate=100-preRollBlackRate;
@@ -1102,14 +1063,11 @@ function buildTimeline(parsed, sourceFile){
       const rollNotice=isBigComeback?'comeback':(isNiceRoll?'nice':(isBadRoll?'bad':null));
 
       if(isBigComeback){
-        const introAnalysis=isOpeningMove
-          ? {type:'jokers',joker:[],antiJoker:[],openingRoll:true}
-          : (previous?.analysis?.type==='jokers' ? previous.analysis : {type:'jokers',...analyzeJokerRolls(beforePosition,r.activePlayer,{winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:lastGammonRate,backgammonRate:lastBackgammonRate})});
         pushState({
           phase:'bigComebackIntro',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:null,cube,
           winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},backgammonRate:{...lastBackgammonRate},luckKind:null,diceMuted,
-          analysis:introAnalysis,historyEvent:null,
+          analysis:{type:'none'},historyEvent:null,
           bigComeback:true,rollNotice:'comeback'
         });
       }
@@ -1166,13 +1124,13 @@ function buildTimeline(parsed, sourceFile){
             analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
             moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
             historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'},
-            forcedMove:true,autoSelectedNearEqual:allCandidatesWithin001
+            forcedMove:true,autoSelectedNearEqual:allCandidatesWithin001,rollNotice
           });
         }else{
         pushState({
           phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
           position:beforePosition,dice:r.dice,cube,winRate:bestWinRate,gammonRate:bestGammonRate,backgammonRate:bestBackgammonRate,luckKind,diceMuted,
-          analysis:{type:'moves',candidates},historyEvent:null
+          analysis:{type:'moves',candidates},historyEvent:null,rollNotice
         });
         // 通常手は候補表示ではPRを変えず、実際の手を選択した瞬間に反映する。
         addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
@@ -1183,7 +1141,8 @@ function buildTimeline(parsed, sourceFile){
           // 配信側でムーブ前→ムーブ後を順番に0.5秒ずつアニメーションするため、
           // 実棋譜の移動区間をそのまま保持する。外部ファイル参照は不要。
           moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
-          historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'}
+          historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'},
+          rollNotice
         });
         }
       }
