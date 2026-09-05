@@ -814,9 +814,9 @@ html,body{
   transform:translateX(-50%);
   text-align:center;
   font-size:25px;
-  line-height:28px;
+  line-height:1;
   font-weight:900;
-  letter-spacing:-.06em;
+  letter-spacing:normal;
   white-space:nowrap;
 }
 
