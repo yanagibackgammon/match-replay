@@ -61,7 +61,7 @@ const isLocal=()=>location.hostname==="localhost"||location.hostname==="127.0.0.
 const pageChannel=(!isLocal()&&"BroadcastChannel" in window)?new BroadcastChannel("match-replay-control"):null;
 let pagesMetaRevision="";
 let pagesMetaPoller=null;
-function normalizedPlaybackRate(value){return Number(value)===2?2:1;}
+function normalizedPlaybackRate(value){const rate=Number(value);return [1,2,3,6].includes(rate)?rate:1;}
 function currentPlaybackRate(){return isLocal()?normalizedPlaybackRate(localPlaybackRate):normalizedPlaybackRate(pagesState.playbackRate);}
 function scaledSequenceDelay(ms){return Math.max(1,Math.round(ms/currentPlaybackRate()));}
 function checkerMoveDuration(){return BASE_CHECKER_MOVE_DURATION/currentPlaybackRate();}

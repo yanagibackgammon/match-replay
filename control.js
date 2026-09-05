@@ -8,6 +8,8 @@ const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const autoNormalModeBtn = document.getElementById("autoNormalModeBtn");
 const autoDoubleModeBtn = document.getElementById("autoDoubleModeBtn");
+const autoTripleModeBtn = document.getElementById("autoTripleModeBtn");
+const autoSixModeBtn = document.getElementById("autoSixModeBtn");
 
 const tournamentLine1Input = document.getElementById("tournamentLine1Input");
 const tournamentLine2Input = document.getElementById("tournamentLine2Input");
@@ -47,6 +49,7 @@ let lastState = {
   }
 };
 let selectedPlaybackButton="pause";
+let selectedPlaybackRate=1;
 let timingMatchFile="";
 let timingStates=[];
 let remainingAnchorMs=0;
@@ -234,12 +237,18 @@ function cacheTimingStates(file, states){
   timingStates=Array.isArray(states)?states:[];
 }
 
+function normalizedPlaybackRate(value){
+  const rate=Number(value);
+  return [1,2,3,6].includes(rate)?rate:1;
+}
+
 function playbackRateForRemaining(){
-  return Number(lastState.playbackRate)===2?2:1;
+  if(lastState.playing&&lastState.mode==="auto") return normalizedPlaybackRate(lastState.playbackRate);
+  return normalizedPlaybackRate(selectedPlaybackRate);
 }
 
 function timingDelayForState(state, rate=1){
-  const safeRate=Number(rate)===2?2:1;
+  const safeRate=normalizedPlaybackRate(rate);
   const sequenceMs=6000/safeRate;
   const checkerMoveMs=500/safeRate;
   if(!state) return sequenceMs;
@@ -321,8 +330,8 @@ function renderGameMarkers(){
 
 function renderState(state){
   lastState = {...lastState, ...state};
-  lastState.playbackRate = Number(lastState.playbackRate)===2?2:1;
-  lastState.speed = lastState.playbackRate===2?3000:6000;
+  lastState.playbackRate = normalizedPlaybackRate(lastState.playbackRate);
+  lastState.speed = 6000/lastState.playbackRate;
   lastState.meta = {...(lastState.meta || {}), ...((state && state.meta) || {})};
   if(!String(lastState.meta.matchFile||"").trim()){
     lastState.meta={...lastState.meta,tournamentTitleLine1:"",tournamentTitleLine2:"",blackName:"",whiteName:""};
@@ -348,12 +357,13 @@ function renderState(state){
 
   const manual=lastState.mode === "manual";
   if(lastState.playing && !manual){
-    selectedPlaybackButton=lastState.playbackRate===2?"auto2":"auto1";
+    selectedPlaybackRate=normalizedPlaybackRate(lastState.playbackRate);
+    selectedPlaybackButton=`auto${selectedPlaybackRate}`;
   }else if(!manual){
     selectedPlaybackButton="pause";
   }
-  const activeButton={auto1:autoNormalModeBtn,auto2:autoDoubleModeBtn,prev:prevBtn,next:nextBtn,pause:pauseBtn}[selectedPlaybackButton]||pauseBtn;
-  [autoNormalModeBtn,autoDoubleModeBtn,prevBtn,nextBtn,pauseBtn].forEach(button=>button.classList.toggle("active",button===activeButton));
+  const activeButton={auto1:autoNormalModeBtn,auto2:autoDoubleModeBtn,auto3:autoTripleModeBtn,auto6:autoSixModeBtn,prev:prevBtn,next:nextBtn,pause:pauseBtn}[selectedPlaybackButton]||pauseBtn;
+  [autoNormalModeBtn,autoDoubleModeBtn,autoTripleModeBtn,autoSixModeBtn,prevBtn,nextBtn,pauseBtn].forEach(button=>button.classList.toggle("active",button===activeButton));
 
   syncMetaEditorsFromState();
 }
@@ -519,7 +529,7 @@ async function applyMeta(){
       if(fileChanged) lastState.index=0;
       else lastState.index=Math.min(lastState.index,lastState.totalSteps-1);
       const revision=writePagesMeta(lastState.meta);
-      localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:lastState.playbackRate===2?3000:6000,playbackRate:lastState.playbackRate||1,mode:lastState.mode||"auto"}));
+      localStorage.setItem("matchReplayPlaybackState",JSON.stringify({index:lastState.index,totalSteps:lastState.totalSteps,playing:false,speed:6000/normalizedPlaybackRate(lastState.playbackRate),playbackRate:normalizedPlaybackRate(lastState.playbackRate),mode:lastState.mode||"auto"}));
       if(pageChannel)pageChannel.postMessage({type:"meta",meta:lastState.meta,revision});
       renderState(lastState);
     }
@@ -582,13 +592,14 @@ if(pageChannel){
 
 function setPlaybackSelection(selection){
   selectedPlaybackButton=selection;
-  const activeButton={auto1:autoNormalModeBtn,auto2:autoDoubleModeBtn,prev:prevBtn,next:nextBtn,pause:pauseBtn}[selection]||pauseBtn;
-  [autoNormalModeBtn,autoDoubleModeBtn,prevBtn,nextBtn,pauseBtn].forEach(button=>button.classList.toggle("active",button===activeButton));
+  const activeButton={auto1:autoNormalModeBtn,auto2:autoDoubleModeBtn,auto3:autoTripleModeBtn,auto6:autoSixModeBtn,prev:prevBtn,next:nextBtn,pause:pauseBtn}[selection]||pauseBtn;
+  [autoNormalModeBtn,autoDoubleModeBtn,autoTripleModeBtn,autoSixModeBtn,prevBtn,nextBtn,pauseBtn].forEach(button=>button.classList.toggle("active",button===activeButton));
 }
 function startAutoPlayback(rate){
-  setPlaybackSelection(rate===2?"auto2":"auto1");
+  selectedPlaybackRate=normalizedPlaybackRate(rate);
+  setPlaybackSelection(`auto${selectedPlaybackRate}`);
   sendCommand("setMode","auto");
-  sendCommand("speed",rate);
+  sendCommand("speed",selectedPlaybackRate);
   sendCommand("play");
 }
 function manualStep(direction){
@@ -598,6 +609,8 @@ function manualStep(direction){
 }
 autoNormalModeBtn.addEventListener("click", () => startAutoPlayback(1));
 autoDoubleModeBtn.addEventListener("click", () => startAutoPlayback(2));
+autoTripleModeBtn.addEventListener("click", () => startAutoPlayback(3));
+autoSixModeBtn.addEventListener("click", () => startAutoPlayback(6));
 pauseBtn.addEventListener("click", () => {setPlaybackSelection("pause");sendCommand("pause");});
 prevBtn.addEventListener("click", () => manualStep("prev"));
 nextBtn.addEventListener("click", () => manualStep("next"));
