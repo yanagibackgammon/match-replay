@@ -699,11 +699,17 @@ function parseMove(rec, version){
   // replay board is rebuilt from the actual move sequence instead of trusting
   // the raw end-position orientation.
   const beforePosition = normalizeStoredPosition(positionI);
-  const applied = applyCheckerMove(beforePosition, activePlayer, moveRaw);
+  // XG の棋譜表記で「41: ???」のようになるレコードは、
+  // サイコロを振った直後にムーブせずリザインしたケース。
+  // moveRaw が全て 0 かつ errMove が -1000 の特殊値になる。
+  const isResignationRoll = moveRaw.every(v => v === 0) && Number(errMove) <= -999;
+  const applied = isResignationRoll
+    ? {position:cloneBoardPosition(beforePosition),segments:[]}
+    : applyCheckerMove(beforePosition, activePlayer, moveRaw);
   const expectedEnd = normalizeMoveEndPosition(positionEnd, activePlayer);
-  const move = formatCheckerMove(moveRaw, beforePosition, activePlayer);
+  const move = isResignationRoll ? 'Resign' : formatCheckerMove(moveRaw, beforePosition, activePlayer);
 
-  const isDance = !applied.segments.length;
+  const isDance = !isResignationRoll && !applied.segments.length;
   for(const candidate of best.candidates){
     if(isDance && samePosition(candidate.pos, positionEnd)){
       candidate.move = 'Cannot Move';
@@ -714,7 +720,8 @@ function parseMove(rec, version){
 
   return {
     positionI,positionEnd,activePlayer,moveRaw,move,dice,cubeCode,best,playedIndex,
-    errMove,errLuck,initEq,invalidM,beforePosition,afterPosition:applied.position,appliedSegments:applied.segments,expectedEnd
+    errMove,errLuck,initEq,invalidM,beforePosition,afterPosition:applied.position,appliedSegments:applied.segments,expectedEnd,
+    isResignationRoll
   };
 }
 
@@ -819,6 +826,7 @@ function buildTimeline(parsed, sourceFile){
   let lastPosition = null;
   let lastCube = {value:1,owner:0};
   let gameHasCheckerMove = false;
+  let pendingResignation = null;
   let matchIntroPushed = false;
   const prStats = {
     black:{error:0,decisions:0},
@@ -867,6 +875,7 @@ function buildTimeline(parsed, sourceFile){
       lastGammonRate = {black:0,white:0};
       lastBackgammonRate = {black:0,white:0};
       gameHasCheckerMove = false;
+      pendingResignation = null;
       if(!matchIntroPushed){
         matchIntroPushed = true;
         pushState({
@@ -1035,7 +1044,9 @@ function buildTimeline(parsed, sourceFile){
       // 選択手では、候補側の推定盤面ではなく棋譜に実際に適用した盤面を表示する。
       const selectedPosition = afterPosition;
       const cube = {value:cubeValueFromCode(r.cubeCode),owner:cubeOwnerFromCode(r.cubeCode)};
-      const diceMuted = r.move === 'Cannot Move' || r.move === 'Dance' || !(Array.isArray(r.appliedSegments) && r.appliedSegments.length);
+      const diceMuted = r.isResignationRoll
+        ? false
+        : (r.move === 'Cannot Move' || r.move === 'Dance' || !(Array.isArray(r.appliedSegments) && r.appliedSegments.length));
       const noContact = isNoContact(beforePosition);
 
       // ロール前のチャンス／ピンチ予測は廃止。
@@ -1070,6 +1081,29 @@ function buildTimeline(parsed, sourceFile){
           analysis:{type:'none'},historyEvent:null,
           bigComeback:true,rollNotice:'comeback'
         });
+      }
+
+      // 「???: ロール後リザイン」は、ロールだけを盤面に表示し、
+      // 候補手・着手は生成しない。リザイン表示は直後の gameEnd で行う。
+      if(r.isResignationRoll){
+        pendingResignation={
+          player:r.activePlayer===1?'black':'white',
+          activePlayer:r.activePlayer,
+          dice:Array.isArray(r.dice)?[...r.dice]:null
+        };
+        pushState({
+          phase:'roll',gameNumber,score:[...score],activePlayer:r.activePlayer,
+          position:beforePosition,dice:r.dice,cube,
+          winRate:bestWinRate,gammonRate:bestGammonRate,backgammonRate:bestBackgammonRate,luckKind,diceMuted:false,
+          analysis:{type:'none'},historyEvent:null,
+          resignationRoll:true,bigComeback:isBigComeback,rollNotice
+        });
+        lastPosition=beforePosition;
+        lastCube=cube;
+        lastBlackRate=bestWinRate.black;
+        lastGammonRate={...bestGammonRate};
+        lastBackgammonRate={...bestBackgammonRate};
+        continue;
       }
 
       const cannotMove = r.move === 'Cannot Move' || r.move === 'Dance';
@@ -1160,12 +1194,16 @@ function buildTimeline(parsed, sourceFile){
       const afterScore=[r.score1,r.score2];
       const winner=r.winner===1?'black':(r.winner===-1?'white':null);
       const points=Math.max(0,Number(r.pointsWon)||0);
+      const resignation=pendingResignation;
       pushState({
         phase:'gameEnd',gameNumber,score:[...beforeScore],activePlayer:0,
         position:lastPosition,dice:null,cube:lastCube,
-        winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},analysis:{type:'none'},historyEvent:null,
-        scoreDelta:winner&&points?{winner,points}:null
+        winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},analysis:{type:'none'},
+        historyEvent:resignation?{player:resignation.player,dice:resignation.dice,move:'Resign',error:0,kind:'resign'}:null,
+        scoreDelta:winner&&points?{winner,points}:null,
+        resignation:resignation?{player:resignation.player}:null
       });
+      pendingResignation=null;
       score=afterScore;
       pushState({
         phase:'scoreUpdate',gameNumber,score:[...score],activePlayer:0,

@@ -502,11 +502,12 @@ function drawGameOverlay(state){
   const winMultiplier=Math.max(1,Math.min(3,Math.round(points/cubeValue)||1));
   const winnerName=winner==="black"?meta.blackName:meta.whiteName;
   const winLabel=winMultiplier>=3?"バックギャモン勝ち":winMultiplier===2?"ギャモン勝ち":"シングル勝ち";
+  const resultLabel=state.resignation?`リザイン・キューブ${cubeValue}倍`:`${winLabel}・キューブ${cubeValue}倍`;
 
   addPanel(116,165,470,216,18);
   addText(220,winnerName,32,"#fff",800);
   addText(300,`＋${toFullWidthScore(points)}`,72,"#18b86b",900);
-  addText(350,`${winLabel}・キューブ${cubeValue}倍`,28,"#fff",800);
+  addText(350,resultLabel,28,"#fff",800);
 }
 trianglePoints();
 
