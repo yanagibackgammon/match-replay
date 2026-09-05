@@ -14,6 +14,7 @@ const tournamentLine1Input = document.getElementById("tournamentLine1Input");
 const tournamentLine2Input = document.getElementById("tournamentLine2Input");
 const themeColorInput = document.getElementById("themeColorInput");
 const themeColorPreview = document.getElementById("themeColorPreview");
+const themeColorSwatch = document.getElementById("themeColorSwatch");
 const designPresetSelect = document.getElementById("designPresetSelect");
 const designPresetPreview = document.getElementById("designPresetPreview");
 const blackNameInput = document.getElementById("blackNameInput");
@@ -132,8 +133,13 @@ function ensureOption(value){
 }
 
 function renderThemeColorPreview(){
+  const rawValue=String(themeColorInput?.value||"").trim();
+  const value=rawValue.toUpperCase();
+  const valid=/^#[0-9A-F]{6}$/.test(value);
+  if(themeColorSwatch){
+    themeColorSwatch.style.background=valid?value:"#FFFFFF";
+  }
   if(!themeColorPreview) return;
-  const value=String(themeColorInput?.value||"#6B670D").trim().toUpperCase();
   themeColorPreview.querySelectorAll(".theme-color-button").forEach(button=>{
     const color=String(button.dataset.color||"").toUpperCase();
     button.style.background=color;

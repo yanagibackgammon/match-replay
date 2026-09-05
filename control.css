@@ -81,9 +81,27 @@ button:disabled{opacity:.35;cursor:not-allowed}
   .match-file-row{grid-template-columns:1fr}
   .match-actions{grid-template-columns:1fr 1fr}
   .status-top,.meta-grid{grid-template-columns:1fr}
+  .theme-color-input-row{grid-template-columns:minmax(0,1fr) 45px}
   .status-row-right{text-align:left}
   .mode-head{grid-template-columns:1fr}
   .transport{grid-template-columns:1fr 1fr}
+}
+
+
+.theme-color-input-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 45px;
+  gap:6px;
+  align-items:center;
+}
+.theme-color-input-row #themeColorInput{min-width:0}
+.theme-color-swatch{
+  display:block;
+  width:45px;
+  height:45px;
+  border:2px solid #111;
+  border-radius:0;
+  background:#6B670D;
 }
 
 .design-preset-preview{
