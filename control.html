@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Match Replay Control</title>
-<link rel="stylesheet" href="./control.css?v=151">
+<link rel="stylesheet" href="./control.css?v=154">
 </head>
 <body>
 <main class="control-shell">
@@ -67,7 +67,16 @@
       <label>
         <span>テーマカラー</span>
         <input id="themeColorInput" type="text" value="#6B670D" placeholder="#6B670D" maxlength="7" spellcheck="false">
-        <div id="themeColorPreview" class="theme-color-preview" aria-label="テーマカラーのプレビュー"></div>
+        <div id="themeColorPreview" class="theme-color-preview" aria-label="テーマカラーのプリセット">
+          <button type="button" class="theme-color-button" data-color="#3C3C3C" aria-label="日 #3C3C3C">日</button>
+          <button type="button" class="theme-color-button" data-color="#6B0D2F" aria-label="盤 #6B0D2F">盤</button>
+          <button type="button" class="theme-color-button" data-color="#6B670D" aria-label="名 #6B670D">名</button>
+          <button type="button" class="theme-color-button" data-color="#0D6B2F" aria-label="王 #0D6B2F">王</button>
+          <button type="button" class="theme-color-button" data-color="#0D236B" aria-label="賽 #0D236B">賽</button>
+          <button type="button" class="theme-color-button" data-color="#6B230D" aria-label="棋 #6B230D">棋</button>
+          <button type="button" class="theme-color-button" data-color="#6B0D5B" aria-label="女 #6B0D5B">女</button>
+          <button type="button" class="theme-color-button" data-color="#0D676B" aria-label="新 #0D676B">新</button>
+        </div>
       </label>
       <label>
         <span>ボードデザイン</span>
@@ -96,6 +105,6 @@
     <code>/matches/</code>
   </section>
 </main>
-<script src="./control.js?v=150"></script>
+<script src="./control.js?v=154"></script>
 </body>
 </html>

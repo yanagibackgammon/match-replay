@@ -123,9 +123,47 @@ button:disabled{opacity:.35;cursor:not-allowed}
 
 .theme-color-preview{
   margin-top:5px;
+  display:grid;
+  grid-template-columns:repeat(8,minmax(0,1fr));
+  gap:0;
   height:17px;
   border:1px solid #111;
-  background:#6B670D;
+  overflow:hidden;
+  background:#fff;
+}
+.theme-color-preview .theme-color-button{
+  min-width:0;
+  min-height:0;
+  width:100%;
+  height:15px;
+  padding:0;
+  border:0;
+  border-right:1px solid rgba(255,255,255,.42);
+  border-radius:0;
+  color:#fff;
+  font:inherit;
+  font-size:7px;
+  font-weight:900;
+  line-height:15px;
+  text-align:center;
+  box-shadow:none;
+  transform:none;
+  filter:none;
+  isolation:auto;
+}
+.theme-color-preview .theme-color-button:last-child{border-right:0}
+.theme-color-preview .theme-color-button:not(:disabled):hover{
+  transform:none;
+  box-shadow:none;
+  filter:brightness(1.12);
+}
+.theme-color-preview .theme-color-button:not(:disabled):active{
+  transform:none;
+  box-shadow:none;
+  filter:brightness(.92);
+}
+.theme-color-preview .theme-color-button.is-selected{
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.95),inset 0 0 0 3px rgba(17,17,17,.7);
 }
 
 /* v44 compact operator layout */

@@ -35,10 +35,10 @@ let lastState = {
   mode:"auto",
   gameStarts:[],
   meta:{
-    tournamentTitleLine1:"JBS第31期名人戦 準々決勝",
-    tournamentTitleLine2:"2025-08-30　25ポイントマッチ　勝てばベスト4",
-    blackName:"柳 暢祐",
-    whiteName:"平林 直",
+    tournamentTitleLine1:"",
+    tournamentTitleLine2:"",
+    blackName:"",
+    whiteName:"",
     blackScore:0,
     whiteScore:0,
     matchFile:"",
@@ -133,8 +133,20 @@ function ensureOption(value){
 
 function renderThemeColorPreview(){
   if(!themeColorPreview) return;
-  const value=String(themeColorInput?.value||"#6B670D").trim();
-  themeColorPreview.style.background=/^#[0-9a-fA-F]{6}$/.test(value)?value:"#6B670D";
+  const value=String(themeColorInput?.value||"#6B670D").trim().toUpperCase();
+  themeColorPreview.querySelectorAll(".theme-color-button").forEach(button=>{
+    const color=String(button.dataset.color||"").toUpperCase();
+    button.style.background=color;
+    button.classList.toggle("is-selected",color===value);
+  });
+}
+
+function clearMatchTextEditors(){
+  const keys=["tournamentTitleLine1","tournamentTitleLine2","blackName","whiteName"];
+  const editors=[tournamentLine1Input,tournamentLine2Input,blackNameInput,whiteNameInput];
+  keys.forEach(key=>dirtyMetaFields.delete(key));
+  editors.forEach(editor=>{if(editor) editor.value="";});
+  lastState.meta={...lastState.meta,tournamentTitleLine1:"",tournamentTitleLine2:"",blackName:"",whiteName:""};
 }
 
 function getPreviewTextColor(hex){
@@ -222,6 +234,10 @@ function renderState(state){
   lastState.playbackRate = Number(lastState.playbackRate)===2?2:1;
   lastState.speed = lastState.playbackRate===2?3000:6000;
   lastState.meta = {...(lastState.meta || {}), ...((state && state.meta) || {})};
+  if(!String(lastState.meta.matchFile||"").trim()){
+    lastState.meta={...lastState.meta,tournamentTitleLine1:"",tournamentTitleLine2:"",blackName:"",whiteName:""};
+    ["tournamentTitleLine1","tournamentTitleLine2","blackName","whiteName"].forEach(key=>dirtyMetaFields.delete(key));
+  }
 
   const total = Math.max(1, lastState.totalSteps || 1);
   timeline.max = total - 1;
@@ -356,6 +372,12 @@ async function applyMeta(){
     whiteName: whiteNameInput.value.trim(),
     matchFile: matchFileSelect.value
   };
+  if(!nextMeta.matchFile){
+    nextMeta.tournamentTitleLine1="";
+    nextMeta.tournamentTitleLine2="";
+    nextMeta.blackName="";
+    nextMeta.whiteName="";
+  }
   const oldFile=lastState.meta.matchFile||"";
   const fileChanged=nextMeta.matchFile!==oldFile;
 
@@ -488,11 +510,22 @@ applyMetaBtn.addEventListener("click", applyMeta);
 refreshMatchesBtn.addEventListener("click", refreshMatches);
 designPresetSelect.addEventListener("change", renderDesignPreview);
 themeColorInput.addEventListener("input", renderThemeColorPreview);
+themeColorPreview?.querySelectorAll(".theme-color-button").forEach(button=>{
+  button.addEventListener("click",()=>{
+    themeColorInput.value=String(button.dataset.color||"").toUpperCase();
+    dirtyMetaFields.add("themeColor");
+    renderThemeColorPreview();
+  });
+});
+matchFileSelect.addEventListener("change",()=>{
+  if(matchFileSelect.value) return;
+  clearMatchTextEditors();
+});
 
 
 
 function installButtonFeedback(){
-  document.querySelectorAll("button").forEach(button=>{
+  document.querySelectorAll("button:not(.theme-color-button)").forEach(button=>{
     button.addEventListener("pointerdown",event=>{
       if(button.disabled) return;
       button.classList.add("is-pressing");

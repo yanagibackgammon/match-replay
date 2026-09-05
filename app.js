@@ -18,9 +18,9 @@ let lastMoveAnimationKey="";
 const BASE_CHECKER_MOVE_DURATION=500;
 
 const defaultMeta={
-  tournamentTitleLine1:"JBS第31期名人戦 準々決勝",
-  tournamentTitleLine2:"2025-08-30　25ポイントマッチ　勝てばベスト4",
-  blackName:"柳 暢祐",whiteName:"平林 直",blackScore:0,whiteScore:0,matchFile:"",themeColor:"#6B670D",designPreset:"green"
+  tournamentTitleLine1:"",
+  tournamentTitleLine2:"",
+  blackName:"",whiteName:"",blackScore:0,whiteScore:0,matchFile:"",themeColor:"#6B670D",designPreset:"green"
 };
 const standardPoints=[0,-2,0,0,0,0,5,0,3,0,0,0,-5,5,0,0,0,-3,0,-5,0,0,0,0,2];
 const emptyState={
