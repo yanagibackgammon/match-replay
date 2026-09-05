@@ -861,6 +861,21 @@ html,body{
   filter:brightness(.22) saturate(.25);
   animation:none!important;
 }
+/* Dance / Cannot Move: keep the dice inactive while allowing only the luck shadow to pulse. */
+#dice.is-muted.is-joker-glow{
+  animation:boardMutedJokerShadowGold 1.15s ease-in-out infinite!important;
+}
+#dice.is-muted.is-antijoker-glow{
+  animation:boardMutedJokerShadowRed 1.15s ease-in-out infinite!important;
+}
+@keyframes boardMutedJokerShadowGold{
+  0%,100%{filter:brightness(.22) saturate(.25) drop-shadow(0 0 3px rgba(213,166,46,.55)) drop-shadow(0 0 7px rgba(213,166,46,.35))}
+  50%{filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(213,166,46,1)) drop-shadow(0 0 28px rgba(213,166,46,.95))}
+}
+@keyframes boardMutedJokerShadowRed{
+  0%,100%{filter:brightness(.22) saturate(.25) drop-shadow(0 0 3px rgba(196,59,59,.55)) drop-shadow(0 0 7px rgba(196,59,59,.35))}
+  50%{filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(196,59,59,1)) drop-shadow(0 0 28px rgba(196,59,59,.95))}
+}
 
 #dice.is-joker-glow,
 #dice.is-antijoker-glow{
@@ -884,6 +899,8 @@ html,body{
   .joker-glow.minus .die{animation:none;filter:drop-shadow(0 0 7px rgba(196,59,59,.75))}
   #dice.is-joker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(213,166,46,.75));opacity:1}
   #dice.is-antijoker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(196,59,59,.75));opacity:1}
+  #dice.is-muted.is-joker-glow{animation:none!important;filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(213,166,46,.9));opacity:.22}
+  #dice.is-muted.is-antijoker-glow{animation:none!important;filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(196,59,59,.9));opacity:.22}
   .big-comeback.is-active{animation:none!important;opacity:1;transform:translate(-50%,-50%)}
   .board-dim-overlay.is-active{animation:none;opacity:1}
   .score-value.is-score-transition .score-number-old,

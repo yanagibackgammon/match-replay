@@ -368,8 +368,8 @@ function renderAnimatedCheckers(state){
 }
 function drawDice(vals,activePlayer,{luckKind=null,muted=false}={}){
   diceG.innerHTML="";
-  diceG.classList.toggle("is-joker-glow",luckKind==="joker"&&!muted);
-  diceG.classList.toggle("is-antijoker-glow",luckKind==="antiJoker"&&!muted);
+  diceG.classList.toggle("is-joker-glow",luckKind==="joker");
+  diceG.classList.toggle("is-antijoker-glow",luckKind==="antiJoker");
   diceG.classList.toggle("is-muted",Boolean(muted));
   if(!vals)return;const spots={1:[[18,18]],2:[[10,10],[26,26]],3:[[10,10],[18,18],[26,26]],4:[[10,10],[26,10],[10,26],[26,26]],5:[[10,10],[26,10],[18,18],[10,26],[26,26]],6:[[10,9],[26,9],[10,18],[26,18],[10,27],[26,27]]};
   const player1=activePlayer===1;
