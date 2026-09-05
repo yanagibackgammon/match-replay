@@ -29,9 +29,9 @@ body{padding:12px 22px 18px}
   width:100%;min-height:45px;height:45px;padding:0 12px;border:2px solid #111;border-radius:0;background:#fff;font:inherit;font-size:16px;
 }
 .match-actions{display:grid;grid-template-columns:160px 160px;gap:10px}
-.loaded-file{margin-top:6px;padding-top:6px;border-top:1px solid #ddd;display:grid;grid-template-columns:90px minmax(0,1fr);gap:12px;align-items:center}
+.loaded-file{margin-top:6px;padding-top:6px;border-top:1px solid #ddd;display:flex;align-items:center;gap:12px;min-width:0;white-space:nowrap}
 .loaded-file span{font-size:12px;font-weight:900;letter-spacing:.1em;color:#777}
-.loaded-file strong{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.loaded-file strong{min-width:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .status-card{padding-bottom:10px}
 .status-top{display:grid;grid-template-columns:1fr 1fr;gap:18px}
@@ -70,6 +70,7 @@ button.active{background:#b7924b;color:#fff}
 .mode-buttons button.active{background:#111;color:#fff}
 button:disabled{opacity:.35;cursor:not-allowed}
 
+.meta-card .match-file-row{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #ddd}
 .meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px}
 .info-card p{margin:0 0 8px;font-size:13px;font-weight:900}
 .info-card p:not(:first-child){margin-top:10px}
@@ -137,7 +138,6 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .match-file-row{align-items:center}
 .match-file-field{display:block;min-width:0}
 .match-file-field select{min-height:45px;height:45px}
-.loaded-file{margin-top:6px;padding-top:6px}
 
 .status-card{padding-bottom:10px}
 .status-summary{display:flex;align-items:baseline;gap:8px;min-height:24px;white-space:nowrap}

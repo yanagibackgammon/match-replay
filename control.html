@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Match Replay Control</title>
-<link rel="stylesheet" href="./control.css?v=150">
+<link rel="stylesheet" href="./control.css?v=151">
 </head>
 <body>
 <main class="control-shell">
@@ -12,37 +12,6 @@
     <h1>MATCH REPLAY <span>操作画面</span></h1>
     <div id="connection" class="connection offline" hidden>DISCONNECTED</div>
   </header>
-
-  <section class="match-card">
-    <div class="match-file-row">
-      <label class="match-file-field">
-        <select id="matchFileSelect" aria-label="棋譜ファイル">
-          <option value="">(未選択)</option>
-        </select>
-      </label>
-      <div class="match-actions">
-        <button id="refreshMatchesBtn">棋譜一覧 更新</button>
-        <button id="applyMetaBtn" class="primary">表示へ反映</button>
-      </div>
-    </div>
-    <div class="loaded-file">
-      <span>PAGES MODE</span>
-      <strong id="loadedFileName">未選択</strong>
-    </div>
-  </section>
-
-  <section class="status-card">
-    <div class="status-summary">
-      <span>現在位置</span><strong id="stepText">1 / 1</strong>
-      <span class="status-divider">再生状態</span><strong id="playState">一時停止</strong>
-    </div>
-    <div class="timeline-block">
-      <div class="timeline-wrap">
-        <div id="gameMarkers" class="game-markers"></div>
-        <input id="timeline" type="range" min="0" max="0" step="1" value="0" aria-label="棋譜位置">
-      </div>
-    </div>
-  </section>
 
   <section class="mode-card">
     <div class="playback-buttons">
@@ -57,7 +26,35 @@
     </div>
   </section>
 
+  <section class="status-card">
+    <div class="status-summary">
+      <span>現在位置</span><strong id="stepText">1 / 1</strong>
+      <span class="status-divider">再生状態</span><strong id="playState">一時停止</strong>
+    </div>
+    <div class="timeline-block">
+      <div class="timeline-wrap">
+        <div id="gameMarkers" class="game-markers"></div>
+        <input id="timeline" type="range" min="0" max="0" step="1" value="0" aria-label="棋譜位置">
+      </div>
+    </div>
+    <div class="loaded-file">
+      <span>PAGES MODE</span>
+      <strong id="loadedFileName">未選択</strong>
+    </div>
+  </section>
+
   <section class="meta-card">
+    <div class="match-file-row">
+      <label class="match-file-field">
+        <select id="matchFileSelect" aria-label="棋譜ファイル">
+          <option value="">(未選択)</option>
+        </select>
+      </label>
+      <div class="match-actions">
+        <button id="refreshMatchesBtn">棋譜一覧 更新</button>
+        <button id="applyMetaBtn" class="primary">表示へ反映</button>
+      </div>
+    </div>
     <div class="meta-grid">
       <label>
         <span>試合名</span>
