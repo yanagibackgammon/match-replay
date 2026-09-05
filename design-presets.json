@@ -343,7 +343,7 @@
       "checkers": {
         "player1": "#2E3F48",
         "player2": "#ECECEC",
-        "border": "#565A5E"
+        "border": "#808080"
       },
       "winRate": {
         "player1": "#2E3F48",
@@ -354,7 +354,7 @@
         "frame": "#565A5E",
         "pointLight": "#B2704F",
         "pointDark": "#D6D6E3",
-        "pointBorder": "#565A5E"
+        "pointBorder": null
       }
     },
     {
@@ -363,7 +363,7 @@
       "checkers": {
         "player1": "#5D2F47",
         "player2": "#F9F9F9",
-        "border": "#5A5457"
+        "border": "#808080"
       },
       "winRate": {
         "player1": "#5D2F47",
@@ -374,7 +374,7 @@
         "frame": "#5A5457",
         "pointLight": "#D1D1D1",
         "pointDark": "#776D2A",
-        "pointBorder": "#5A5457"
+        "pointBorder": null
       }
     },
     {
@@ -383,7 +383,7 @@
       "checkers": {
         "player1": "#56676C",
         "player2": "#ECECEC",
-        "border": "#525860"
+        "border": "#808080"
       },
       "winRate": {
         "player1": "#56676C",
@@ -394,7 +394,7 @@
         "frame": "#525860",
         "pointLight": "#3F5D6B",
         "pointDark": "#734071",
-        "pointBorder": "#525860"
+        "pointBorder": null
       }
     },
     {
@@ -403,7 +403,7 @@
       "checkers": {
         "player1": "#ECECEC",
         "player2": "#3B3F2F",
-        "border": "#9F6679"
+        "border": "#808080"
       },
       "winRate": {
         "player1": "#ECECEC",
@@ -414,7 +414,7 @@
         "frame": "#9F6679",
         "pointLight": "#4F5C2D",
         "pointDark": "#D6D6E3",
-        "pointBorder": "#9F6679"
+        "pointBorder": null
       }
     },
     {
@@ -423,7 +423,7 @@
       "checkers": {
         "player1": "#595656",
         "player2": "#ECECEC",
-        "border": "#0A3A5F"
+        "border": "#808080"
       },
       "winRate": {
         "player1": "#595656",
@@ -434,7 +434,7 @@
         "frame": "#0A3A5F",
         "pointLight": "#397AAD",
         "pointDark": "#606E30",
-        "pointBorder": "#0A3A5F"
+        "pointBorder": null
       }
     }
   ]
