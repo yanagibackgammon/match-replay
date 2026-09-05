@@ -181,8 +181,8 @@ html,body{
   text-shadow:0 2px 5px rgba(0,0,0,.52),0 0 1px rgba(0,0,0,.45);
   transform:translateY(12px);
 }
-.headline-name.left{justify-content:flex-start;text-align:left;padding-left:10px;padding-right:0}
-.headline-name.right{justify-content:flex-end;text-align:right;padding-right:10px;padding-left:0}
+.headline-name.left{justify-content:flex-start;text-align:left;padding-left:18px;padding-right:0}
+.headline-name.right{justify-content:flex-end;text-align:right;padding-right:18px;padding-left:0}
 
 .headline-title-block{
   position:relative;
