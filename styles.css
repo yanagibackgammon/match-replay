@@ -29,6 +29,7 @@
   --point-border:#000000;
   --checker-border:#000000;
   --line:#d6e2d6;
+  --sequence-duration:6s;
   --winrate-frame-color:color-mix(in srgb,var(--theme-color) 26%,#111);
 }
 
@@ -338,9 +339,9 @@ html,body{
   align-items:center;
   justify-content:center;
 }
-.score-value.is-score-transition .score-number-old{animation:scoreOldTravel 5s cubic-bezier(.18,.72,.22,1) both}
-.score-value.is-score-transition .score-number-gain{animation:scoreGainTravel 5s cubic-bezier(.18,.72,.22,1) both;color:#18b86b;font-size:72px}
-.score-value.is-score-transition .score-number-new{animation:scoreNewTravel 5s cubic-bezier(.18,.72,.22,1) both}
+.score-value.is-score-transition .score-number-old{animation:scoreOldTravel var(--sequence-duration) cubic-bezier(.18,.72,.22,1) both}
+.score-value.is-score-transition .score-number-gain{animation:scoreGainTravel var(--sequence-duration) cubic-bezier(.18,.72,.22,1) both;color:#18b86b;font-size:72px}
+.score-value.is-score-transition .score-number-new{animation:scoreNewTravel var(--sequence-duration) cubic-bezier(.18,.72,.22,1) both}
 @keyframes scoreOldTravel{
   0%,18%{transform:translateY(0);opacity:1}
   25%,100%{transform:translateY(-92px);opacity:0}
@@ -506,8 +507,8 @@ html,body{
 }
 .big-comeback.is-comeback{color:#e53935}
 .big-comeback.is-nice{color:#ffd33d}
-.big-comeback.is-active.is-comeback{animation:bigComebackRed 3s ease-in-out both}
-.big-comeback.is-active.is-nice{animation:niceRollGold 3s ease-in-out both}
+.big-comeback.is-active.is-comeback{animation:bigComebackRed var(--sequence-duration) ease-in-out both}
+.big-comeback.is-active.is-nice{animation:niceRollGold var(--sequence-duration) ease-in-out both}
 @keyframes bigComebackRed{
   0%{opacity:0;transform:translate(-50%,48px);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(229,57,53,.30)}
   14%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 8px rgba(229,57,53,.92),0 0 16px rgba(229,57,53,.58)}
@@ -554,7 +555,7 @@ html,body{
   pointer-events:none;
   z-index:6;
 }
-.board-dim-overlay.is-active{animation:boardDimBeforeComeback 5s linear both}
+.board-dim-overlay.is-active{animation:boardDimBeforeComeback var(--sequence-duration) linear both}
 @keyframes boardDimBeforeComeback{
   0%{opacity:0}
   100%{opacity:1}
@@ -850,22 +851,17 @@ html,body{
 #dice.is-antijoker-glow{
   transform-box:fill-box;
   transform-origin:center;
+  filter:none;
+  animation:boardJokerDieBlink 1.15s ease-in-out infinite;
 }
-#dice.is-joker-glow{animation:boardJokerPulseGold 1.15s ease-in-out infinite}
-#dice.is-antijoker-glow{animation:boardJokerPulseRed 1.15s ease-in-out infinite}
-@keyframes boardJokerPulseGold{
-  0%,100%{filter:drop-shadow(0 0 3px rgba(213,166,46,.30)) drop-shadow(0 0 6px rgba(213,166,46,.24))}
-  50%{filter:drop-shadow(0 0 6px rgba(213,166,46,.96)) drop-shadow(0 0 12px rgba(213,166,46,.68)) drop-shadow(0 0 18px rgba(213,166,46,.34))}
-}
-@keyframes boardJokerPulseRed{
-  0%,100%{filter:drop-shadow(0 0 3px rgba(196,59,59,.28)) drop-shadow(0 0 6px rgba(196,59,59,.24))}
-  50%{filter:drop-shadow(0 0 6px rgba(196,59,59,.94)) drop-shadow(0 0 12px rgba(196,59,59,.64)) drop-shadow(0 0 18px rgba(196,59,59,.36))}
+@keyframes boardJokerDieBlink{
+  0%,100%{opacity:1}
+  50%{opacity:.38}
 }
 @media (prefers-reduced-motion:reduce){
   .joker-glow.plus,.joker-glow.minus{animation:none;filter:none}
   .joker-glow.plus .die,.joker-glow.minus .die{animation:none}
-  #dice.is-joker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(213,166,46,.88)) drop-shadow(0 0 12px rgba(213,166,46,.30))}
-  #dice.is-antijoker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(196,59,59,.86)) drop-shadow(0 0 12px rgba(196,59,59,.28))}
+  #dice.is-joker-glow,#dice.is-antijoker-glow{animation:none;filter:none;opacity:1}
   .big-comeback.is-active{animation:none!important;opacity:1;transform:translate(-50%,-50%)}
   .board-dim-overlay.is-active{animation:none;opacity:1}
   .score-value.is-score-transition .score-number-old,
