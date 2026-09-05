@@ -509,8 +509,10 @@ html,body{
 }
 .big-comeback.is-comeback{color:#e53935}
 .big-comeback.is-nice{color:#ffd33d}
+.big-comeback.is-bad{color:#8e44ad}
 .big-comeback.is-active.is-comeback{animation:bigComebackRed var(--sequence-duration) ease-in-out both}
 .big-comeback.is-active.is-nice{animation:niceRollGold var(--sequence-duration) ease-in-out both}
+.big-comeback.is-active.is-bad{animation:badRollPurple var(--sequence-duration) ease-in-out both}
 @keyframes bigComebackRed{
   0%{opacity:0;transform:translate(-50%,48px);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(229,57,53,.30)}
   14%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 8px rgba(229,57,53,.92),0 0 16px rgba(229,57,53,.58)}
@@ -528,6 +530,15 @@ html,body{
   62%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(255,211,61,.38),0 0 9px rgba(255,211,61,.28)}
   78%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(255,211,61,.96),0 0 17px rgba(255,211,61,.62)}
   100%{opacity:0;transform:translate(-50%,-88px);text-shadow:0 3px 4px rgba(0,0,0,.36),0 0 4px rgba(255,211,61,.22)}
+}
+@keyframes badRollPurple{
+  0%{opacity:0;transform:translate(-50%,48px);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(142,68,173,.30)}
+  14%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 8px rgba(142,68,173,.94),0 0 16px rgba(142,68,173,.60)}
+  30%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(142,68,173,.40),0 0 9px rgba(142,68,173,.30)}
+  46%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(142,68,173,.98),0 0 17px rgba(142,68,173,.64)}
+  62%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(142,68,173,.38),0 0 9px rgba(142,68,173,.28)}
+  78%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(142,68,173,.96),0 0 17px rgba(142,68,173,.62)}
+  100%{opacity:0;transform:translate(-50%,-88px);text-shadow:0 3px 4px rgba(0,0,0,.36),0 0 4px rgba(142,68,173,.22)}
 }
 
 .main-area{
@@ -733,8 +744,41 @@ html,body{
 .die.player2{background:var(--die-player2);border-color:var(--die-border)}
 .die.player2 .die-pip{background:var(--die-player2-pip)}
 
-.dice-pair-inline .die{--die-size:44px;--pip-size:8px}
-.analysis-jokers .die{--die-size:36px;--pip-size:7px}
+.dice-pair-inline{gap:10px}
+.dice-pair-inline .die{
+  --die-size:36px;
+  --pip-size:6.8px;
+  border-width:1.5px;
+  border-radius:4px;
+  box-shadow:none;
+}
+.dice-pair-inline .die-pip{box-shadow:none}
+.dice-pair-inline .die-pip.p1{left:6.6px;top:6.6px}
+.dice-pair-inline .die-pip.p2{left:50%;top:6.6px;transform:translateX(-50%)}
+.dice-pair-inline .die-pip.p3{right:6.6px;top:6.6px}
+.dice-pair-inline .die-pip.p4{left:6.6px;top:50%;transform:translateY(-50%)}
+.dice-pair-inline .die-pip.p5{left:50%;top:50%;transform:translate(-50%,-50%)}
+.dice-pair-inline .die-pip.p6{right:6.6px;top:50%;transform:translateY(-50%)}
+.dice-pair-inline .die-pip.p7{left:6.6px;bottom:6.6px}
+.dice-pair-inline .die-pip.p8{left:50%;bottom:6.6px;transform:translateX(-50%)}
+.dice-pair-inline .die-pip.p9{right:6.6px;bottom:6.6px}
+.analysis-jokers .die{
+  --die-size:54px;
+  --pip-size:10.2px;
+  border-width:2.25px;
+  border-radius:6px;
+  box-shadow:none;
+}
+.analysis-jokers .die-pip{box-shadow:none}
+.analysis-jokers .die-pip.p1{left:9.9px;top:9.9px}
+.analysis-jokers .die-pip.p2{left:50%;top:9.9px;transform:translateX(-50%)}
+.analysis-jokers .die-pip.p3{right:9.9px;top:9.9px}
+.analysis-jokers .die-pip.p4{left:9.9px;top:50%;transform:translateY(-50%)}
+.analysis-jokers .die-pip.p5{left:50%;top:50%;transform:translate(-50%,-50%)}
+.analysis-jokers .die-pip.p6{right:9.9px;top:50%;transform:translateY(-50%)}
+.analysis-jokers .die-pip.p7{left:9.9px;bottom:9.9px}
+.analysis-jokers .die-pip.p8{left:50%;bottom:9.9px;transform:translateX(-50%)}
+.analysis-jokers .die-pip.p9{right:9.9px;bottom:9.9px}
 
 .die-pip{
   position:absolute;
@@ -831,7 +875,7 @@ html,body{
   align-items:center;
   justify-content:center;
 }
-.analysis-jokers .joker-glow.is-single-face .die{--die-size:36px;--pip-size:7px}
+.analysis-jokers .joker-glow.is-single-face .die{--die-size:54px;--pip-size:10.2px}
 .joker-glow.plus .joker-label{color:var(--joker-gold)}
 .joker-glow.minus .joker-label{color:#c43b3b}
 .joker-glow.plus,

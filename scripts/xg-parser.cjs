@@ -1074,14 +1074,18 @@ function buildTimeline(parsed, sourceFile){
       const preRollWhiteRate=100-preRollBlackRate;
       const postRollBlackRate=Number(bestWinRate.black);
       const postRollWhiteRate=Number(bestWinRate.white);
-      const rollSwing=Math.abs(postRollBlackRate-preRollBlackRate);
+      const rollerPreRate=r.activePlayer===1?preRollBlackRate:preRollWhiteRate;
+      const rollerPostRate=r.activePlayer===1?postRollBlackRate:postRollWhiteRate;
+      const rollerSwing=rollerPostRate-rollerPreRate;
       // 大逆転: 同じ選手の勝率が1ロールで30%以下から70%以上へ逆転したとき。
       const blackComeback=Number.isFinite(preRollBlackRate) && Number.isFinite(postRollBlackRate) && preRollBlackRate<=30 && postRollBlackRate>=70;
       const whiteComeback=Number.isFinite(preRollWhiteRate) && Number.isFinite(postRollWhiteRate) && preRollWhiteRate<=30 && postRollWhiteRate>=70;
       const isBigComeback=blackComeback||whiteComeback;
-      // ナイスロール: 1ロールで勝率が20pt以上動く。大逆転条件を満たす場合は大逆転を優先。
-      const isNiceRoll=Number.isFinite(rollSwing) && rollSwing>=20 && !isBigComeback;
-      const rollNotice=isBigComeback?'comeback':(isNiceRoll?'nice':null);
+      // ロール演出は「振った本人」の勝率変化で判定する。
+      // +20pt以上ならナイスロール、-20pt以下ならバッドロール。大逆転を最優先する。
+      const isNiceRoll=Number.isFinite(rollerSwing) && rollerSwing>=20 && !isBigComeback;
+      const isBadRoll=Number.isFinite(rollerSwing) && rollerSwing<=-20 && !isBigComeback;
+      const rollNotice=isBigComeback?'comeback':(isNiceRoll?'nice':(isBadRoll?'bad':null));
 
       if(isBigComeback){
         const introAnalysis=isOpeningMove

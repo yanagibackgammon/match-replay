@@ -779,9 +779,15 @@ function renderAnalysis(a){
   }
   const selectedIndex=Number.isInteger(a.playedIndex)?a.playedIndex:-1;
   const all=a.candidates||[];
-  let visible=all.slice(0,5).map((c,i)=>({candidate:c,index:i}));
-  // 選択手が6位以下の場合は、5行目を実際の選択手に置き換える。
-  if(selectedIndex>=5 && all[selectedIndex]){
+  const candidateEntries=all.map((candidate,index)=>({candidate,index}));
+  const cubeDecision=["cubeOffer","cubeOfferSelect","cubeResponse","cubeResponseSelect"].includes(currentState()?.phase);
+  if(cubeDecision){
+    // Double / No Double、Take / Pass は最善（error=0 に最も近い手）を常に1行目へ。
+    candidateEntries.sort((left,right)=>Number(right.candidate?.error??-Infinity)-Number(left.candidate?.error??-Infinity));
+  }
+  let visible=candidateEntries.slice(0,5);
+  // 選択手が表示範囲外の場合は、5行目を実際の選択手に置き換える。
+  if(selectedIndex>=0 && all[selectedIndex] && !visible.some(entry=>entry.index===selectedIndex)){
     const entry={candidate:all[selectedIndex],index:selectedIndex};
     if(visible.length<5)visible.push(entry);else visible[4]=entry;
   }
@@ -817,16 +823,17 @@ function renderBoardDimOverlay(state){
 function renderBigComeback(state){
   const el=els.bigComebackText;if(!el)return;
   const notice=state?.phase==="roll" ? state?.rollNotice : null;
-  const isVisible=notice==="comeback" || notice==="nice";
+  const isVisible=notice==="comeback" || notice==="nice" || notice==="bad";
   if(!isVisible){
     lastBigComebackKey="";
-    el.classList.remove("is-active","is-comeback","is-nice");
+    el.classList.remove("is-active","is-comeback","is-nice","is-bad");
     el.setAttribute("aria-hidden","true");
     return;
   }
-  el.textContent=notice==="comeback"?"大逆転！":"ナイスロール！";
+  el.textContent=notice==="comeback"?"大逆転！":(notice==="bad"?"バッドロール…":"ナイスロール！");
   el.classList.toggle("is-comeback",notice==="comeback");
   el.classList.toggle("is-nice",notice==="nice");
+  el.classList.toggle("is-bad",notice==="bad");
   const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}:${notice}`;
   el.setAttribute("aria-hidden","false");
   if(key===lastBigComebackKey) return;
