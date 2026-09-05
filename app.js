@@ -406,6 +406,28 @@ function cubeVisualTarget(state,cube){
   }
   return cubeOwnerTarget(cube);
 }
+function cubeVisualValue(state,cube){
+  const baseValue=Math.max(1,Number(cube?.value)||1);
+  const phase=state?.phase||"";
+  const move=String(state?.historyEvent?.move||"");
+  const eventValue=Number(state?.historyEvent?.cubeValue);
+
+  // Once an actual Double is selected, show the offered (doubled) value
+  // while the cube moves to the opponent's half. Keep that same value
+  // through the response phase; Take then carries it to the new owner bar,
+  // while Pass leaves it at the offered position.
+  if(phase==="cubeOfferSelect"&&move==="Double"){
+    return Number.isFinite(eventValue)&&eventValue>0?eventValue:baseValue*2;
+  }
+  if(phase==="cubeResponse"){
+    return baseValue*2;
+  }
+  if(phase==="cubeResponseSelect"&&(move==="Take"||move==="Pass")){
+    if(Number.isFinite(eventValue)&&eventValue>0) return eventValue;
+    return move==="Take"?baseValue:baseValue*2;
+  }
+  return baseValue;
+}
 function resetCubeMotion(){
   lastCubeVisualTarget=null;
 }
@@ -425,7 +447,7 @@ function drawCube(cube,state=currentState()){
   cubeG.innerHTML="";
   cubeG.removeAttribute("transform");
   cubeG.style.transform="";
-  const value=Math.max(1,Number(cube?.value)||1);
+  const value=cubeVisualValue(state,cube);
   const target=cubeVisualTarget(state,cube);
   const previous=lastCubeVisualTarget;
   const cubePhase=["cubeOffer","cubeOfferSelect","cubeResponse","cubeResponseSelect"].includes(state?.phase);
@@ -502,7 +524,7 @@ function drawGameOverlay(state){
   const winMultiplier=Math.max(1,Math.min(3,Math.round(points/cubeValue)||1));
   const winnerName=winner==="black"?meta.blackName:meta.whiteName;
   const winLabel=winMultiplier>=3?"バックギャモン勝ち":winMultiplier===2?"ギャモン勝ち":"シングル勝ち";
-  const resultLabel=state.resignation?`リザイン・キューブ${cubeValue}倍`:`${winLabel}・キューブ${cubeValue}倍`;
+  const resultLabel=`${winLabel}・キューブ${cubeValue}倍`;
 
   addPanel(116,165,470,216,18);
   addText(220,winnerName,32,"#fff",800);
