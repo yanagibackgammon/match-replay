@@ -478,7 +478,7 @@ function gammonTone(hex){
   const rgb=[0,2,4].map(i=>parseInt(color.slice(i,i+2),16));
   const lum=(rgb[0]*299+rgb[1]*587+rgb[2]*114)/1000;
   const target=lum>=150?0:255;
-  const ratio=0.22;
+  const ratio=0.34;
   const mixed=rgb.map(v=>Math.round(v*(1-ratio)+target*ratio));
   return `#${mixed.map(v=>v.toString(16).padStart(2,"0")).join("")}`;
 }

@@ -509,7 +509,7 @@ html,body{
 }
 .big-comeback.is-comeback{color:#e53935}
 .big-comeback.is-nice{color:#ffd33d}
-.big-comeback.is-bad{color:#8e44ad}
+.big-comeback.is-bad{color:#b56cff}
 .big-comeback.is-active.is-comeback{animation:bigComebackRed var(--sequence-duration) ease-in-out both}
 .big-comeback.is-active.is-nice{animation:niceRollGold var(--sequence-duration) ease-in-out both}
 .big-comeback.is-active.is-bad{animation:badRollPurple var(--sequence-duration) ease-in-out both}
@@ -532,13 +532,13 @@ html,body{
   100%{opacity:0;transform:translate(-50%,-88px);text-shadow:0 3px 4px rgba(0,0,0,.36),0 0 4px rgba(255,211,61,.22)}
 }
 @keyframes badRollPurple{
-  0%{opacity:0;transform:translate(-50%,48px);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(142,68,173,.30)}
-  14%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 8px rgba(142,68,173,.94),0 0 16px rgba(142,68,173,.60)}
-  30%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(142,68,173,.40),0 0 9px rgba(142,68,173,.30)}
-  46%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(142,68,173,.98),0 0 17px rgba(142,68,173,.64)}
-  62%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(142,68,173,.38),0 0 9px rgba(142,68,173,.28)}
-  78%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(142,68,173,.96),0 0 17px rgba(142,68,173,.62)}
-  100%{opacity:0;transform:translate(-50%,-88px);text-shadow:0 3px 4px rgba(0,0,0,.36),0 0 4px rgba(142,68,173,.22)}
+  0%{opacity:0;transform:translate(-50%,48px);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(181,108,255,.30)}
+  14%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 8px rgba(181,108,255,.94),0 0 16px rgba(181,108,255,.60)}
+  30%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(181,108,255,.40),0 0 9px rgba(181,108,255,.30)}
+  46%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(181,108,255,.98),0 0 17px rgba(181,108,255,.64)}
+  62%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(181,108,255,.38),0 0 9px rgba(181,108,255,.28)}
+  78%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(181,108,255,.96),0 0 17px rgba(181,108,255,.62)}
+  100%{opacity:0;transform:translate(-50%,-88px);text-shadow:0 3px 4px rgba(0,0,0,.36),0 0 4px rgba(181,108,255,.22)}
 }
 
 .main-area{
