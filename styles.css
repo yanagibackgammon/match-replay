@@ -968,6 +968,7 @@ html,body{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:12px;
+  padding:0 12px;
   align-items:center;
   overflow:hidden;
 }

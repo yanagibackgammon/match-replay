@@ -132,7 +132,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
   border-right:1px solid rgba(17,17,17,.45);
   border-radius:0;
   font:inherit;
-  font-size:8px;
+  font-size:17px;
   font-weight:900;
   letter-spacing:-.02em;
   text-align:center;
@@ -253,5 +253,6 @@ button.active .button-ripple{opacity:.25}
 }
 
 @media(max-width:760px){
-  .design-preview-chip{font-size:6px}
+  .design-preview-chip,
+  .theme-color-preview .theme-color-button{font-size:17px}
 }
