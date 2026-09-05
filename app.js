@@ -422,9 +422,13 @@ function cubeVisualValue(state,cube){
   if(phase==="cubeResponse"){
     return baseValue*2;
   }
-  if(phase==="cubeResponseSelect"&&(move==="Take"||move==="Pass")){
+  if(phase==="cubeResponseSelect"&&move==="Take"){
     if(Number.isFinite(eventValue)&&eventValue>0) return eventValue;
-    return move==="Take"?baseValue:baseValue*2;
+    return baseValue*2;
+  }
+  if(phase==="cubeResponseSelect"&&move==="Pass"){
+    // A passed cube is never owned/turned: keep the original pre-double value.
+    return baseValue;
   }
   return baseValue;
 }
