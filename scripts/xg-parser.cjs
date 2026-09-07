@@ -1227,19 +1227,19 @@ function buildTimeline(parsed, sourceFile){
       const postRollBlackRate=Number(bestWinRate.black);
       const postRollWhiteRate=Number(bestWinRate.white);
 
-      // ロール演出は必ず「手番側（実際にサイコロを振った側）」の勝率変化だけで判定する。
+      // ロール演出は「実際のXGエクイティ（errLuck）」を基準に判定する。
+      // 盤面サイコロのチャンス／ピンチ影と同じ基準を使い、演出の整合を保つ。
       // activePlayer===1 は black（選手1）、それ以外は white（選手2）。
       const rollerPreRate=r.activePlayer===1 ? preRollBlackRate : preRollWhiteRate;
       const rollerPostRate=r.activePlayer===1 ? postRollBlackRate : postRollWhiteRate;
-      const rollerSwing=rollerPostRate-rollerPreRate;
 
-      // 大逆転: 手番側自身の勝率が1ロールで30%以下から70%以上へ上昇。
+      // 大逆転のみ、視聴者に直感的な演出として従来どおり勝率基準を維持する。
       const isBigComeback=Number.isFinite(rollerPreRate) && Number.isFinite(rollerPostRate)
         && rollerPreRate<=30 && rollerPostRate>=70;
-      // ナイスロール: 手番側自身の勝率が20pt以上上昇。大逆転を優先。
-      const isNiceRoll=Number.isFinite(rollerSwing) && rollerSwing>=20 && !isBigComeback;
-      // バッドロール: 手番側自身の勝率が20pt以上低下。
-      const isBadRoll=Number.isFinite(rollerSwing) && rollerSwing<=-20;
+      // ナイスロール／バッドロール、および盤面サイコロの光り方は、
+      // XGが記録した実際のロール・ラック（errLuck）で統一する。
+      const isNiceRoll=luckKind==='joker' && !isBigComeback;
+      const isBadRoll=luckKind==='antiJoker';
       const rollNotice=isBigComeback?'comeback':(isNiceRoll?'nice':(isBadRoll?'bad':null));
 
       if(isBigComeback){
