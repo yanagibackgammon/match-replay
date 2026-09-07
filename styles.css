@@ -333,7 +333,7 @@ html,body{
 }
 .score-value.score-two-digit,
 .score-number.score-two-digit{
-  letter-spacing:-.04em;
+  letter-spacing:-.065em;
 }
 .score-number{
   position:absolute;
@@ -346,7 +346,7 @@ html,body{
   justify-content:center;
 }
 .score-value.is-score-transition .score-number-old{animation:scoreOldTravel var(--sequence-duration) cubic-bezier(.18,.72,.22,1) both}
-.score-value.is-score-transition .score-number-gain{animation:scoreGainTravel var(--sequence-duration) cubic-bezier(.18,.72,.22,1) both;color:#18b86b;font-size:70px}
+.score-value.is-score-transition .score-number-gain{animation:scoreGainTravel var(--sequence-duration) cubic-bezier(.18,.72,.22,1) both;color:#18b86b;font-size:70px;letter-spacing:-.065em}
 .score-value.is-score-transition .score-number-new{animation:scoreNewTravel var(--sequence-duration) cubic-bezier(.18,.72,.22,1) both}
 @keyframes scoreOldTravel{
   0%,18%{transform:translateY(0);opacity:1}
