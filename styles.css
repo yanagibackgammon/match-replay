@@ -581,6 +581,39 @@ html,body{
   background:var(--board-surface);
   flex:0 0 auto;
 }
+.achievement-overlay{
+  position:absolute;
+  inset:0;
+  z-index:5;
+  pointer-events:none;
+  overflow:hidden;
+}
+.achievement-fly{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(calc(-50% + 680px),-50%);
+  opacity:0;
+  color:#fff;
+  font-family:"Noto Sans JP","Noto Sans CJK JP","Yu Gothic",Meiryo,sans-serif;
+  font-size:50px;
+  font-weight:900;
+  line-height:1.12;
+  white-space:nowrap;
+  text-align:center;
+  -webkit-text-stroke:1.5px rgba(0,0,0,.72);
+  paint-order:stroke fill;
+  text-shadow:0 3px 5px rgba(0,0,0,.45);
+}
+.achievement-overlay.is-active .achievement-fly{animation-name:achievementSlide;animation-timing-function:ease-out;animation-fill-mode:both}
+@keyframes achievementSlide{
+  0%{opacity:0;transform:translate(calc(-50% + 680px),-50%)}
+  18%{opacity:1;transform:translate(calc(-50% + 220px),-50%)}
+  45%{opacity:1;transform:translate(-50%,-50%)}
+  60%{opacity:1;transform:translate(-50%,-50%)}
+  82%{opacity:.95;transform:translate(calc(-50% - 220px),-50%)}
+  100%{opacity:0;transform:translate(calc(-50% - 680px),-50%)}
+}
 
 .info-area{
   width:840px;
@@ -902,6 +935,7 @@ html,body{
   #dice.is-muted.is-joker-glow{animation:none!important;filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(213,166,46,.9));opacity:.22}
   #dice.is-muted.is-antijoker-glow{animation:none!important;filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(181,108,255,.9));opacity:.22}
   .big-comeback.is-active{animation:none!important;opacity:1;transform:translate(-50%,-50%)}
+  .achievement-overlay.is-active .achievement-fly{animation:none!important;opacity:1;transform:translate(-50%,-50%)}
   .board-dim-overlay.is-active{animation:none;opacity:1}
   .score-value.is-score-transition .score-number-old,
   .score-value.is-score-transition .score-number-gain,
