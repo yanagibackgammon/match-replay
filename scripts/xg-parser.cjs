@@ -389,6 +389,142 @@ function madeHomePoints(position,player){
   return n;
 }
 function blotCount(position,player){let n=0;for(let p=1;p<=24;p++)if(countChecker(position,player,p)===1)n++;return n;}
+
+// Backgammon Ace風シチュエーション判定。
+// 実際に記録されたロール／着手だけを対象とし、予測候補からは発火させない。
+const ACHIEVEMENT_LABELS={
+  fullPrime:'フルプライム',
+  semiPrime:'セミプライム',
+  closeOut:'クローズアウト',
+  backgame:'バックゲーム',
+  anchor3:'3アンカーバックゲーム',
+  anchor4:'4アンカーバックゲーム',
+  anchor5:'5アンカーバックゲーム',
+  doubleHit:'ダブルヒット',
+  tripleHit:'トリプルヒット',
+  quadrupleHit:'クアドラプルヒット',
+  hitAndCover:'ヒット・アンド・カバー',
+  bananaSplit:'バナナスプリット',
+  loversLeap:'ラバーズリープ',
+  candlesticks:'キャンドルスティックス',
+  dance66:'66ダンス',
+  blitz55:'55ブリッツ'
+};
+function achievement(id){return {id,label:ACHIEVEMENT_LABELS[id]||id};}
+function relativePointToCanonical(player,relativePoint){return player===1?relativePoint:25-relativePoint;}
+function relativeCheckerCount(position,player,relativePoint){
+  return countChecker(position,player,relativePointToCanonical(player,relativePoint));
+}
+function isMadeRelativePoint(position,player,relativePoint){return relativeCheckerCount(position,player,relativePoint)>=2;}
+function hasConsecutiveMadePoints(position,player,length){
+  let run=0;
+  for(let relative=1;relative<=24;relative++){
+    if(isMadeRelativePoint(position,player,relative)){
+      run+=1;
+      if(run>=length)return true;
+    }else run=0;
+  }
+  return false;
+}
+function isCloseOutPosition(position,player){
+  if(barCount(position,-player)<=0)return false;
+  for(let relative=1;relative<=6;relative++)if(!isMadeRelativePoint(position,player,relative))return false;
+  return true;
+}
+function opponentHomeAnchorCount(position,player){
+  let anchors=0;
+  for(let relative=19;relative<=24;relative++)if(isMadeRelativePoint(position,player,relative))anchors+=1;
+  return anchors;
+}
+function isBackgamePosition(position,player){
+  return opponentHomeAnchorCount(position,player)>=2 && (pipCount(position,player)-pipCount(position,-player))>=30;
+}
+function candlestickPointCount(position,player){
+  let towers=0;
+  for(let relative=1;relative<=24;relative++)if(relativeCheckerCount(position,player,relative)>=6)towers+=1;
+  return towers;
+}
+function isCandlesticksPosition(position,player){return candlestickPointCount(position,player)>=2;}
+function ownHomeCanonicalPoint(player,point){
+  if(!Number.isInteger(point))return false;
+  return player===1 ? point>=1&&point<=6 : point>=19&&point<=24;
+}
+function hitAndCoverOccurred(beforePosition,afterPosition,player,segments){
+  const hits=(segments||[]).map((seg,index)=>({seg,index})).filter(item=>item.seg?.hit && Number.isInteger(item.seg?.destination));
+  for(const {seg:hitSeg,index} of hits){
+    for(let j=index+1;j<(segments||[]).length;j++){
+      const next=segments[j];
+      if(next?.source!==hitSeg.destination || !Number.isInteger(next?.destination))continue;
+      // ヒットした同じ駒を続けて動かし、着手前に1枚だった自駒をカバー。
+      if(countChecker(beforePosition,player,next.destination)===1 && countChecker(afterPosition,player,next.destination)>=2)return true;
+    }
+  }
+  return false;
+}
+function bananaSplitOccurred(beforePosition,afterPosition,player,segments){
+  if(!(segments||[]).some(seg=>seg?.hit))return false;
+  if(blotCount(afterPosition,player)<2)return false;
+  const sources=new Set((segments||[]).map(seg=>seg?.source).filter(Number.isInteger));
+  for(const source of sources){
+    if(!ownHomeCanonicalPoint(player,source))continue;
+    if(countChecker(beforePosition,player,source)>=2 && countChecker(afterPosition,player,source)<2)return true;
+  }
+  return false;
+}
+function isLoversLeap(dice,move,moveNumber){
+  if(moveNumber!==1 || !Array.isArray(dice))return false;
+  const sorted=dice.map(Number).sort((a,b)=>a-b);
+  return sorted[0]===5 && sorted[1]===6 && /(?:^|\s)24\/13(?:\s|$|\*)/.test(String(move||''));
+}
+function is66Dance(beforePosition,player,dice,segments){
+  return barCount(beforePosition,player)>0 && Array.isArray(dice) && Number(dice[0])===6 && Number(dice[1])===6 && !(segments||[]).length;
+}
+function is55Blitz(beforePosition,afterPosition,player,dice,moveNumber){
+  if(moveNumber!==2 && moveNumber!==3)return false;
+  if(!Array.isArray(dice) || Number(dice[0])!==5 || Number(dice[1])!==5)return false;
+  // 序盤の55で自陣1ポイント・3ポイントを同時に新しく作る形。
+  const beforeOne=isMadeRelativePoint(beforePosition,player,1),beforeThree=isMadeRelativePoint(beforePosition,player,3);
+  return !beforeOne && !beforeThree && isMadeRelativePoint(afterPosition,player,1) && isMadeRelativePoint(afterPosition,player,3);
+}
+function detectAchievements({beforePosition,afterPosition,player,dice,segments,move,moveNumber}){
+  const out=[];
+  const push=id=>out.push(achievement(id));
+
+  const semiBefore=hasConsecutiveMadePoints(beforePosition,player,5);
+  const semiAfter=hasConsecutiveMadePoints(afterPosition,player,5);
+  const fullBefore=hasConsecutiveMadePoints(beforePosition,player,6);
+  const fullAfter=hasConsecutiveMadePoints(afterPosition,player,6);
+  const closeOutBefore=isCloseOutPosition(beforePosition,player);
+  const closeOutAfter=isCloseOutPosition(afterPosition,player);
+  // プライム系は上位互換を1件だけ表示:
+  // クローズアウト > フルプライム > セミプライム
+  if(!closeOutBefore&&closeOutAfter)push('closeOut');
+  else if(!fullBefore&&fullAfter)push('fullPrime');
+  else if(!semiBefore&&semiAfter)push('semiPrime');
+
+  const anchorsBefore=opponentHomeAnchorCount(beforePosition,player);
+  const anchorsAfter=opponentHomeAnchorCount(afterPosition,player);
+  const backgameBefore=isBackgamePosition(beforePosition,player);
+  const backgameAfter=isBackgamePosition(afterPosition,player);
+  // アンカー系も、そのロールで新たに成立した最上位だけを表示:
+  // 5アンカー > 4アンカー > 3アンカー > バックゲーム
+  if(anchorsBefore<5&&anchorsAfter>=5)push('anchor5');
+  else if(anchorsBefore<4&&anchorsAfter>=4)push('anchor4');
+  else if(anchorsBefore<3&&anchorsAfter>=3)push('anchor3');
+  else if(!backgameBefore&&backgameAfter)push('backgame');
+
+  const hitCount=(segments||[]).reduce((sum,seg)=>sum+(seg?.hit?1:0),0);
+  if(hitCount>=4)push('quadrupleHit');
+  else if(hitCount===3)push('tripleHit');
+  else if(hitCount===2)push('doubleHit');
+  if(hitAndCoverOccurred(beforePosition,afterPosition,player,segments))push('hitAndCover');
+  if(bananaSplitOccurred(beforePosition,afterPosition,player,segments))push('bananaSplit');
+  if(isLoversLeap(dice,move,moveNumber))push('loversLeap');
+  if(!isCandlesticksPosition(beforePosition,player)&&isCandlesticksPosition(afterPosition,player))push('candlesticks');
+  if(is66Dance(beforePosition,player,dice,segments))push('dance66');
+  if(is55Blitz(beforePosition,afterPosition,player,dice,moveNumber))push('blitz55');
+  return out;
+}
 function staticEquityProxy(position,player){
   const opp=-player;
   const pipAdv=pipCount(position,opp)-pipCount(position,player);
@@ -835,6 +971,7 @@ function buildTimeline(parsed, sourceFile){
   let lastPosition = null;
   let lastCube = {value:1,owner:0};
   let gameHasCheckerMove = false;
+  let gameRollCount = 0;
   let pendingResignation = null;
   let matchIntroPushed = false;
   const prStats = {
@@ -884,6 +1021,7 @@ function buildTimeline(parsed, sourceFile){
       lastGammonRate = {black:0,white:0};
       lastBackgammonRate = {black:0,white:0};
       gameHasCheckerMove = false;
+      gameRollCount = 0;
       pendingResignation = null;
       if(!matchIntroPushed){
         matchIntroPushed = true;
@@ -1075,6 +1213,11 @@ function buildTimeline(parsed, sourceFile){
         continue;
       }
 
+      const moveNumber=gameRollCount+1;
+      const achievements=r.isResignationRoll ? [] : detectAchievements({
+        beforePosition,afterPosition,player:r.activePlayer,dice:r.dice,segments:r.appliedSegments||[],move:r.move,moveNumber
+      });
+
       // ロール前のチャンス／ピンチ予測は廃止。
       // 盤面上の光り方だけを、実際のXGエクイティ（errLuck）で判定する。
       const isOpeningMove=!gameHasCheckerMove;
@@ -1122,13 +1265,14 @@ function buildTimeline(parsed, sourceFile){
           position:beforePosition,dice:r.dice,cube,
           winRate:bestWinRate,gammonRate:bestGammonRate,backgammonRate:bestBackgammonRate,luckKind,diceMuted:false,
           analysis:{type:'none'},historyEvent:null,
-          resignationRoll:true,bigComeback:isBigComeback,rollNotice
+          resignationRoll:true,bigComeback:isBigComeback,rollNotice,achievements:[]
         });
         lastPosition=beforePosition;
         lastCube=cube;
         lastBlackRate=bestWinRate.black;
         lastGammonRate={...bestGammonRate};
         lastBackgammonRate={...bestBackgammonRate};
+        gameRollCount += 1;
         continue;
       }
 
@@ -1144,7 +1288,7 @@ function buildTimeline(parsed, sourceFile){
           analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
           moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
           historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'},
-          noContactCombined:true,bigComeback:isBigComeback,rollNotice
+          noContactCombined:true,bigComeback:isBigComeback,rollNotice,achievements
         });
       }else if(cannotMove){
         // Cannot Move はロール表示と候補選択を同一シーケンスにする。
@@ -1157,7 +1301,7 @@ function buildTimeline(parsed, sourceFile){
           analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
           moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
           historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'},
-          forcedMove:true,bigComeback:isBigComeback,rollNotice
+          forcedMove:true,bigComeback:isBigComeback,rollNotice,achievements
         });
       }else{
         pushState({
@@ -1165,7 +1309,7 @@ function buildTimeline(parsed, sourceFile){
           position:beforePosition,dice:r.dice,cube,
           winRate:bestWinRate,gammonRate:bestGammonRate,backgammonRate:bestBackgammonRate,luckKind,diceMuted,
           analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'none'},historyEvent:null,
-          bigComeback:isBigComeback,rollNotice
+          bigComeback:isBigComeback,rollNotice,achievements
         });
         // 候補表示シーケンスを省略する条件：
         // 1) 候補が1手だけ
@@ -1208,6 +1352,7 @@ function buildTimeline(parsed, sourceFile){
         });
         }
       }
+      gameRollCount += 1;
       gameHasCheckerMove = true;
       lastPosition = afterPosition;
       lastCube = cube;
