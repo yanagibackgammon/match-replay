@@ -44,6 +44,7 @@ let appliedDesignOverridesKey="";
 let index=0,meta={...defaultMeta},matchData={states:[emptyState]},loadedMatchFile="",socket=null;
 let adFiles=[],adIndex=0,adTimer=null;
 let lastBigComebackKey="";
+let lastAchievementKey="";
 let lastBoardDimKey="";
 const SEQUENCE_SPEED=6000;
 const BIG_COMEBACK_SPEED=SEQUENCE_SPEED;
@@ -85,6 +86,7 @@ const els={
   blackGammonText:document.getElementById("blackGammonText"),whiteGammonText:document.getElementById("whiteGammonText"),
   blackBackgammonText:document.getElementById("blackBackgammonText"),whiteBackgammonText:document.getElementById("whiteBackgammonText"),
   bigComebackText:document.getElementById("bigComebackText"),
+  achievementOverlay:document.getElementById("achievementOverlay"),
   boardDimOverlay:document.getElementById("boardDimOverlay"),
   historyList:document.getElementById("historyList"),
   blackHistoryList:document.getElementById("blackHistoryList"),whiteHistoryList:document.getElementById("whiteHistoryList"),
@@ -951,6 +953,54 @@ function renderBoardDimOverlay(state){
   void el.offsetWidth;
   el.classList.add("is-active");
 }
+function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));}
+function renderAchievements(state){
+  const el=els.achievementOverlay;if(!el)return;
+  const raw=state?.phase==="roll" && Array.isArray(state?.achievements) ? state.achievements : [];
+  const items=raw.map(item=>{
+    if(typeof item==="string")return {id:item,label:item};
+    return {id:String(item?.id||item?.label||""),label:String(item?.label||item?.id||"")};
+  }).filter(item=>item.label);
+  if(!items.length){
+    lastAchievementKey="";
+    el.getAnimations?.().forEach(a=>a.cancel());
+    el.innerHTML="";
+    el.classList.remove("is-active");
+    el.setAttribute("aria-hidden","true");
+    return;
+  }
+  const key=`${index}:${items.map(item=>item.id).join("|")}`;
+  el.setAttribute("aria-hidden","false");
+  if(key===lastAchievementKey)return;
+  lastAchievementKey=key;
+  el.getAnimations?.().forEach(a=>a.cancel());
+  el.classList.remove("is-active");
+  el.innerHTML=items.map(item=>`<div class="achievement-fly">${escapeHtml(item.label)}</div>`).join("");
+  void el.offsetWidth;
+  el.classList.add("is-active");
+
+  // CSS animationだけに依存せず、実際のロール到達時にJSから確実に発火させる。
+  // 右から出現 → 中央で静止 → 左へ抜けて消える。
+  const duration=scaledSequenceDelay(5000);
+  const stepDelay=scaledSequenceDelay(650);
+  [...el.querySelectorAll(".achievement-fly")].forEach((node,i)=>{
+    const delay=i*stepDelay;
+    if(typeof node.animate==="function"){
+      node.classList.add("is-js-animated");
+      node.animate([
+        {opacity:0,transform:"translate(calc(-50% + 760px),-50%)",offset:0},
+        {opacity:1,transform:"translate(calc(-50% + 220px),-50%)",offset:.18},
+        {opacity:1,transform:"translate(-50%,-50%)",offset:.38},
+        {opacity:1,transform:"translate(-50%,-50%)",offset:.66},
+        {opacity:.95,transform:"translate(calc(-50% - 220px),-50%)",offset:.84},
+        {opacity:0,transform:"translate(calc(-50% - 760px),-50%)",offset:1}
+      ],{duration,delay,easing:"ease-out",fill:"both"});
+    }else{
+      node.style.animationDuration=`${duration}ms`;
+      node.style.animationDelay=`${delay}ms`;
+    }
+  });
+}
 function renderBigComeback(state){
   const el=els.bigComebackText;if(!el)return;
   // ロールで発生した演出は、その手番の候補表示・着手完了まで維持する。
@@ -1009,6 +1059,7 @@ function render(){
   if(els.blackBackgammonText)els.blackBackgammonText.textContent=blackBgText;
   if(els.whiteBackgammonText)els.whiteBackgammonText.textContent=whiteBgText;
   renderBigComeback(s);
+  renderAchievements(s);
   renderBoardDimOverlay(s);
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
   els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);

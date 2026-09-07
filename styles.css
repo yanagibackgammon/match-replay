@@ -584,7 +584,7 @@ html,body{
 .achievement-overlay{
   position:absolute;
   inset:0;
-  z-index:5;
+  z-index:20;
   pointer-events:none;
   overflow:hidden;
 }
@@ -605,7 +605,8 @@ html,body{
   paint-order:stroke fill;
   text-shadow:0 3px 5px rgba(0,0,0,.45);
 }
-.achievement-overlay.is-active .achievement-fly{animation-name:achievementSlide;animation-timing-function:ease-out;animation-fill-mode:both}
+.achievement-overlay.is-active .achievement-fly:not(.is-js-animated){animation-name:achievementSlide;animation-timing-function:ease-out;animation-fill-mode:both;will-change:transform,opacity}
+.achievement-fly.is-js-animated{animation:none!important;will-change:transform,opacity}
 @keyframes achievementSlide{
   0%{opacity:0;transform:translate(calc(-50% + 680px),-50%)}
   18%{opacity:1;transform:translate(calc(-50% + 220px),-50%)}
@@ -935,7 +936,7 @@ html,body{
   #dice.is-muted.is-joker-glow{animation:none!important;filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(213,166,46,.9));opacity:.22}
   #dice.is-muted.is-antijoker-glow{animation:none!important;filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(181,108,255,.9));opacity:.22}
   .big-comeback.is-active{animation:none!important;opacity:1;transform:translate(-50%,-50%)}
-  .achievement-overlay.is-active .achievement-fly{animation:none!important;opacity:1;transform:translate(-50%,-50%)}
+  .achievement-overlay.is-active .achievement-fly:not(.is-js-animated){animation:none!important;opacity:1;transform:translate(-50%,-50%)}
   .board-dim-overlay.is-active{animation:none;opacity:1}
   .score-value.is-score-transition .score-number-old,
   .score-value.is-score-transition .score-number-gain,
