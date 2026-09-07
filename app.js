@@ -1001,7 +1001,7 @@ function renderAchievements(state){
 
   // CSS animationだけに依存せず、実際のムーブ確定時にJSから確実に発火させる。
   // 右から出現 → 中央で静止 → 左へ抜けて消える。
-  const duration=scaledSequenceDelay(5000);
+  const duration=scaledSequenceDelay(6000);
   const stepDelay=scaledSequenceDelay(650);
   [...el.querySelectorAll(".achievement-fly")].forEach((node,i)=>{
     const delay=i*stepDelay;
@@ -1009,8 +1009,8 @@ function renderAchievements(state){
       node.classList.add("is-js-animated");
       node.animate([
         {opacity:0,transform:"translate(calc(-50% + 760px),-50%)",offset:0},
-        {opacity:1,transform:"translate(-50%,-50%)",offset:.10},
-        {opacity:1,transform:"translate(-50%,-50%)",offset:.90},
+        {opacity:1,transform:"translate(-50%,-50%)",offset:.083333},
+        {opacity:1,transform:"translate(-50%,-50%)",offset:.916667},
         {opacity:0,transform:"translate(calc(-50% - 760px),-50%)",offset:1}
       ],{duration,delay,easing:"ease-in-out",fill:"both"});
     }else{
