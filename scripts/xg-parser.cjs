@@ -426,6 +426,22 @@ function hasConsecutiveMadePoints(position,player,length){
   }
   return false;
 }
+function hasTrappingPrime(position,player,length){
+  if(barCount(position,-player)>0)return true;
+  let run=0;
+  for(let relative=1;relative<=24;relative++){
+    if(isMadeRelativePoint(position,player,relative)){
+      run+=1;
+      if(run>=length){
+        const runEnd=relative;
+        for(let oppRelative=runEnd+1;oppRelative<=24;oppRelative++){
+          if(relativeCheckerCount(position,-player,oppRelative)>0)return true;
+        }
+      }
+    }else run=0;
+  }
+  return false;
+}
 function isCloseOutPosition(position,player){
   if(barCount(position,-player)<=0)return false;
   for(let relative=1;relative<=6;relative++)if(!isMadeRelativePoint(position,player,relative))return false;
@@ -490,10 +506,10 @@ function detectAchievements({beforePosition,afterPosition,player,dice,segments,m
   const out=[];
   const push=id=>out.push(achievement(id));
 
-  const semiBefore=hasConsecutiveMadePoints(beforePosition,player,5);
-  const semiAfter=hasConsecutiveMadePoints(afterPosition,player,5);
-  const fullBefore=hasConsecutiveMadePoints(beforePosition,player,6);
-  const fullAfter=hasConsecutiveMadePoints(afterPosition,player,6);
+  const semiBefore=hasConsecutiveMadePoints(beforePosition,player,5) && hasTrappingPrime(beforePosition,player,5);
+  const semiAfter=hasConsecutiveMadePoints(afterPosition,player,5) && hasTrappingPrime(afterPosition,player,5);
+  const fullBefore=hasConsecutiveMadePoints(beforePosition,player,6) && hasTrappingPrime(beforePosition,player,6);
+  const fullAfter=hasConsecutiveMadePoints(afterPosition,player,6) && hasTrappingPrime(afterPosition,player,6);
   const closeOutBefore=isCloseOutPosition(beforePosition,player);
   const closeOutAfter=isCloseOutPosition(afterPosition,player);
   // プライム系は上位互換を1件だけ表示:
