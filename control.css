@@ -70,7 +70,7 @@ button.active{background:#b7924b;color:#fff}
 .mode-buttons button.active{background:#111;color:#fff}
 button:disabled{opacity:.35;cursor:not-allowed}
 
-.meta-card .match-file-row{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #ddd}
+.meta-card .match-file-row{margin-bottom:10px;padding-bottom:0;border-bottom:0}
 .meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px}
 .info-card p{margin:0 0 8px;font-size:13px;font-weight:900}
 .info-card p:not(:first-child){margin-top:10px}
