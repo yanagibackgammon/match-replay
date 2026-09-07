@@ -896,8 +896,8 @@ html,body{
 }
 
 #dice.is-muted{
-  opacity:.22;
-  filter:brightness(.22) saturate(.25);
+  opacity:.52;
+  filter:grayscale(.72) saturate(.38);
   animation:none!important;
 }
 /* Dance / Cannot Move: keep the dice inactive while allowing only the luck shadow to pulse. */
@@ -908,12 +908,12 @@ html,body{
   animation:boardMutedJokerShadowPurple 1.15s ease-in-out infinite!important;
 }
 @keyframes boardMutedJokerShadowGold{
-  0%,100%{filter:brightness(.22) saturate(.25) drop-shadow(0 0 3px rgba(213,166,46,.55)) drop-shadow(0 0 7px rgba(213,166,46,.35))}
-  50%{filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(213,166,46,1)) drop-shadow(0 0 28px rgba(213,166,46,.95))}
+  0%,100%{filter:grayscale(.72) saturate(.38) drop-shadow(0 0 3px rgba(213,166,46,.55)) drop-shadow(0 0 7px rgba(213,166,46,.35))}
+  50%{filter:grayscale(.72) saturate(.38) drop-shadow(0 0 14px rgba(213,166,46,1)) drop-shadow(0 0 28px rgba(213,166,46,.95))}
 }
 @keyframes boardMutedJokerShadowPurple{
-  0%,100%{filter:brightness(.22) saturate(.25) drop-shadow(0 0 3px rgba(181,108,255,.55)) drop-shadow(0 0 7px rgba(181,108,255,.35))}
-  50%{filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(181,108,255,1)) drop-shadow(0 0 28px rgba(181,108,255,.95))}
+  0%,100%{filter:grayscale(.72) saturate(.38) drop-shadow(0 0 3px rgba(181,108,255,.55)) drop-shadow(0 0 7px rgba(181,108,255,.35))}
+  50%{filter:grayscale(.72) saturate(.38) drop-shadow(0 0 14px rgba(181,108,255,1)) drop-shadow(0 0 28px rgba(181,108,255,.95))}
 }
 
 #dice.is-joker-glow,
@@ -938,8 +938,8 @@ html,body{
   .joker-glow.minus .die{animation:none;filter:drop-shadow(0 0 7px rgba(181,108,255,.75))}
   #dice.is-joker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(213,166,46,.75));opacity:1}
   #dice.is-antijoker-glow{animation:none;filter:drop-shadow(0 0 7px rgba(181,108,255,.75));opacity:1}
-  #dice.is-muted.is-joker-glow{animation:none!important;filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(213,166,46,.9));opacity:.22}
-  #dice.is-muted.is-antijoker-glow{animation:none!important;filter:brightness(.22) saturate(.25) drop-shadow(0 0 14px rgba(181,108,255,.9));opacity:.22}
+  #dice.is-muted.is-joker-glow{animation:none!important;filter:grayscale(.72) saturate(.38) drop-shadow(0 0 14px rgba(213,166,46,.9));opacity:.52}
+  #dice.is-muted.is-antijoker-glow{animation:none!important;filter:grayscale(.72) saturate(.38) drop-shadow(0 0 14px rgba(181,108,255,.9));opacity:.52}
   .big-comeback.is-active{animation:none!important;opacity:1;transform:translate(-50%,-50%)}
   .achievement-overlay.is-active .achievement-fly:not(.is-js-animated){animation:none!important;opacity:1;transform:translate(-50%,-50%)}
   .board-dim-overlay.is-active{animation:none;opacity:1}
