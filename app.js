@@ -954,9 +954,29 @@ function renderBoardDimOverlay(state){
   el.classList.add("is-active");
 }
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));}
+function achievementSourceForMoveState(state){
+  if(!state)return null;
+  // シチュエーションは「出目」ではなく、実際にその着手結果が盤面へ反映される瞬間に表示する。
+  // ノーコンタクト統合手番や Cannot Move / Dance は roll 状態そのものが手番確定タイミング。
+  if(state.phase==="roll" && (state.noContactCombined || state.forcedMove || state?.historyEvent?.move==="Cannot Move")){
+    return state;
+  }
+  const isMoveState=state.phase==="analysis" || (state.phase==="candidates" && state.forcedMove);
+  if(!isMoveState)return null;
+  const diceKey=Array.isArray(state.dice)?state.dice.join("-"):"";
+  for(let i=index-1;i>=Math.max(0,index-4);i--){
+    const prev=matchData.states[i];
+    if(prev?.gameNumber!==state.gameNumber)break;
+    if(prev?.phase!=="roll")continue;
+    const prevDiceKey=Array.isArray(prev.dice)?prev.dice.join("-"):"";
+    if(prev.activePlayer===state.activePlayer && prevDiceKey===diceKey)return prev;
+  }
+  return null;
+}
 function renderAchievements(state){
   const el=els.achievementOverlay;if(!el)return;
-  const raw=state?.phase==="roll" && Array.isArray(state?.achievements) ? state.achievements : [];
+  const source=achievementSourceForMoveState(state);
+  const raw=Array.isArray(source?.achievements) ? source.achievements : [];
   const items=raw.map(item=>{
     if(typeof item==="string")return {id:item,label:item};
     return {id:String(item?.id||item?.label||""),label:String(item?.label||item?.id||"")};
@@ -979,7 +999,7 @@ function renderAchievements(state){
   void el.offsetWidth;
   el.classList.add("is-active");
 
-  // CSS animationだけに依存せず、実際のロール到達時にJSから確実に発火させる。
+  // CSS animationだけに依存せず、実際のムーブ確定時にJSから確実に発火させる。
   // 右から出現 → 中央で静止 → 左へ抜けて消える。
   const duration=scaledSequenceDelay(5000);
   const stepDelay=scaledSequenceDelay(650);
