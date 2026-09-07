@@ -1141,16 +1141,18 @@ function buildTimeline(parsed, sourceFile){
           analysis:isOpeningMove?{type:'jokers',joker:[],antiJoker:[],openingRoll:true}:{type:'none'},historyEvent:null,
           bigComeback:isBigComeback,rollNotice
         });
-        const candidateEquities=candidates.map(c=>Number(c.equity)).filter(Number.isFinite);
-        const allCandidateEquitiesSame=candidates.length>1 && candidateEquities.length===candidates.length &&
-          (Math.max(...candidateEquities)-Math.min(...candidateEquities)<=1e-6);
-        const allCandidatesWithin001=candidates.length>1 && candidateEquities.length===candidates.length &&
-          (Math.max(...candidateEquities)-Math.min(...candidateEquities)<=0.0100001);
-        const sameEquityBearoff=allInHome(beforePosition,r.activePlayer) && allCandidateEquitiesSame;
-        const forcedMove = candidates.length <= 1 || diceMuted || sameEquityBearoff || allCandidatesWithin001;
+        // 候補表示シーケンスを省略する条件：
+        // 1) 候補が1手だけ
+        // 2) すべての候補に equity error <= -0.020（エラー／ブランダー）が存在しない
+        // ※ best は error=0。-0.020ちょうどは「エラーあり」扱いなので省略しない。
+        const allCandidatesHaveNoErrorOrBlunder = candidates.length > 1 && candidates.every(c => {
+          const error=Number(c.error);
+          return Number.isFinite(error) && error > -0.020;
+        });
+        const forcedMove = candidates.length <= 1 || allCandidatesHaveNoErrorOrBlunder;
         if(forcedMove){
-          // 全候補の評価値差が0.01以内などで候補表示シーケンスを省略する場合も、
-          // 着手シーケンス上では候補一覧を表示し、実際の選択手を選択済みで見せる。
+          // 候補表示を省略する場合も、着手シーケンス上では候補一覧を表示し、
+          // 実際の選択手を選択済みで見せる。
           addPrDecision(r.activePlayer,r.errMove,r.invalidM===0 && r.best.unused!==1);
           pushState({
             phase:'candidates',gameNumber,score:[...score],activePlayer:r.activePlayer,
@@ -1158,7 +1160,7 @@ function buildTimeline(parsed, sourceFile){
             analysis:{type:'moves',candidates,playedIndex:r.playedIndex},
             moveAnimation:{beforePosition,segments:r.appliedSegments||[]},
             historyEvent:{player:r.activePlayer===1?'black':'white',dice:r.dice,move:r.move,error:r.errMove,kind:'move'},
-            forcedMove:true,autoSelectedNearEqual:allCandidatesWithin001,rollNotice
+            forcedMove:true,autoSelectedNoErrorCandidate:allCandidatesHaveNoErrorOrBlunder,rollNotice
           });
         }else{
         pushState({
