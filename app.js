@@ -1017,16 +1017,17 @@ function renderAchievements(state){
   lastAchievementKey=key;
   el.getAnimations?.().forEach(a=>a.cancel());
   el.classList.remove("is-active");
-  el.innerHTML=items.map(item=>`<div class="achievement-fly">${escapeHtml(item.label)}</div>`).join("");
+  // 複数シチュエーションが同時成立した場合は、同じ演出ブロック内で2行以上に積んで同時表示する。
+  const lines=items.map(item=>`<span class="achievement-line">${escapeHtml(item.label)}</span>`).join("");
+  el.innerHTML=`<div class="achievement-fly${items.length>1?" is-multiline":""}">${lines}</div>`;
   void el.offsetWidth;
   el.classList.add("is-active");
 
   // CSS animationだけに依存せず、実際のムーブ確定時にJSから確実に発火させる。
-  // 右から出現 → 中央で静止 → 左へ抜けて消える。
+  // 右から出現 → 中央で静止 → 左へ抜けて消える。複数行も1ブロックとして同時に移動する。
   const duration=scaledSequenceDelay(6000);
-  const stepDelay=scaledSequenceDelay(650);
-  [...el.querySelectorAll(".achievement-fly")].forEach((node,i)=>{
-    const delay=i*stepDelay;
+  const node=el.querySelector(".achievement-fly");
+  if(node){
     if(typeof node.animate==="function"){
       node.classList.add("is-js-animated");
       node.animate([
@@ -1034,12 +1035,12 @@ function renderAchievements(state){
         {opacity:1,transform:"translate(-50%,-50%)",offset:.083333},
         {opacity:1,transform:"translate(-50%,-50%)",offset:.916667},
         {opacity:0,transform:"translate(calc(-50% - 760px),-50%)",offset:1}
-      ],{duration,delay,easing:"ease-in-out",fill:"both"});
+      ],{duration,easing:"ease-in-out",fill:"both"});
     }else{
       node.style.animationDuration=`${duration}ms`;
-      node.style.animationDelay=`${delay}ms`;
+      node.style.animationDelay="0ms";
     }
-  });
+  }
 }
 function renderBigComeback(state){
   const el=els.bigComebackText;if(!el)return;

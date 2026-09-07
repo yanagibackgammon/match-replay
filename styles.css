@@ -775,6 +775,9 @@ html,body{
     0 0 7px rgba(0,0,0,.82),
     0 4px 8px rgba(0,0,0,.72);
 }
+.achievement-line{display:block;white-space:nowrap}
+.achievement-fly.is-multiline{line-height:1.08}
+.achievement-fly.is-multiline .achievement-line + .achievement-line{margin-top:.08em}
 .achievement-overlay.is-active .achievement-fly:not(.is-js-animated){animation-name:achievementSlide;animation-timing-function:ease-out;animation-fill-mode:both;will-change:transform,opacity}
 .achievement-fly.is-js-animated{animation:none!important;will-change:transform,opacity}
 @keyframes achievementSlide{
