@@ -247,6 +247,32 @@ function syncDesignColorEditor(){
   }
   designColorEditor?.classList.remove("is-invalid");
 }
+function closeDesignColorEditor(){
+  designColorEditor?.classList.remove("is-open");
+}
+function positionDesignColorEditor(anchor){
+  if(!designColorEditor||!anchor) return;
+  designColorEditor.classList.add("is-open");
+  const rect=anchor.getBoundingClientRect();
+  const popupRect=designColorEditor.getBoundingClientRect();
+  const gap=5;
+  let left=rect.left + rect.width/2 - popupRect.width/2;
+  left=Math.max(6,Math.min(left,window.innerWidth-popupRect.width-6));
+  let top=rect.bottom+gap;
+  if(top+popupRect.height>window.innerHeight-6){
+    top=Math.max(6,rect.top-popupRect.height-gap);
+  }
+  designColorEditor.style.left=`${Math.round(left)}px`;
+  designColorEditor.style.top=`${Math.round(top)}px`;
+}
+function openDesignColorEditor(anchor){
+  syncDesignColorEditor();
+  positionDesignColorEditor(anchor);
+  requestAnimationFrame(()=>{
+    designColorInput?.focus();
+    designColorInput?.select();
+  });
+}
 function renderDesignPreview(){
   const preset=designPresets.find(p=>p.id===designPresetSelect.value)||designPresets[0];
   if(!preset){designPresetPreview.innerHTML="";return;}
@@ -707,6 +733,7 @@ timeline.addEventListener("input", () => sendCommand("seek", Number(timeline.val
 applyMetaBtn.addEventListener("click", applyMeta);
 refreshMatchesBtn.addEventListener("click", refreshMatches);
 designPresetSelect.addEventListener("change",()=>{
+  closeDesignColorEditor();
   designOverridesDraft={};
   dirtyMetaFields.add("designPreset");
   dirtyMetaFields.add("designOverrides");
@@ -717,8 +744,8 @@ designPresetPreview?.addEventListener("click",event=>{
   if(!chip) return;
   selectedDesignKey=chip.dataset.designKey||selectedDesignKey;
   renderDesignPreview();
-  designColorInput?.focus();
-  designColorInput?.select();
+  const currentChip=designPresetPreview.querySelector(`[data-design-key="${selectedDesignKey}"]`);
+  openDesignColorEditor(currentChip||chip);
 });
 designColorInput?.addEventListener("input",()=>{
   const raw=designColorInput.value.trim();
@@ -731,6 +758,17 @@ designColorInput?.addEventListener("change",()=>{
   setSelectedDesignColor(raw);
 });
 designColorNoneBtn?.addEventListener("click",()=>setSelectedDesignColor(null));
+document.addEventListener("pointerdown",event=>{
+  if(!designColorEditor?.classList.contains("is-open")) return;
+  if(designColorEditor.contains(event.target)) return;
+  if(event.target.closest?.("[data-design-key]")) return;
+  closeDesignColorEditor();
+});
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape") closeDesignColorEditor();
+});
+window.addEventListener("resize",closeDesignColorEditor);
+window.addEventListener("scroll",closeDesignColorEditor,true);
 themeColorInput.addEventListener("input", renderThemeColorPreview);
 themeColorPreview?.querySelectorAll(".theme-color-button").forEach(button=>{
   button.addEventListener("click",()=>{
