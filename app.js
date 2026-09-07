@@ -698,19 +698,22 @@ function renderMeta(state){
   const whiteGain=state?.scoreDelta?.winner==='white'?Number(state.scoreDelta.points)||0:0;
   function renderScoreValue(el,value,gain){
     if(!el)return;
+    const isTwoDigits=v=>Math.abs(Math.trunc(Number(v)||0))>=10;
     const gainNow=gain>0;
     if(gainNow){
       const oldScore=Number(value)||0;
       const newScore=oldScore+gain;
       const key=`${state?.gameNumber||0}-${index}-${oldScore}-${gain}-${newScore}`;
+      el.classList.remove('score-two-digit');
       if(el.dataset.scoreGainKey!==key){
         el.dataset.scoreGainKey=key;
         el.classList.add('is-score-transition');
-        el.innerHTML=`<span class="score-number score-number-old">${toFullWidthScore(oldScore)}</span><span class="score-number score-number-gain">＋${toFullWidthScore(gain)}</span><span class="score-number score-number-new">${toFullWidthScore(newScore)}</span>`;
+        el.innerHTML=`<span class="score-number score-number-old${isTwoDigits(oldScore)?' score-two-digit':''}">${toFullWidthScore(oldScore)}</span><span class="score-number score-number-gain">＋${toFullWidthScore(gain)}</span><span class="score-number score-number-new${isTwoDigits(newScore)?' score-two-digit':''}">${toFullWidthScore(newScore)}</span>`;
       }
     }else{
       el.dataset.scoreGainKey='';
       el.classList.remove('is-score-transition');
+      el.classList.toggle('score-two-digit',isTwoDigits(value));
       el.textContent=toFullWidthScore(value);
     }
   }

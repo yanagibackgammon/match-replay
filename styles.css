@@ -331,6 +331,10 @@ html,body{
   font-weight:900;
   line-height:1;
 }
+.score-value.score-two-digit,
+.score-number.score-two-digit{
+  letter-spacing:-.04em;
+}
 .score-number{
   position:absolute;
   left:0;
