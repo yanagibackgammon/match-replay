@@ -284,6 +284,15 @@ function allInHome(position,player){
   }
   return true;
 }
+function hasNoRollOpportunity(position,player){
+  // ロール前の盤面だけで、1〜6のどの目が出ても最初の1手を合法に動かせない場合は
+  // 「そもそもロール機会がない」状態として扱う。典型例はバー上の駒が
+  // 相手の6ポイントクローズアウトで完全に閉じ込められているケース。
+  // singleDieMoves はバー優先・ブロック・ベアオフ条件を含むため、
+  // クローズアウト以外でも全ての出目で合法手が0なら同じ判定になる。
+  return [1,2,3,4,5,6].every(die=>singleDieMoves(position,player,die).length===0);
+}
+
 function isNoContact(position){
   // Player 1 moves 24 -> 1, Player 2 moves 1 -> 24.
   // バー上に駒がなく、Player 1 の最後尾が Player 2 の最後尾を完全に通過したらノーコンタクト。
@@ -1048,6 +1057,23 @@ function buildTimeline(parsed, sourceFile){
         ? false
         : (r.move === 'Cannot Move' || r.move === 'Dance' || !(Array.isArray(r.appliedSegments) && r.appliedSegments.length));
       const noContact = isNoContact(beforePosition);
+      const noRollOpportunity = !r.isResignationRoll && hasNoRollOpportunity(beforePosition,r.activePlayer);
+
+      // 盤面だけで「どの出目でも合法手が0」と確定している場合は、ロール自体を行わない。
+      // ロール・候補手・着手の各シーケンスを生成せず、履歴へ Cannot Move だけを記録する。
+      if(noRollOpportunity){
+        pushState({
+          phase:'cannotMoveNoRoll',gameNumber,score:[...score],activePlayer:r.activePlayer,
+          position:beforePosition,dice:null,cube,
+          winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},backgammonRate:{...lastBackgammonRate},
+          luckKind:null,diceMuted:true,analysis:{type:'none'},
+          historyEvent:{player:r.activePlayer===1?'black':'white',dice:null,move:'Cannot Move',error:0,kind:'noRoll'},
+          noRollOpportunity:true
+        });
+        lastPosition=beforePosition;
+        lastCube=cube;
+        continue;
+      }
 
       // ロール前のチャンス／ピンチ予測は廃止。
       // 盤面上の光り方だけを、実際のXGエクイティ（errLuck）で判定する。
