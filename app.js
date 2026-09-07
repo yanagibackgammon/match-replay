@@ -46,6 +46,7 @@ let adFiles=[],adIndex=0,adTimer=null;
 let lastBigComebackKey="";
 let lastAchievementKey="";
 let lastBoardDimKey="";
+let lastComebackFxKey="";
 const SEQUENCE_SPEED=6000;
 const BIG_COMEBACK_SPEED=SEQUENCE_SPEED;
 const BIG_COMEBACK_DIM_SPEED=SEQUENCE_SPEED;
@@ -88,6 +89,10 @@ const els={
   bigComebackText:document.getElementById("bigComebackText"),
   achievementOverlay:document.getElementById("achievementOverlay"),
   boardDimOverlay:document.getElementById("boardDimOverlay"),
+  comebackFlashOverlay:document.getElementById("comebackFlashOverlay"),
+  comebackShockOverlay:document.getElementById("comebackShockOverlay"),
+  lightningOverlay:document.getElementById("lightningOverlay"),
+  winrateBar:document.querySelector(".winrate-bar"),
   historyList:document.getElementById("historyList"),
   blackHistoryList:document.getElementById("blackHistoryList"),whiteHistoryList:document.getElementById("whiteHistoryList"),
   analysisContent:document.getElementById("analysisContent"),
@@ -938,23 +943,37 @@ function renderAnalysis(a){
 }
 function currentState(){return matchData.states[Math.max(0,Math.min(index,matchData.states.length-1))]||emptyState;}
 function resetBoardDimOverlay(){
-  const el=els.boardDimOverlay;if(!el)return;
   lastBoardDimKey="";
-  el.classList.remove("is-active");
+  lastComebackFxKey="";
+  els.stage?.classList.remove("is-comeback-intro");
+  els.winrateBar?.classList.remove("is-comeback-impact");
+  [els.boardDimOverlay,els.comebackFlashOverlay,els.comebackShockOverlay,els.lightningOverlay].forEach(el=>{
+    if(!el)return;
+    el.classList.remove("is-active");
+    el.setAttribute("aria-hidden","true");
+  });
 }
 function renderBoardDimOverlay(state){
-  const el=els.boardDimOverlay;if(!el)return;
   const isIntro=state?.phase==="bigComebackIntro" && Boolean(state?.bigComeback);
   if(!isIntro){
     resetBoardDimOverlay();
     return;
   }
   const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}`;
-  if(key===lastBoardDimKey) return;
+  if(key===lastComebackFxKey) return;
   lastBoardDimKey=key;
-  el.classList.remove("is-active");
-  void el.offsetWidth;
-  el.classList.add("is-active");
+  lastComebackFxKey=key;
+  els.stage?.classList.remove("is-comeback-intro");
+  els.winrateBar?.classList.remove("is-comeback-impact");
+  [els.boardDimOverlay,els.comebackFlashOverlay,els.comebackShockOverlay,els.lightningOverlay].forEach(el=>el?.classList.remove("is-active"));
+  void (els.stage?.offsetWidth||0);
+  els.stage?.classList.add("is-comeback-intro");
+  els.winrateBar?.classList.add("is-comeback-impact");
+  [els.boardDimOverlay,els.comebackFlashOverlay,els.comebackShockOverlay,els.lightningOverlay].forEach(el=>{
+    if(!el)return;
+    el.setAttribute("aria-hidden","false");
+    el.classList.add("is-active");
+  });
 }
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));}
 function achievementSourceForMoveState(state){
@@ -1024,9 +1043,8 @@ function renderAchievements(state){
 }
 function renderBigComeback(state){
   const el=els.bigComebackText;if(!el)return;
-  // ロールで発生した演出は、その手番の候補表示・着手完了まで維持する。
-  // bigComebackIntro はロール前なので、文字は実際のロールから表示する。
-  const notice=state?.phase!=="bigComebackIntro" ? state?.rollNotice : null;
+  // ロール演出は手番終了まで維持しつつ、大逆転のみ intro から先行表示して特別感を出す。
+  const notice=state?.rollNotice || null;
   const isVisible=notice==="comeback" || notice==="nice" || notice==="bad";
   if(!isVisible){
     lastBigComebackKey="";
