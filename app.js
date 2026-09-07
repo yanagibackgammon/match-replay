@@ -1009,12 +1009,10 @@ function renderAchievements(state){
       node.classList.add("is-js-animated");
       node.animate([
         {opacity:0,transform:"translate(calc(-50% + 760px),-50%)",offset:0},
-        {opacity:1,transform:"translate(calc(-50% + 220px),-50%)",offset:.18},
-        {opacity:1,transform:"translate(-50%,-50%)",offset:.38},
-        {opacity:1,transform:"translate(-50%,-50%)",offset:.66},
-        {opacity:.95,transform:"translate(calc(-50% - 220px),-50%)",offset:.84},
+        {opacity:1,transform:"translate(-50%,-50%)",offset:.10},
+        {opacity:1,transform:"translate(-50%,-50%)",offset:.90},
         {opacity:0,transform:"translate(calc(-50% - 760px),-50%)",offset:1}
-      ],{duration,delay,easing:"ease-out",fill:"both"});
+      ],{duration,delay,easing:"ease-in-out",fill:"both"});
     }else{
       node.style.animationDuration=`${duration}ms`;
       node.style.animationDelay=`${delay}ms`;

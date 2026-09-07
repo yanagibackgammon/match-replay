@@ -596,24 +596,25 @@ html,body{
   opacity:0;
   color:#fff;
   font-family:"Noto Sans JP","Noto Sans CJK JP","Yu Gothic",Meiryo,sans-serif;
-  font-size:68px;
+  font-size:80px;
   font-weight:900;
   line-height:1.12;
   white-space:nowrap;
   text-align:center;
-  -webkit-text-stroke:1.5px rgba(0,0,0,.72);
+  -webkit-text-stroke:3px rgba(0,0,0,.92);
   paint-order:stroke fill;
-  text-shadow:0 3px 5px rgba(0,0,0,.45);
+  text-shadow:
+    0 0 3px rgba(0,0,0,.95),
+    0 0 7px rgba(0,0,0,.82),
+    0 4px 8px rgba(0,0,0,.72);
 }
 .achievement-overlay.is-active .achievement-fly:not(.is-js-animated){animation-name:achievementSlide;animation-timing-function:ease-out;animation-fill-mode:both;will-change:transform,opacity}
 .achievement-fly.is-js-animated{animation:none!important;will-change:transform,opacity}
 @keyframes achievementSlide{
-  0%{opacity:0;transform:translate(calc(-50% + 680px),-50%)}
-  18%{opacity:1;transform:translate(calc(-50% + 220px),-50%)}
-  45%{opacity:1;transform:translate(-50%,-50%)}
-  60%{opacity:1;transform:translate(-50%,-50%)}
-  82%{opacity:.95;transform:translate(calc(-50% - 220px),-50%)}
-  100%{opacity:0;transform:translate(calc(-50% - 680px),-50%)}
+  0%{opacity:0;transform:translate(calc(-50% + 760px),-50%)}
+  10%{opacity:1;transform:translate(-50%,-50%)}
+  90%{opacity:1;transform:translate(-50%,-50%)}
+  100%{opacity:0;transform:translate(calc(-50% - 760px),-50%)}
 }
 
 .info-area{
