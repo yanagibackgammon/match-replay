@@ -46,7 +46,8 @@ const defaultMeta = {
   whiteScore: 0,
   matchFile: "",
   themeColor: "#6B670D",
-  designPreset: "green"
+  designPreset: "green",
+  designOverrides: {}
 };
 
 function ensureDirs(){
@@ -257,6 +258,20 @@ function startTimer(){
 }
 function setIndex(v){state.index=Math.max(0,Math.min(Math.max(0,state.totalSteps-1),Number(v)||0));}
 
+const DESIGN_OVERRIDE_KEYS=new Set(["board.surface","board.frame","board.pointLight","board.pointDark","board.pointBorder","checkers.player1","checkers.player2","checkers.border"]);
+function sanitizeDesignOverrides(value){
+  if(!value||typeof value!=="object"||Array.isArray(value)) return {};
+  const out={};
+  for(const [key,raw] of Object.entries(value)){
+    if(!DESIGN_OVERRIDE_KEYS.has(key)) continue;
+    if(raw===null){out[key]=null;continue;}
+    const text=String(raw).trim();
+    if(!text||text.toLowerCase()==="none"||text.toLowerCase()==="transparent"){out[key]=null;continue;}
+    if(/^#[0-9a-fA-F]{6}$/.test(text)) out[key]=text.toUpperCase();
+  }
+  return out;
+}
+
 function applyMetaPatch(patch){
   const oldFile=state.meta.matchFile;
   state.meta={
@@ -265,6 +280,7 @@ function applyMetaPatch(patch){
     tournamentTitleLine2:String(patch.tournamentTitleLine2 ?? state.meta.tournamentTitleLine2 ?? "").trim(),
     themeColor:/^#[0-9a-fA-F]{6}$/.test(String(patch.themeColor ?? state.meta.themeColor ?? "")) ? String(patch.themeColor ?? state.meta.themeColor) : "#6B670D",
     designPreset:String(patch.designPreset ?? state.meta.designPreset ?? "green").trim() || "green",
+    designOverrides:Object.prototype.hasOwnProperty.call(patch,"designOverrides")?sanitizeDesignOverrides(patch.designOverrides):sanitizeDesignOverrides(state.meta.designOverrides),
     blackName:String(patch.blackName ?? state.meta.blackName ?? "").trim(),
     whiteName:String(patch.whiteName ?? state.meta.whiteName ?? "").trim(),
     blackScore:Number.isFinite(Number(patch.blackScore))?Number(patch.blackScore):state.meta.blackScore,

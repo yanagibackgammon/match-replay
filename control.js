@@ -18,6 +18,11 @@ const themeColorPreview = document.getElementById("themeColorPreview");
 const themeColorSwatch = document.getElementById("themeColorSwatch");
 const designPresetSelect = document.getElementById("designPresetSelect");
 const designPresetPreview = document.getElementById("designPresetPreview");
+const designColorEditor = document.getElementById("designColorEditor");
+const designColorLabel = document.getElementById("designColorLabel");
+const designColorInput = document.getElementById("designColorInput");
+const designColorSwatch = document.getElementById("designColorSwatch");
+const designColorNoneBtn = document.getElementById("designColorNoneBtn");
 const blackNameInput = document.getElementById("blackNameInput");
 const whiteNameInput = document.getElementById("whiteNameInput");
 const matchFileSelect = document.getElementById("matchFileSelect");
@@ -45,7 +50,8 @@ let lastState = {
     whiteScore:0,
     matchFile:"",
     themeColor:"#6B670D",
-    designPreset:"green"
+    designPreset:"green",
+    designOverrides:{}
   }
 };
 let selectedPlaybackButton="pause";
@@ -57,6 +63,8 @@ let remainingAnchorAt=performance.now();
 let remainingCounting=false;
 
 let designPresets=[];
+let designOverridesDraft={};
+let selectedDesignKey="board.surface";
 
 
 // 操作画面の入力中データを、再生状態の定期受信で上書きしない。
@@ -96,6 +104,9 @@ function syncMetaEditorsFromState(){
   renderThemeColorPreview();
   syncEditorValue(blackNameInput,"blackName",lastState.meta.blackName || "");
   syncEditorValue(whiteNameInput,"whiteName",lastState.meta.whiteName || "");
+  if(!dirtyMetaFields.has("designOverrides")){
+    designOverridesDraft=normalizeDesignOverridesObject(lastState.meta.designOverrides);
+  }
 
   if(designPresetSelect && !dirtyMetaFields.has("designPreset")){
     const presetId=lastState.meta.designPreset||"green";
@@ -173,36 +184,97 @@ function getPreviewTextColor(hex){
   return luminance > 0.68 ? "#111" : "#fff";
 }
 
+const DESIGN_ITEMS=[
+  {key:"board.surface",label:"盤面"},
+  {key:"board.frame",label:"盤枠"},
+  {key:"board.pointLight",label:"升１"},
+  {key:"board.pointDark",label:"升２"},
+  {key:"board.pointBorder",label:"升枠"},
+  {key:"checkers.player1",label:"駒１"},
+  {key:"checkers.player2",label:"駒２"},
+  {key:"checkers.border",label:"駒枠"}
+];
+function normalizeDesignOverridesObject(value){
+  if(!value||typeof value!=="object"||Array.isArray(value)) return {};
+  const out={};
+  for(const item of DESIGN_ITEMS){
+    if(!Object.prototype.hasOwnProperty.call(value,item.key)) continue;
+    const raw=value[item.key];
+    if(raw===null||String(raw).trim().toLowerCase()==="none"||String(raw).trim().toLowerCase()==="transparent"||String(raw).trim()==="") out[item.key]=null;
+    else if(/^#[0-9a-fA-F]{6}$/.test(String(raw).trim())) out[item.key]=String(raw).trim().toUpperCase();
+  }
+  return out;
+}
+function getNestedDesignValue(preset,key){
+  return key.split(".").reduce((obj,part)=>obj?.[part],preset);
+}
+function normalizePreviewColor(value,fallback){
+  if(value===undefined) value=fallback;
+  if(value===null) return "";
+  const raw=String(value??"").trim();
+  if(!raw) return "";
+  const lower=raw.toLowerCase();
+  if(lower==="none"||lower==="transparent") return "";
+  return raw;
+}
+function effectiveDesignValue(preset,key){
+  if(Object.prototype.hasOwnProperty.call(designOverridesDraft,key)) return designOverridesDraft[key];
+  const boardFrame=preset?.board?.frame;
+  const fallback={
+    "board.surface":boardFrame,
+    "board.frame":"#111111",
+    "board.pointLight":boardFrame,
+    "board.pointDark":boardFrame,
+    "board.pointBorder":boardFrame,
+    "checkers.player1":boardFrame,
+    "checkers.player2":boardFrame,
+    "checkers.border":boardFrame
+  }[key];
+  const base=getNestedDesignValue(preset,key);
+  const normalized=normalizePreviewColor(base,fallback);
+  return normalized||null;
+}
+function syncDesignColorEditor(){
+  const preset=designPresets.find(p=>p.id===designPresetSelect.value)||designPresets[0];
+  const item=DESIGN_ITEMS.find(x=>x.key===selectedDesignKey)||DESIGN_ITEMS[0];
+  if(!preset||!item) return;
+  const value=effectiveDesignValue(preset,item.key);
+  if(designColorLabel) designColorLabel.textContent=item.label;
+  if(designColorInput) designColorInput.value=value||"";
+  if(designColorSwatch){
+    designColorSwatch.classList.toggle("is-none",!value);
+    designColorSwatch.style.background=value||"";
+  }
+  designColorEditor?.classList.remove("is-invalid");
+}
 function renderDesignPreview(){
   const preset=designPresets.find(p=>p.id===designPresetSelect.value)||designPresets[0];
   if(!preset){designPresetPreview.innerHTML="";return;}
-  const boardFrame=preset.board?.frame;
-  const normalizePreviewColor=(value,fallback)=>{
-    if(value===undefined) return fallback;
-    if(value===null) return "";
-    const raw=String(value).trim();
-    if(!raw) return "";
-    const lower=raw.toLowerCase();
-    if(lower==="none"||lower==="transparent") return "";
-    return raw;
-  };
-  const items=[
-    {label:"盤面", color:normalizePreviewColor(preset.board?.surface,boardFrame)},
-    {label:"盤枠", color:normalizePreviewColor(boardFrame,"#111111")},
-    {label:"升１", color:normalizePreviewColor(preset.board?.pointLight,boardFrame)},
-    {label:"升２", color:normalizePreviewColor(preset.board?.pointDark,boardFrame)},
-    {label:"升枠", color:normalizePreviewColor(preset.board?.pointBorder,boardFrame)},
-    {label:"駒１", color:normalizePreviewColor(preset.checkers?.player1,boardFrame)},
-    {label:"駒２", color:normalizePreviewColor(preset.checkers?.player2,boardFrame)},
-    {label:"駒枠", color:normalizePreviewColor(preset.checkers?.border,boardFrame)}
-  ];
-  designPresetPreview.innerHTML=items.map(item=>{
-    const hasColor=Boolean(item.color);
-    const textColor=hasColor?getPreviewTextColor(item.color):"#111";
-    const cls=`design-preview-chip${hasColor?"":" is-none"}`;
-    const style=hasColor?`background:${item.color};color:${textColor}`:`color:${textColor}`;
-    return `<span class="${cls}" style="${style}">${item.label}</span>`;
+  designPresetPreview.innerHTML=DESIGN_ITEMS.map(item=>{
+    const color=effectiveDesignValue(preset,item.key);
+    const hasColor=Boolean(color);
+    const textColor=hasColor?getPreviewTextColor(color):"#111";
+    const cls=`design-preview-chip${hasColor?"":" is-none"}${item.key===selectedDesignKey?" is-editing":""}`;
+    const style=hasColor?`background:${color};color:${textColor}`:`color:${textColor}`;
+    return `<button type="button" class="${cls}" data-design-key="${item.key}" style="${style}" aria-pressed="${item.key===selectedDesignKey?"true":"false"}">${item.label}</button>`;
   }).join("");
+  syncDesignColorEditor();
+}
+function setSelectedDesignColor(value){
+  if(!selectedDesignKey) return;
+  if(value===null){
+    designOverridesDraft[selectedDesignKey]=null;
+  }else{
+    const raw=String(value||"").trim();
+    if(!/^#[0-9a-fA-F]{6}$/.test(raw)){
+      designColorEditor?.classList.add("is-invalid");
+      return;
+    }
+    designOverridesDraft[selectedDesignKey]=raw.toUpperCase();
+  }
+  dirtyMetaFields.add("designOverrides");
+  designColorEditor?.classList.remove("is-invalid");
+  renderDesignPreview();
 }
 function renderDesignOptions(){
   const current=lastState.meta.designPreset||designPresetSelect.value||"green";
@@ -480,6 +552,7 @@ async function applyMeta(){
     tournamentTitleLine2: tournamentLine2Input.value.trim(),
     themeColor: themeColorInput.value.trim() || "#6B670D",
     designPreset: designPresetSelect.value || "green",
+    designOverrides: normalizeDesignOverridesObject(designOverridesDraft),
     blackName: blackNameInput.value.trim(),
     whiteName: whiteNameInput.value.trim(),
     matchFile: matchFileSelect.value
@@ -633,7 +706,31 @@ gameMarkers.addEventListener("keydown",event=>{
 timeline.addEventListener("input", () => sendCommand("seek", Number(timeline.value)));
 applyMetaBtn.addEventListener("click", applyMeta);
 refreshMatchesBtn.addEventListener("click", refreshMatches);
-designPresetSelect.addEventListener("change", renderDesignPreview);
+designPresetSelect.addEventListener("change",()=>{
+  designOverridesDraft={};
+  dirtyMetaFields.add("designPreset");
+  dirtyMetaFields.add("designOverrides");
+  renderDesignPreview();
+});
+designPresetPreview?.addEventListener("click",event=>{
+  const chip=event.target.closest("[data-design-key]");
+  if(!chip) return;
+  selectedDesignKey=chip.dataset.designKey||selectedDesignKey;
+  renderDesignPreview();
+  designColorInput?.focus();
+  designColorInput?.select();
+});
+designColorInput?.addEventListener("input",()=>{
+  const raw=designColorInput.value.trim();
+  if(/^#[0-9a-fA-F]{6}$/.test(raw)) setSelectedDesignColor(raw);
+  else designColorEditor?.classList.toggle("is-invalid",raw.length>=7);
+});
+designColorInput?.addEventListener("change",()=>{
+  const raw=designColorInput.value.trim();
+  if(!raw) return;
+  setSelectedDesignColor(raw);
+});
+designColorNoneBtn?.addEventListener("click",()=>setSelectedDesignColor(null));
 themeColorInput.addEventListener("input", renderThemeColorPreview);
 themeColorPreview?.querySelectorAll(".theme-color-button").forEach(button=>{
   button.addEventListener("click",()=>{

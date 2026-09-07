@@ -22,7 +22,7 @@ let lastCubeVisualTarget=null;
 const defaultMeta={
   tournamentTitleLine1:"",
   tournamentTitleLine2:"",
-  blackName:"",whiteName:"",blackScore:0,whiteScore:0,matchFile:"",themeColor:"#6B670D",designPreset:"green"
+  blackName:"",whiteName:"",blackScore:0,whiteScore:0,matchFile:"",themeColor:"#6B670D",designPreset:"green",designOverrides:{}
 };
 const standardPoints=[0,-2,0,0,0,0,5,0,3,0,0,0,-5,5,0,0,0,-3,0,-5,0,0,0,0,2];
 const emptyState={
@@ -39,6 +39,7 @@ const FALLBACK_DESIGN={
 let designPresets=[FALLBACK_DESIGN];
 let currentDesign=FALLBACK_DESIGN;
 let appliedDesignPresetId="";
+let appliedDesignOverridesKey="";
 
 let index=0,meta={...defaultMeta},matchData={states:[emptyState]},loadedMatchFile="",socket=null;
 let adFiles=[],adIndex=0,adTimer=null;
@@ -573,14 +574,45 @@ function gammonTone(hex){
 function findDesignPreset(id){
   return designPresets.find(p=>p&&p.id===id)||designPresets[0]||FALLBACK_DESIGN;
 }
-function applyDesignPreset(id){
-  const next=findDesignPreset(id||"green");
+const DESIGN_OVERRIDE_KEYS=new Set(["board.surface","board.frame","board.pointLight","board.pointDark","board.pointBorder","checkers.player1","checkers.player2","checkers.border"]);
+function normalizeDesignOverrides(value){
+  if(!value||typeof value!=="object"||Array.isArray(value)) return {};
+  const out={};
+  for(const [key,raw] of Object.entries(value)){
+    if(!DESIGN_OVERRIDE_KEYS.has(key)) continue;
+    if(raw===null){out[key]=null;continue;}
+    const text=String(raw).trim();
+    if(!text||text.toLowerCase()==="none"||text.toLowerCase()==="transparent"){out[key]=null;continue;}
+    if(/^#[0-9a-fA-F]{6}$/.test(text)) out[key]=text;
+  }
+  return out;
+}
+function mergeDesignOverrides(base,overrides){
+  const next={
+    ...base,
+    board:{...(base?.board||{})},
+    checkers:{...(base?.checkers||{})},
+    winRate:{...(base?.winRate||{})}
+  };
+  for(const [key,value] of Object.entries(normalizeDesignOverrides(overrides))){
+    const [group,field]=key.split(".");
+    if(group==="board") next.board[field]=value;
+    else if(group==="checkers") next.checkers[field]=value;
+  }
+  return next;
+}
+function applyDesignPreset(id,overrides=meta.designOverrides){
+  const base=findDesignPreset(id||"green");
+  const normalizedOverrides=normalizeDesignOverrides(overrides);
+  const overrideKey=JSON.stringify(normalizedOverrides);
+  const next=mergeDesignOverrides(base,normalizedOverrides);
   currentDesign=next;
-  if(appliedDesignPresetId===next.id) return;
-  appliedDesignPresetId=next.id;
+  if(appliedDesignPresetId===base.id && appliedDesignOverridesKey===overrideKey) return;
+  appliedDesignPresetId=base.id;
+  appliedDesignOverridesKey=overrideKey;
   const root=document.documentElement;
-  const checkerPlayer1=normalizeHex(next.checkers?.player1,"#111111");
-  const checkerPlayer2=normalizeHex(next.checkers?.player2,"#FFFFFF");
+  const checkerPlayer1=normalizeOptionalDesignColor(next.checkers?.player1,"#111111");
+  const checkerPlayer2=normalizeOptionalDesignColor(next.checkers?.player2,"#FFFFFF");
   root.style.setProperty("--checker-player1",checkerPlayer1);
   root.style.setProperty("--checker-player2",checkerPlayer2);
   root.style.setProperty("--die-player1",checkerPlayer1);
@@ -593,13 +625,13 @@ function applyDesignPreset(id){
   root.style.setProperty("--win-player2",winPlayer2);
   root.style.setProperty("--gammon-player1",gammonTone(winPlayer1));
   root.style.setProperty("--gammon-player2",gammonTone(winPlayer2));
-  const boardSurface=normalizeHex(next.board?.surface,"#FFFFFF");
+  const boardSurface=normalizeOptionalDesignColor(next.board?.surface,"#FFFFFF");
   root.style.setProperty("--board-surface",boardSurface);
   root.style.setProperty("--board-info-text",contrastText(boardSurface));
-  root.style.setProperty("--point-light",normalizeHex(next.board?.pointLight,"#FFFFFF"));
-  root.style.setProperty("--point-dark",normalizeHex(next.board?.pointDark,"#CFCFCF"));
-  root.style.setProperty("--board-bar",normalizeHex(next.board?.bar,"#111111"));
-  const boardFrame=normalizeHex(next.board?.frame,"#000000");
+  root.style.setProperty("--point-light",normalizeOptionalDesignColor(next.board?.pointLight,"#FFFFFF"));
+  root.style.setProperty("--point-dark",normalizeOptionalDesignColor(next.board?.pointDark,"#CFCFCF"));
+  root.style.setProperty("--board-bar",normalizeOptionalDesignColor(next.board?.bar,"#111111"));
+  const boardFrame=normalizeOptionalDesignColor(next.board?.frame,"#000000");
   const pointBorder=normalizeOptionalDesignColor(next.board?.pointBorder,next.board?.frame||"#000000");
   const hasCheckerBorder=checkerBorderEnabled(next);
   const checkerBorder=normalizeOptionalDesignColor(next.checkers?.border,next.board?.frame||"#000000");
@@ -614,7 +646,6 @@ function applyDesignPreset(id){
   if(baseRects[0]) baseRects[0].setAttribute("fill",boardSurface);
   if(baseRects[1]) baseRects[1].setAttribute("fill",boardFrame);
   if(baseRects[2]) baseRects[2].setAttribute("fill",boardFrame);
-  // 外周・中央バー周り・左右端など、盤面の区切り線はすべて frame で統一する。
   document.querySelectorAll("#boardBase rect, #boardBase line").forEach(el=>el.setAttribute("stroke",boardFrame));
   trianglePoints();
 }
@@ -630,7 +661,8 @@ async function loadDesignPresets(){
     designPresets=[FALLBACK_DESIGN];
   }
   appliedDesignPresetId="";
-  applyDesignPreset(meta.designPreset||"green");
+  appliedDesignOverridesKey="";
+  applyDesignPreset(meta.designPreset||"green",meta.designOverrides);
   render();
 }
 
@@ -653,7 +685,7 @@ function renderHistoryHeader(el,prValue,nameText){
 }
 function renderMeta(state){
   document.documentElement.style.setProperty("--theme-color",normalizeThemeColor(meta.themeColor));
-  applyDesignPreset(meta.designPreset||"green");
+  applyDesignPreset(meta.designPreset||"green",meta.designOverrides);
   els.tournamentTitleLine1.textContent=meta.tournamentTitleLine1;
   els.tournamentTitleLine2.textContent=meta.tournamentTitleLine2||"";
   els.blackName.textContent=meta.blackName;els.whiteName.textContent=meta.whiteName;
