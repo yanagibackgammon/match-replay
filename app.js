@@ -829,7 +829,7 @@ function collectHistoryRows(){
       const turnPlayer=state.activePlayer===1?"black":(state.activePlayer===-1?"white":null);
       if(turnPlayer){
         if(!leadPlayer)leadPlayer=turnPlayer;
-        const canReuseCubeRow=lastCubeActionRow&&!rowHasCheckerEvent(lastCubeActionRow,turnPlayer);
+        const canReuseCubeRow=lastCubeActionRow&&!rowEvents(lastCubeActionRow,turnPlayer).some(Boolean);
         if(canReuseCubeRow){
           openMoveRow=lastCubeActionRow;
         }else if(turnPlayer===leadPlayer){
@@ -860,7 +860,8 @@ function collectHistoryRows(){
       }
       if(event.kind==="cubeResponse"){
         // テイク／パスは候補選択が確定した時点で必ず改行して新しい行へ表示する。
-        // テイク後は、その同じ行のダブルした側の空きセルへ次のロール／着手を詰める。
+        // テイク後は、その行の反対側セルが空いていればダブルした側の次ロールを置ける。
+        // ただしテイクした側の次ロールは、テイクと同じセルへ併記せず必ず次行に送る。
         const pairedRow=event.pairId?cubeRows.get(event.pairId):null;
         const pairedOffer=pairedRow
           ? [...rowEvents(pairedRow,"black"),...rowEvents(pairedRow,"white")].find(item=>item?.kind==="cube")
@@ -877,12 +878,17 @@ function collectHistoryRows(){
         continue;
       }
       if(!leadPlayer)leadPlayer=event.player;
-      // 直前のキューブ行やロール行に詰められる場合は同じ行を維持。
+      // 1選手・1行につき1アクションだけ表示する。
+      // 既にロールがある場合のみ、その同じ場所を着手結果で上書きする。
       if(!openMoveRow){openMoveRow=newHistoryActionRow(rows);}
-      const events=rowEvents(openMoveRow,event.player);
-      const hasRoll=events.some(item=>item?.kind==="roll");
-      const hasMove=events.some(item=>item&&!["cube","cubeResponse","roll"].includes(item.kind));
-      if(hasMove){openMoveRow=newHistoryActionRow(rows);}
+      let events=rowEvents(openMoveRow,event.player);
+      let hasRoll=events.some(item=>item?.kind==="roll");
+      const hasOtherAction=events.some(item=>item?.kind!=="roll");
+      if(hasOtherAction){
+        openMoveRow=newHistoryActionRow(rows);
+        events=rowEvents(openMoveRow,event.player);
+        hasRoll=false;
+      }
       appendHistoryEvent(openMoveRow,event.player,event,{replaceRoll:hasRoll});
       lastCubeActionRow=null;
       continue;
@@ -895,15 +901,19 @@ function collectHistoryRows(){
       if(turnPlayer){
         if(!leadPlayer)leadPlayer=turnPlayer;
         let row=openMoveRow;
-        const canReuseCubeRow=lastCubeActionRow&&!rowHasCheckerEvent(lastCubeActionRow,turnPlayer);
+        const canReuseCubeRow=lastCubeActionRow&&!rowEvents(lastCubeActionRow,turnPlayer).some(Boolean);
         if(canReuseCubeRow)row=lastCubeActionRow;
         let events=row?rowEvents(row,turnPlayer):[];
-        const hasRollOrMove=events.some(item=>item&&!["cube","cubeResponse"].includes(item.kind));
-        if(!row||hasRollOrMove){row=newHistoryActionRow(rows);events=rowEvents(row,turnPlayer);}
-        const rollEvent={player:turnPlayer,dice:state.dice,move:"",error:0,kind:"roll"};
-        // ノーダブルは選択中だけ履歴に表示し、実際のロールが出た瞬間に同じ場所へ上書きする。
         const noDoubleIndex=events.findIndex(item=>item?.kind==="cube"&&(item?.move==="No Double"||item?.move==="No Doubke"));
-        if(noDoubleIndex>=0)events[noDoubleIndex]=rollEvent;
+        // ノーダブルだけは、実際のロールが出た瞬間に同じ場所へ上書きする。
+        // それ以外に既存アクションがあるセルへは追記せず、新しい行へ送る。
+        if(!row||(events.length>0&&noDoubleIndex<0)){
+          row=newHistoryActionRow(rows);
+          events=rowEvents(row,turnPlayer);
+        }
+        const rollEvent={player:turnPlayer,dice:state.dice,move:"",error:0,kind:"roll"};
+        const replaceNoDoubleIndex=events.findIndex(item=>item?.kind==="cube"&&(item?.move==="No Double"||item?.move==="No Doubke"));
+        if(replaceNoDoubleIndex>=0)events[replaceNoDoubleIndex]=rollEvent;
         else appendHistoryEvent(row,turnPlayer,rollEvent);
         openMoveRow=row;
       }
