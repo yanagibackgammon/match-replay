@@ -45,7 +45,7 @@ const defaultMeta = {
   blackScore: 0,
   whiteScore: 0,
   matchFile: "",
-  themeColor: "#6B670D",
+  themeColor: "#000000",
   designPreset: "green",
   designOverrides: {}
 };
@@ -278,7 +278,7 @@ function applyMetaPatch(patch){
     ...state.meta,
     tournamentTitleLine1:String(patch.tournamentTitleLine1 ?? state.meta.tournamentTitleLine1 ?? "").trim(),
     tournamentTitleLine2:String(patch.tournamentTitleLine2 ?? state.meta.tournamentTitleLine2 ?? "").trim(),
-    themeColor:/^#[0-9a-fA-F]{6}$/.test(String(patch.themeColor ?? state.meta.themeColor ?? "")) ? String(patch.themeColor ?? state.meta.themeColor) : "#6B670D",
+    themeColor:/^#[0-9a-fA-F]{6}$/.test(String(patch.themeColor ?? state.meta.themeColor ?? "")) ? String(patch.themeColor ?? state.meta.themeColor) : "#000000",
     designPreset:String(patch.designPreset ?? state.meta.designPreset ?? "green").trim() || "green",
     designOverrides:Object.prototype.hasOwnProperty.call(patch,"designOverrides")?sanitizeDesignOverrides(patch.designOverrides):sanitizeDesignOverrides(state.meta.designOverrides),
     blackName:String(patch.blackName ?? state.meta.blackName ?? "").trim(),

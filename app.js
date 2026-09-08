@@ -22,7 +22,7 @@ let lastCubeVisualTarget=null;
 const defaultMeta={
   tournamentTitleLine1:"",
   tournamentTitleLine2:"",
-  blackName:"",whiteName:"",blackScore:0,whiteScore:0,matchFile:"",themeColor:"#6B670D",designPreset:"green",designOverrides:{}
+  blackName:"",whiteName:"",blackScore:0,whiteScore:0,matchFile:"",themeColor:"#000000",designPreset:"green",designOverrides:{}
 };
 const standardPoints=[0,-2,0,0,0,0,5,0,3,0,0,0,-5,5,0,0,0,-3,0,-5,0,0,0,0,2];
 const emptyState={
@@ -557,7 +557,7 @@ trianglePoints();
 
 function normalizeThemeColor(value){
   const text=String(value||"").trim();
-  return /^#[0-9a-fA-F]{6}$/.test(text)?text:"#6B670D";
+  return /^#[0-9a-fA-F]{6}$/.test(text)?text:"#000000";
 }
 
 function normalizeHex(value,fallback){

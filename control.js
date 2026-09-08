@@ -49,7 +49,7 @@ let lastState = {
     blackScore:0,
     whiteScore:0,
     matchFile:"",
-    themeColor:"#6B670D",
+    themeColor:"#000000",
     designPreset:"green",
     designOverrides:{}
   }
@@ -100,7 +100,7 @@ function acceptAppliedMeta(){
 function syncMetaEditorsFromState(){
   syncEditorValue(tournamentLine1Input,"tournamentTitleLine1",lastState.meta.tournamentTitleLine1 || lastState.meta.tournamentTitle || "");
   syncEditorValue(tournamentLine2Input,"tournamentTitleLine2",lastState.meta.tournamentTitleLine2 || "");
-  syncEditorValue(themeColorInput,"themeColor",lastState.meta.themeColor || "#6B670D");
+  syncEditorValue(themeColorInput,"themeColor",lastState.meta.themeColor || "#000000");
   renderThemeColorPreview();
   syncEditorValue(blackNameInput,"blackName",lastState.meta.blackName || "");
   syncEditorValue(whiteNameInput,"whiteName",lastState.meta.whiteName || "");
@@ -604,7 +604,7 @@ async function applyMeta(){
   const nextMeta = {
     tournamentTitleLine1: tournamentLine1Input.value.trim(),
     tournamentTitleLine2: tournamentLine2Input.value.trim(),
-    themeColor: themeColorInput.value.trim() || "#6B670D",
+    themeColor: themeColorInput.value.trim() || "#000000",
     designPreset: designPresetSelect.value || "green",
     designOverrides: normalizeDesignOverridesObject(designOverridesDraft),
     blackName: blackNameInput.value.trim(),
