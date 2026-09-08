@@ -546,7 +546,7 @@ function drawGameOverlay(state){
   const winMultiplier=Math.max(1,Math.min(3,Math.round(points/cubeValue)||1));
   const winnerName=winner==="black"?meta.blackName:meta.whiteName;
   const winLabel=winMultiplier>=3?"バックギャモン勝ち":winMultiplier===2?"ギャモン勝ち":"シングル勝ち";
-  const resultLabel=`${winLabel}・キューブ${cubeValue}倍`;
+  const resultLabel=state.matchResignation?"マッチリザイン":`${winLabel}・キューブ${cubeValue}倍`;
 
   addPanel(116,165,470,216,18);
   addText(220,winnerName,32,"#fff",800);
@@ -824,7 +824,7 @@ function collectHistoryRows(){
     }
 
     // 各ゲームで最初に手番を迎えた側を先行とする。
-    // ただしキューブ判断直後は、次のロールをキューブ行の空きへ詰めるため新規行を先に作らない。
+    // Double直後は空きへ詰められる場合があるが、Take/Pass確定後は openMoveRow を閉じて次行から始める。
     if(state.phase==="preRoll"){
       const turnPlayer=state.activePlayer===1?"black":(state.activePlayer===-1?"white":null);
       if(turnPlayer){
@@ -859,16 +859,16 @@ function collectHistoryRows(){
         continue;
       }
       if(event.kind==="cubeResponse"){
-        let row=event.pairId?cubeRows.get(event.pairId):null;
-        // Double と Take/Pass は同じ行に入るとは限らない。相手側セルが既に埋まっていれば次行へ送る。
-        if(!row||rowEvents(row,event.player).some(Boolean))row=newHistoryActionRow(rows);
+        // テイク／パスは候補選択が確定した時点で必ず改行して単独の新しい行へ表示する。
+        // その次のロールも同じ行へ詰めず、さらに次の行から開始する。
         const pairedRow=event.pairId?cubeRows.get(event.pairId):null;
         const pairedOffer=pairedRow
           ? [...rowEvents(pairedRow,"black"),...rowEvents(pairedRow,"white")].find(item=>item?.kind==="cube")
           : null;
+        const row=newHistoryActionRow(rows);
         appendHistoryEvent(row,event.player,event.cubeValue?event:{...event,cubeValue:pairedOffer?.cubeValue});
-        openMoveRow=row;
-        lastCubeActionRow=row;
+        openMoveRow=null;
+        lastCubeActionRow=null;
         continue;
       }
       if(!leadPlayer)leadPlayer=event.player;
@@ -883,7 +883,7 @@ function collectHistoryRows(){
       continue;
     }
 
-    // ロールした瞬間は、キューブアクション直後の行に空きがあれば改行せず同じ行へ詰める。
+    // ロールした瞬間は、通常の空き行には詰める。Take/Pass直後は必ず新しい行から始める。
     // 着手確定時にはこの roll セグメントを同じ場所でムーブ表示へ置き換える。
     if(state.phase==="roll"&&Array.isArray(state.dice)){
       const turnPlayer=state.activePlayer===1?"black":(state.activePlayer===-1?"white":null);

@@ -1428,26 +1428,37 @@ function buildTimeline(parsed, sourceFile){
 
     if(r.type === 'gameFooter'){
       const beforeScore=[...score];
-      const afterScore=[r.score1,r.score2];
+      const rawAfterScore=[r.score1,r.score2];
       const winner=r.winner===1?'black':(r.winner===-1?'white':null);
-      const points=Math.max(0,Number(r.pointsWon)||0);
+      const rawPoints=Math.max(0,Number(r.pointsWon)||0);
       const resignation=pendingResignation;
+      const matchLength=Math.max(0,Number(parsed.match?.matchLength)||0);
+      const winnerIndex=winner==='black'?0:(winner==='white'?1:-1);
+      const rawMatchFinished=matchLength>0 && (rawAfterScore[0]>=matchLength || rawAfterScore[1]>=matchLength);
+      // 最終ゲームのリザインでそのままマッチが終了した場合は「マッチリザイン」として扱う。
+      // 表示上の加点は通常のゲーム得点ではなく、ゴールまでの残り点数にする。
+      const isMatchResignation=Boolean(resignation&&winner&&rawMatchFinished&&winnerIndex>=0);
+      const remainingToGoal=isMatchResignation?Math.max(0,matchLength-Number(beforeScore[winnerIndex]||0)):0;
+      const points=isMatchResignation?remainingToGoal:rawPoints;
+      const afterScore=[...rawAfterScore];
+      if(isMatchResignation&&winnerIndex>=0)afterScore[winnerIndex]=matchLength;
       pushState({
         phase:'gameEnd',gameNumber,score:[...beforeScore],activePlayer:0,
         position:lastPosition,dice:null,cube:lastCube,
         winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},analysis:{type:'none'},
         historyEvent:resignation?{player:resignation.player,dice:resignation.dice,move:'Resign',error:0,kind:'resign'}:null,
         scoreDelta:winner&&points?{winner,points}:null,
-        resignation:resignation?{player:resignation.player}:null
+        resignation:resignation?{player:resignation.player}:null,
+        matchResignation:isMatchResignation
       });
       pendingResignation=null;
       score=afterScore;
       pushState({
         phase:'scoreUpdate',gameNumber,score:[...score],activePlayer:0,
         position:lastPosition,dice:null,cube:lastCube,
-        winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},analysis:{type:'none'},historyEvent:null
+        winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},analysis:{type:'none'},historyEvent:null,
+        matchResignation:isMatchResignation
       });
-      const matchLength=Math.max(0,Number(parsed.match?.matchLength)||0);
       const matchFinished=matchLength>0 && (afterScore[0]>=matchLength || afterScore[1]>=matchLength);
       if(matchFinished){
         const matchWinner=afterScore[0]>=matchLength?'black':'white';
@@ -1455,7 +1466,7 @@ function buildTimeline(parsed, sourceFile){
           phase:'matchEnd',gameNumber,score:[...score],activePlayer:0,
           position:lastPosition,dice:null,cube:lastCube,
           winRate:{black:lastBlackRate,white:100-lastBlackRate},gammonRate:{...lastGammonRate},analysis:{type:'none'},historyEvent:null,
-          matchWinner
+          matchWinner,matchResignation:isMatchResignation
         });
       }
     }
