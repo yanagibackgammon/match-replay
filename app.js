@@ -846,6 +846,15 @@ function collectHistoryRows(){
       }
     }
 
+    // ダブル候補を表示した時点で履歴を改行する。
+    // 直前の行がすでに空ならその行を使い、相手側の着手などが入っている場合だけ新しい行を作る。
+    if(state.phase==="cubeOffer"){
+      const row=openMoveRow;
+      const hasAnyAction=row&&([...rowEvents(row,"black"),...rowEvents(row,"white")].some(Boolean));
+      if(!row||hasAnyAction)openMoveRow=newHistoryActionRow(rows);
+      lastCubeActionRow=null;
+    }
+
     // Legacy generated JSON compatibility.
     const grouped=Array.isArray(state.historyEvents)?state.historyEvents.filter(Boolean):[];
     if(grouped.length){
@@ -1052,6 +1061,8 @@ function renderAnalysis(a){
       return errorDiff || left.index-right.index;
     });
   }
+  const bestIndex=candidateEntries[0]?.index??-1;
+  const showBestMarker=all.length>1;
   let visible=candidateEntries.slice(0,5);
   // 実際の選択手がエクイティ6位以下なら、選択時だけ5行目をその手に置き換える。
   if(selectedIndex>=0 && all[selectedIndex] && !visible.some(entry=>entry.index===selectedIndex)){
@@ -1062,7 +1073,10 @@ function renderAnalysis(a){
     const errorClass=candidateErrorClass(c.error);
     const selected=i===selectedIndex;
     const selectedClass=selected?(errorClass==="error-purple"?" is-selected is-selected-blunder":errorClass==="error-red"?" is-selected is-selected-error":" is-selected"):"";
-    return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${Number(c.error??0).toFixed(3)}</span></div>`;
+    // 候補が複数ある場合のみ最善手を BEST と表示する。
+    // 1候補しかない強制手・ムーブ不能では、BEST / 0.000 のどちらも表示しない。
+    const equityLabel=!showBestMarker?"":(i===bestIndex?"BEST":Number(c.error??0).toFixed(3));
+    return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${equityLabel}</span></div>`;
   });
   while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span></div>');
   els.analysisContent.innerHTML=`<div class="analysis-moves">${rows.slice(0,5).join("")}</div>`;
