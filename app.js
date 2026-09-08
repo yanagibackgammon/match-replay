@@ -1030,10 +1030,30 @@ function renderAnalysis(a){
   const cubeDecision=["cubeOffer","cubeOfferSelect","cubeResponse","cubeResponseSelect"].includes(currentState()?.phase);
   if(cubeDecision){
     // Double / No Double、Take / Pass は最善（error=0 に最も近い手）を常に1行目へ。
-    candidateEntries.sort((left,right)=>Number(right.candidate?.error??-Infinity)-Number(left.candidate?.error??-Infinity));
+    candidateEntries.sort((left,right)=>{
+      const diff=Number(right.candidate?.error??-Infinity)-Number(left.candidate?.error??-Infinity);
+      return diff || left.index-right.index;
+    });
+  }else{
+    // チェッカームーブの候補は、XGファイル内の格納順ではなくエクイティ上位順に表示する。
+    // XGでは実際の着手が上位に差し込まれている場合があるため、候補時点では純粋な上位5手を見せる。
+    candidateEntries.sort((left,right)=>{
+      const leftEq=Number(left.candidate?.equity);
+      const rightEq=Number(right.candidate?.equity);
+      if(Number.isFinite(leftEq)&&Number.isFinite(rightEq)){
+        const diff=rightEq-leftEq;
+        if(diff)return diff;
+      }else if(Number.isFinite(rightEq)){
+        return 1;
+      }else if(Number.isFinite(leftEq)){
+        return -1;
+      }
+      const errorDiff=Number(right.candidate?.error??-Infinity)-Number(left.candidate?.error??-Infinity);
+      return errorDiff || left.index-right.index;
+    });
   }
   let visible=candidateEntries.slice(0,5);
-  // 選択手が表示範囲外の場合は、5行目を実際の選択手に置き換える。
+  // 実際の選択手がエクイティ6位以下なら、選択時だけ5行目をその手に置き換える。
   if(selectedIndex>=0 && all[selectedIndex] && !visible.some(entry=>entry.index===selectedIndex)){
     const entry={candidate:all[selectedIndex],index:selectedIndex};
     if(visible.length<5)visible.push(entry);else visible[4]=entry;
