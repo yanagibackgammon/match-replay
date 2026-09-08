@@ -393,6 +393,7 @@ function blotCount(position,player){let n=0;for(let p=1;p<=24;p++)if(countChecke
 // Backgammon Ace風シチュエーション判定。
 // 実際に記録されたロール／着手だけを対象とし、予測候補からは発火させない。
 const ACHIEVEMENT_LABELS={
+  noContact:'ノーコンタクト',
   fullPrime:'フルプライム',
   semiPrime:'セミプライム',
   closeOut:'クローズアウト',
@@ -548,6 +549,10 @@ function is55Blitz(beforePosition,afterPosition,player,dice,playerTurnNumber,seg
 function detectAchievements({beforePosition,afterPosition,player,dice,segments,move,moveNumber,playerTurnNumber}){
   const out=[];
   const push=id=>out.push(achievement(id));
+
+  // このムーブで初めて両者の駒が完全にすれ違った場合は、
+  // シチュエーション表示に「ノーコンタクト」を追加する。
+  if(!isNoContact(beforePosition)&&isNoContact(afterPosition))push('noContact');
 
   const semiBefore=hasConsecutiveMadePoints(beforePosition,player,5) && hasTrappingPrime(beforePosition,player,5);
   const semiAfter=hasConsecutiveMadePoints(afterPosition,player,5) && hasTrappingPrime(afterPosition,player,5);
