@@ -89,9 +89,6 @@ const els={
   bigComebackText:document.getElementById("bigComebackText"),
   achievementOverlay:document.getElementById("achievementOverlay"),
   boardDimOverlay:document.getElementById("boardDimOverlay"),
-  comebackFlashOverlay:document.getElementById("comebackFlashOverlay"),
-  comebackShockOverlay:document.getElementById("comebackShockOverlay"),
-  lightningOverlay:document.getElementById("lightningOverlay"),
   winrateBar:document.querySelector(".winrate-bar"),
   historyList:document.getElementById("historyList"),
   blackHistoryList:document.getElementById("blackHistoryList"),whiteHistoryList:document.getElementById("whiteHistoryList"),
@@ -376,7 +373,7 @@ function renderAnimatedCheckers(state){
   }
   if(!moveAnimationRunning)drawCheckers(state.position);
 }
-function drawDice(vals,activePlayer,{luckKind=null,muted=false}={}){
+function drawDice(vals,activePlayer,{luckKind=null,muted=false,comeback=false}={}){
   diceG.innerHTML="";
   diceG.classList.toggle("is-joker-glow",luckKind==="joker");
   diceG.classList.toggle("is-antijoker-glow",luckKind==="antiJoker");
@@ -390,6 +387,19 @@ function drawDice(vals,activePlayer,{luckKind=null,muted=false}={}){
   // Player 1 is shown in the center of the right half; Player 2 in the center of the left half.
   const xs=player1?[468.5,514.5]:[151.5,197.5];
   diceG.appendChild(die(xs[0],254,vals[0]));diceG.appendChild(die(xs[1],254,vals[1]));
+  if(comeback){
+    const cx=(xs[0]+xs[1]+36)/2;
+    const lightning=document.createElementNS("http://www.w3.org/2000/svg","g");
+    lightning.setAttribute("class","comeback-dice-lightning");
+    lightning.setAttribute("aria-hidden","true");
+    const main=document.createElementNS("http://www.w3.org/2000/svg","path");
+    main.setAttribute("class","comeback-lightning-main");
+    main.setAttribute("d",`M ${cx-7} 184 L ${cx+12} 184 L ${cx+1} 219 L ${cx+18} 219 L ${cx-13} 282 L ${cx-4} 239 L ${cx-20} 239 Z`);
+    const branch=document.createElementNS("http://www.w3.org/2000/svg","path");
+    branch.setAttribute("class","comeback-lightning-branch");
+    branch.setAttribute("d",`M ${cx+7} 219 L ${cx+31} 202 L ${cx+21} 226 L ${cx+39} 225 L ${cx+13} 253 L ${cx+21} 231 Z`);
+    lightning.appendChild(main);lightning.appendChild(branch);diceG.appendChild(lightning);
+  }
 }
 function cubeOwnerTarget(cube){
   const owner=cube?.owner||0;
@@ -944,36 +954,50 @@ function renderAnalysis(a){
 function currentState(){return matchData.states[Math.max(0,Math.min(index,matchData.states.length-1))]||emptyState;}
 function resetBoardDimOverlay(){
   lastBoardDimKey="";
-  lastComebackFxKey="";
-  els.stage?.classList.remove("is-comeback-intro");
-  els.winrateBar?.classList.remove("is-comeback-impact");
-  [els.boardDimOverlay,els.comebackFlashOverlay,els.comebackShockOverlay,els.lightningOverlay].forEach(el=>{
-    if(!el)return;
-    el.classList.remove("is-active");
-    el.setAttribute("aria-hidden","true");
-  });
+  const el=els.boardDimOverlay;if(!el)return;
+  el.classList.remove("is-active");
+  el.setAttribute("aria-hidden","true");
 }
 function renderBoardDimOverlay(state){
+  const dim=els.boardDimOverlay;
   const isIntro=state?.phase==="bigComebackIntro" && Boolean(state?.bigComeback);
-  if(!isIntro){
-    resetBoardDimOverlay();
+  const isImpact=state?.phase==="roll" && state?.rollNotice==="comeback";
+
+  // 1段目は暗転だけ。サイコロ・勝率バー・衝撃演出はまだ出さない。
+  if(isIntro){
+    els.stage?.classList.remove("is-comeback-impact");
+    els.winrateBar?.classList.remove("is-comeback-impact","is-player-left","is-player-right");
+    lastComebackFxKey="";
+    if(!dim)return;
+    const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}:dim`;
+    if(key!==lastBoardDimKey){
+      lastBoardDimKey=key;
+      dim.classList.remove("is-active");
+      void dim.offsetWidth;
+      dim.setAttribute("aria-hidden","false");
+      dim.classList.add("is-active");
+    }
     return;
   }
-  const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}`;
-  if(key===lastComebackFxKey) return;
-  lastBoardDimKey=key;
+
+  resetBoardDimOverlay();
+
+  // 2段目はロール確定と同時に、勝率バー・サイコロの雷・盤面衝撃を発火。
+  if(!isImpact){
+    lastComebackFxKey="";
+    els.stage?.classList.remove("is-comeback-impact");
+    els.winrateBar?.classList.remove("is-comeback-impact","is-player-left","is-player-right");
+    return;
+  }
+  const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}:impact`;
+  if(key===lastComebackFxKey)return;
   lastComebackFxKey=key;
-  els.stage?.classList.remove("is-comeback-intro");
-  els.winrateBar?.classList.remove("is-comeback-impact");
-  [els.boardDimOverlay,els.comebackFlashOverlay,els.comebackShockOverlay,els.lightningOverlay].forEach(el=>el?.classList.remove("is-active"));
+  const sideClass=state.activePlayer===1?"is-player-left":"is-player-right";
+  els.stage?.classList.remove("is-comeback-impact");
+  els.winrateBar?.classList.remove("is-comeback-impact","is-player-left","is-player-right");
   void (els.stage?.offsetWidth||0);
-  els.stage?.classList.add("is-comeback-intro");
-  els.winrateBar?.classList.add("is-comeback-impact");
-  [els.boardDimOverlay,els.comebackFlashOverlay,els.comebackShockOverlay,els.lightningOverlay].forEach(el=>{
-    if(!el)return;
-    el.setAttribute("aria-hidden","false");
-    el.classList.add("is-active");
-  });
+  els.stage?.classList.add("is-comeback-impact");
+  els.winrateBar?.classList.add("is-comeback-impact",sideClass);
 }
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));}
 function achievementSourceForMoveState(state){
@@ -1044,12 +1068,12 @@ function renderAchievements(state){
 }
 function renderBigComeback(state){
   const el=els.bigComebackText;if(!el)return;
-  // ロール演出は手番終了まで維持しつつ、大逆転のみ intro から先行表示して特別感を出す。
-  const notice=state?.rollNotice || null;
+  // intro は暗転だけ。大逆転／ナイス／バッドの文字は実際のロールから表示する。
+  const notice=state?.phase!=="bigComebackIntro" ? state?.rollNotice : null;
   const isVisible=notice==="comeback" || notice==="nice" || notice==="bad";
   if(!isVisible){
     lastBigComebackKey="";
-    el.classList.remove("is-active","is-comeback","is-nice","is-bad");
+    el.classList.remove("is-active","is-comeback","is-nice","is-bad","is-player-left","is-player-right");
     el.setAttribute("aria-hidden","true");
     return;
   }
@@ -1057,6 +1081,8 @@ function renderBigComeback(state){
   el.classList.toggle("is-comeback",notice==="comeback");
   el.classList.toggle("is-nice",notice==="nice");
   el.classList.toggle("is-bad",notice==="bad");
+  el.classList.toggle("is-player-left",state.activePlayer===1);
+  el.classList.toggle("is-player-right",state.activePlayer===-1);
   const key=`${state.gameNumber||0}:${state.activePlayer||0}:${notice}`;
   el.setAttribute("aria-hidden","false");
   if(key===lastBigComebackKey) return;
@@ -1103,7 +1129,7 @@ function render(){
   renderBoardDimOverlay(s);
   els.blackHistoryName.classList.toggle("active-turn",s.activePlayer===1);
   els.whiteHistoryName.classList.toggle("active-turn",s.activePlayer===-1);
-  drawPointLabels(s.activePlayer);drawPipInfo(s.position);renderAnimatedCheckers(s);drawDice(s.dice,s.activePlayer,{luckKind:s.luckKind||null,muted:Boolean(s.diceMuted)});drawCube(s.cube,s);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
+  drawPointLabels(s.activePlayer);drawPipInfo(s.position);renderAnimatedCheckers(s);drawDice(s.dice,s.activePlayer,{luckKind:s.luckKind||null,muted:Boolean(s.diceMuted),comeback:s.phase==="roll"&&s.rollNotice==="comeback"});drawCube(s.cube,s);drawGameOverlay(s);renderHistory();renderAnalysis(s.analysis);
 }
 
 async function fetchManifest(){try{const u=new URL("./matches/manifest.json",location.href);u.searchParams.set("t",Date.now());const r=await fetch(u,{cache:"no-store"});return r.ok?await r.json():{};}catch{return {};}}

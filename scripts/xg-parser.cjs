@@ -427,18 +427,25 @@ function hasConsecutiveMadePoints(position,player,length){
   return false;
 }
 function hasTrappingPrime(position,player,length){
-  if(barCount(position,-player)>0)return true;
-  let run=0;
+  // セミ／フルプライムは「そのプライムの後ろ」に相手駒が1枚以上いる時だけ成立。
+  // player の相対座標では、相手は 1 -> 24 方向へ進むため、
+  // プライム開始点より小さい側（またはバー上）が「後ろ」にあたる。
+  let run=0,runStart=0;
   for(let relative=1;relative<=24;relative++){
     if(isMadeRelativePoint(position,player,relative)){
+      if(run===0)runStart=relative;
       run+=1;
       if(run>=length){
-        const runEnd=relative;
-        for(let oppRelative=runEnd+1;oppRelative<=24;oppRelative++){
-          if(relativeCheckerCount(position,-player,oppRelative)>0)return true;
+        if(barCount(position,-player)>0)return true;
+        for(let behindRelative=1;behindRelative<runStart;behindRelative++){
+          const canonical=relativePointToCanonical(player,behindRelative);
+          if(countChecker(position,-player,canonical)>0)return true;
         }
       }
-    }else run=0;
+    }else{
+      run=0;
+      runStart=0;
+    }
   }
   return false;
 }
@@ -478,12 +485,34 @@ function hitAndCoverOccurred(beforePosition,afterPosition,player,segments){
   return false;
 }
 function bananaSplitOccurred(beforePosition,afterPosition,player,segments){
-  if(!(segments||[]).some(seg=>seg?.hit))return false;
-  if(blotCount(afterPosition,player)<2)return false;
-  const sources=new Set((segments||[]).map(seg=>seg?.source).filter(Number.isInteger));
-  for(const source of sources){
-    if(!ownHomeCanonicalPoint(player,source))continue;
-    if(countChecker(beforePosition,player,source)>=2 && countChecker(afterPosition,player,source)<2)return true;
+  const list=Array.isArray(segments)?segments:[];
+  if(!list.some(seg=>seg?.hit))return false;
+
+  // Backgammon Aceの定義に合わせ、
+  // 「自分のインナーボードのメイドポイントを壊したその駒」が
+  // 自分のインナーボード内でルースヒットし、結果として
+  // 元ポイントとヒット先の2か所がブロットになる場合だけ成立。
+  for(let i=0;i<list.length;i++){
+    const first=list[i];
+    const origin=first?.source;
+    if(!Number.isInteger(origin) || !ownHomeCanonicalPoint(player,origin))continue;
+    if(countChecker(beforePosition,player,origin)<2)continue;
+    if(countChecker(afterPosition,player,origin)!==1)continue;
+
+    let previousDestination=null;
+    for(let j=i;j<list.length;j++){
+      const seg=list[j];
+      if(j===i){
+        if(seg?.source!==origin)break;
+      }else{
+        if(seg?.source!==previousDestination)break;
+      }
+      previousDestination=seg?.destination;
+      if(!seg?.hit || !Number.isInteger(seg.destination))continue;
+      if(!ownHomeCanonicalPoint(player,seg.destination))continue;
+      if(countChecker(afterPosition,player,seg.destination)!==1)continue;
+      return true;
+    }
   }
   return false;
 }
@@ -493,16 +522,30 @@ function isLoversLeap(dice,move,moveNumber){
   return sorted[0]===5 && sorted[1]===6 && /(?:^|\s)24\/13(?:\s|$|\*)/.test(String(move||''));
 }
 function is66Dance(beforePosition,player,dice,segments){
-  return barCount(beforePosition,player)>0 && Array.isArray(dice) && Number(dice[0])===6 && Number(dice[1])===6 && !(segments||[]).length;
+  if(barCount(beforePosition,player)<=0 || !Array.isArray(dice) || Number(dice[0])!==6 || Number(dice[1])!==6)return false;
+  // 66ダンスは、相手インナーで「6ポイントだけ」がブロックされている場合に限定。
+  // 1〜5はエンター可能で、6だけエンター不能であることを確認する。
+  const sixBlocked=singleDieMoves(beforePosition,player,6).length===0;
+  const oneToFiveOpen=[1,2,3,4,5].every(die=>singleDieMoves(beforePosition,player,die).length>0);
+  return sixBlocked && oneToFiveOpen && !(segments||[]).length;
 }
-function is55Blitz(beforePosition,afterPosition,player,dice,moveNumber){
-  if(moveNumber!==2 && moveNumber!==3)return false;
+function pointOnRelativePoint(beforePosition,afterPosition,player,segments,relativePoint){
+  const point=relativePointToCanonical(player,relativePoint);
+  const hit=(segments||[]).some(seg=>seg?.hit && seg?.destination===point);
+  return hit
+    && countChecker(beforePosition,-player,point)===1
+    && !isMadeRelativePoint(beforePosition,player,relativePoint)
+    && isMadeRelativePoint(afterPosition,player,relativePoint);
+}
+function is55Blitz(beforePosition,afterPosition,player,dice,playerTurnNumber,segments){
+  if(playerTurnNumber!==2 && playerTurnNumber!==3)return false;
   if(!Array.isArray(dice) || Number(dice[0])!==5 || Number(dice[1])!==5)return false;
-  // 序盤の55で自陣1ポイント・3ポイントを同時に新しく作る形。
-  const beforeOne=isMadeRelativePoint(beforePosition,player,1),beforeThree=isMadeRelativePoint(beforePosition,player,3);
-  return !beforeOne && !beforeThree && isMadeRelativePoint(afterPosition,player,1) && isMadeRelativePoint(afterPosition,player,3);
+  // Backgammon Aceの55 BLITZは、各プレイヤー自身の2手目または3手目の55で、
+  // 1ポイントと3ポイントの両方を「ポイントオン（ヒットしつつポイントを作る）」して成立。
+  return pointOnRelativePoint(beforePosition,afterPosition,player,segments,1)
+    && pointOnRelativePoint(beforePosition,afterPosition,player,segments,3);
 }
-function detectAchievements({beforePosition,afterPosition,player,dice,segments,move,moveNumber}){
+function detectAchievements({beforePosition,afterPosition,player,dice,segments,move,moveNumber,playerTurnNumber}){
   const out=[];
   const push=id=>out.push(achievement(id));
 
@@ -538,7 +581,7 @@ function detectAchievements({beforePosition,afterPosition,player,dice,segments,m
   if(isLoversLeap(dice,move,moveNumber))push('loversLeap');
   if(!isCandlesticksPosition(beforePosition,player)&&isCandlesticksPosition(afterPosition,player))push('candlesticks');
   if(is66Dance(beforePosition,player,dice,segments))push('dance66');
-  if(is55Blitz(beforePosition,afterPosition,player,dice,moveNumber))push('blitz55');
+  if(is55Blitz(beforePosition,afterPosition,player,dice,playerTurnNumber,segments))push('blitz55');
   return out;
 }
 function staticEquityProxy(position,player){
@@ -988,6 +1031,7 @@ function buildTimeline(parsed, sourceFile){
   let lastCube = {value:1,owner:0};
   let gameHasCheckerMove = false;
   let gameRollCount = 0;
+  let gamePlayerTurnCount = {black:0,white:0};
   let pendingResignation = null;
   let matchIntroPushed = false;
   const prStats = {
@@ -1038,6 +1082,7 @@ function buildTimeline(parsed, sourceFile){
       lastBackgammonRate = {black:0,white:0};
       gameHasCheckerMove = false;
       gameRollCount = 0;
+      gamePlayerTurnCount = {black:0,white:0};
       pendingResignation = null;
       if(!matchIntroPushed){
         matchIntroPushed = true;
@@ -1212,6 +1257,9 @@ function buildTimeline(parsed, sourceFile){
         : (r.move === 'Cannot Move' || r.move === 'Dance' || !(Array.isArray(r.appliedSegments) && r.appliedSegments.length));
       const noContact = isNoContact(beforePosition);
       const noRollOpportunity = !r.isResignationRoll && hasNoRollOpportunity(beforePosition,r.activePlayer);
+      const turnKey=r.activePlayer===1?'black':'white';
+      const playerTurnNumber=(gamePlayerTurnCount[turnKey]||0)+1;
+      gamePlayerTurnCount[turnKey]=playerTurnNumber;
 
       // 盤面だけで「どの出目でも合法手が0」と確定している場合は、ロール自体を行わない。
       // ロール・候補手・着手の各シーケンスを生成せず、履歴へ Cannot Move だけを記録する。
@@ -1231,7 +1279,7 @@ function buildTimeline(parsed, sourceFile){
 
       const moveNumber=gameRollCount+1;
       const achievements=r.isResignationRoll ? [] : detectAchievements({
-        beforePosition,afterPosition,player:r.activePlayer,dice:r.dice,segments:r.appliedSegments||[],move:r.move,moveNumber
+        beforePosition,afterPosition,player:r.activePlayer,dice:r.dice,segments:r.appliedSegments||[],move:r.move,moveNumber,playerTurnNumber
       });
 
       // ロール前のチャンス／ピンチ予測は廃止。

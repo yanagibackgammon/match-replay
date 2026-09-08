@@ -391,10 +391,12 @@ html,body{
 .winrate-bar.is-comeback-impact::before,
 .winrate-bar.is-comeback-impact::after{content:"";position:absolute;pointer-events:none}
 .winrate-bar.is-comeback-impact::before{
-  left:50%;top:-48%;width:176px;height:188%;transform:translateX(-50%) scaleX(.18);
+  top:-48%;width:176px;height:188%;transform:translateX(-50%) scaleX(.18);
   background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.82) 26%,rgba(255,222,114,.95) 48%,rgba(255,255,255,.78) 68%,rgba(255,255,255,0) 100%);
   filter:blur(7px);mix-blend-mode:screen;opacity:0;animation:winrateImpactCore var(--sequence-duration) linear both;
 }
+.winrate-bar.is-comeback-impact.is-player-left::before{left:18%}
+.winrate-bar.is-comeback-impact.is-player-right::before{left:82%}
 .winrate-bar.is-comeback-impact::after{
   inset:-5px;border-radius:16px;border:4px solid rgba(255,221,110,.9);opacity:0;box-shadow:0 0 16px rgba(255,214,88,.88),0 0 30px rgba(255,133,45,.42);animation:winrateImpactFrame var(--sequence-duration) linear both;
 }
@@ -552,45 +554,6 @@ html,body{
 .big-comeback.is-active.is-comeback{animation:bigComebackRed var(--sequence-duration) ease-in-out both}
 .big-comeback.is-active.is-nice{animation:niceRollGold var(--sequence-duration) ease-in-out both}
 .big-comeback.is-active.is-bad{animation:badRollPurple var(--sequence-duration) ease-in-out both}
-#stage.is-comeback-intro .board-area{animation:comebackBoardShake var(--sequence-duration) linear both}
-#stage.is-comeback-intro .eval-wrap{animation:comebackEvalShake var(--sequence-duration) linear both}
-#stage.is-comeback-intro .big-comeback.is-active.is-comeback{animation:bigComebackCinematic var(--sequence-duration) linear both}
-#stage.is-comeback-intro .big-comeback.is-comeback{
-  font-size:86px;
-  color:#fff4c8;
-  letter-spacing:.06em;
-  -webkit-text-stroke:3px #1a1200;
-  text-shadow:
-    0 4px 10px rgba(0,0,0,.55),
-    0 0 12px rgba(255,239,171,.92),
-    0 0 28px rgba(255,196,64,.84),
-    0 0 48px rgba(228,57,53,.55);
-}
-@keyframes bigComebackCinematic{
-  0%,7%{opacity:0;transform:translate(-50%,-50%) scale(.72)}
-  10%{opacity:1;transform:translate(-50%,-50%) scale(1.24)}
-  17%{opacity:1;transform:translate(-50%,-50%) scale(.98)}
-  24%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}
-  32%{opacity:1;transform:translate(-50%,-50%) scale(1)}
-  100%{opacity:1;transform:translate(-50%,-50%) scale(1)}
-}
-@keyframes comebackBoardShake{
-  0%,8%{transform:translate3d(0,0,0)}
-  10%{transform:translate3d(-6px,2px,0)}
-  12%{transform:translate3d(8px,-3px,0)}
-  14%{transform:translate3d(-7px,3px,0)}
-  16%{transform:translate3d(6px,-2px,0)}
-  18%{transform:translate3d(-4px,1px,0)}
-  20%{transform:translate3d(2px,-1px,0)}
-  22%,100%{transform:translate3d(0,0,0)}
-}
-@keyframes comebackEvalShake{
-  0%,8%{transform:translate3d(0,0,0)}
-  10%{transform:translate3d(0,-1px,0) scale(1.01)}
-  12%{transform:translate3d(0,1px,0) scale(1.02)}
-  15%{transform:translate3d(0,-1px,0) scale(1.01)}
-  18%,100%{transform:translate3d(0,0,0) scale(1)}
-}
 @keyframes bigComebackRed{
   0%{opacity:0;transform:translate(-50%,48px);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(229,57,53,.30)}
   14%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 8px rgba(229,57,53,.92),0 0 16px rgba(229,57,53,.58)}
@@ -617,6 +580,54 @@ html,body{
   62%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(181,108,255,.38),0 0 9px rgba(181,108,255,.28)}
   78%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(181,108,255,.96),0 0 17px rgba(181,108,255,.62)}
   100%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 7px rgba(181,108,255,.72),0 0 13px rgba(181,108,255,.42)}
+}
+
+/* ロール通知は手番側から勝率バー中央へスライドイン。 */
+.big-comeback.is-active.is-player-left{animation:rollNoticeFromLeft var(--sequence-duration) ease-out both!important}
+.big-comeback.is-active.is-player-right{animation:rollNoticeFromRight var(--sequence-duration) ease-out both!important}
+.big-comeback.is-comeback{font-size:60px;text-shadow:0 3px 5px rgba(0,0,0,.5),0 0 10px rgba(229,57,53,.78),0 0 22px rgba(229,57,53,.46)}
+@keyframes rollNoticeFromLeft{
+  0%{opacity:0;transform:translate(calc(-50% - 420px),-50%) scale(.92)}
+  14%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}
+  22%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
+@keyframes rollNoticeFromRight{
+  0%{opacity:0;transform:translate(calc(-50% + 420px),-50%) scale(.92)}
+  14%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}
+  22%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
+
+/* 大逆転のロール確定時だけ、盤面へ短い物理的な衝撃を与える。 */
+#stage.is-comeback-impact #board{animation:comebackBoardImpact var(--sequence-duration) linear both;transform-origin:center center}
+@keyframes comebackBoardImpact{
+  0%,3%{transform:translate3d(0,0,0) scale(1)}
+  5%{transform:translate3d(-7px,3px,0) scale(1.008)}
+  7%{transform:translate3d(8px,-3px,0) scale(1.008)}
+  9%{transform:translate3d(-6px,2px,0) scale(1.006)}
+  11%{transform:translate3d(5px,-2px,0) scale(1.004)}
+  14%{transform:translate3d(-3px,1px,0) scale(1.002)}
+  17%,100%{transform:translate3d(0,0,0) scale(1)}
+}
+
+/* 雷は画面中央ではなく、実際に出たサイコロへ落とす。 */
+#dice .comeback-dice-lightning{opacity:0;animation:comebackDiceLightning var(--sequence-duration) linear both;pointer-events:none}
+#dice .comeback-lightning-main,#dice .comeback-lightning-branch{
+  fill:#fffdf0;
+  stroke:#ffffff;
+  stroke-width:1.2;
+  paint-order:stroke fill;
+  filter:drop-shadow(0 0 3px rgba(255,255,255,1)) drop-shadow(0 0 8px rgba(152,211,255,.98)) drop-shadow(0 0 15px rgba(255,210,78,.92));
+}
+@keyframes comebackDiceLightning{
+  0%,3%{opacity:0}
+  5%{opacity:1}
+  7%{opacity:.08}
+  9%{opacity:1}
+  12%{opacity:.2}
+  15%{opacity:.86}
+  19%,100%{opacity:0}
 }
 
 .main-area{
@@ -646,101 +657,12 @@ html,body{
   pointer-events:none;
   z-index:6;
 }
-.board-dim-overlay.is-active{animation:boardDimBeforeComeback var(--sequence-duration) linear both}
+.board-dim-overlay.is-active{animation:boardDimBeforeComeback var(--sequence-duration) ease-out both}
 @keyframes boardDimBeforeComeback{
-  0%,4%{opacity:0}
-  7%{opacity:.82}
-  11%{opacity:.14}
-  15%{opacity:.46}
-  19%{opacity:.08}
-  100%{opacity:0}
+  0%{opacity:0}
+  14%{opacity:.78}
+  100%{opacity:.78}
 }
-.comeback-flash-overlay,
-.comeback-shock-overlay,
-.lightning-overlay{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  opacity:0;
-}
-.comeback-flash-overlay{z-index:12;mix-blend-mode:screen;background:
-  radial-gradient(circle at 50% 48%,rgba(255,255,255,.98) 0 9%,rgba(255,255,255,.82) 12%,rgba(191,223,255,.34) 20%,rgba(255,255,255,0) 38%),
-  linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.88) 48%,rgba(255,255,255,0) 100%);
-}
-.comeback-flash-overlay.is-active{animation:comebackFlashBurst var(--sequence-duration) linear both}
-@keyframes comebackFlashBurst{
-  0%,6%{opacity:0}
-  8%{opacity:.1}
-  10%{opacity:1}
-  12%{opacity:.12}
-  16%{opacity:.72}
-  19%{opacity:0}
-  100%{opacity:0}
-}
-.comeback-shock-overlay{z-index:11;overflow:hidden}
-.shock-ring{
-  position:absolute;
-  left:50%;top:50%;
-  width:136px;height:136px;
-  border-radius:50%;
-  border:4px solid rgba(255,216,92,.96);
-  box-shadow:0 0 12px rgba(255,216,92,.95),0 0 28px rgba(255,122,32,.55),inset 0 0 10px rgba(255,255,255,.36);
-  transform:translate(-50%,-50%) scale(.15);
-  opacity:0;
-}
-.comeback-shock-overlay.is-active .shock-ring-a{animation:shockRingA var(--sequence-duration) linear both}
-.comeback-shock-overlay.is-active .shock-ring-b{animation:shockRingB var(--sequence-duration) linear both}
-@keyframes shockRingA{
-  0%,9%{opacity:0;transform:translate(-50%,-50%) scale(.15)}
-  10%{opacity:1;transform:translate(-50%,-50%) scale(.18)}
-  22%{opacity:.96;transform:translate(-50%,-50%) scale(2.8)}
-  34%{opacity:0;transform:translate(-50%,-50%) scale(4.2)}
-  100%{opacity:0;transform:translate(-50%,-50%) scale(4.2)}
-}
-@keyframes shockRingB{
-  0%,14%{opacity:0;transform:translate(-50%,-50%) scale(.15)}
-  18%{opacity:.72;transform:translate(-50%,-50%) scale(.25)}
-  31%{opacity:.52;transform:translate(-50%,-50%) scale(3.6)}
-  42%{opacity:0;transform:translate(-50%,-50%) scale(5)}
-  100%{opacity:0;transform:translate(-50%,-50%) scale(5)}
-}
-.lightning-overlay{z-index:13;overflow:hidden}
-.lightning-bolt{
-  position:absolute;
-  top:52px;
-  left:50%;
-  background:linear-gradient(180deg,rgba(255,255,255,1) 0%,rgba(255,255,255,.98) 28%,rgba(205,229,255,.96) 58%,rgba(255,214,105,.86) 100%);
-  filter:drop-shadow(0 0 8px rgba(255,255,255,.96)) drop-shadow(0 0 18px rgba(140,205,255,.85)) drop-shadow(0 0 30px rgba(255,183,77,.55));
-  opacity:0;
-}
-.lightning-bolt.bolt-main{
-  width:12px;height:344px;
-  clip-path:polygon(48% 0,70% 0,54% 18%,75% 18%,36% 48%,56% 48%,30% 79%,48% 79%,18% 100%,0 100%,28% 74%,12% 74%,45% 44%,22% 44%,59% 15%,40% 15%);
-  transform:translateX(-50%) rotate(-6deg) scaleY(.88);
-}
-.lightning-bolt.bolt-sub{
-  width:9px;height:232px;
-  top:102px;
-  clip-path:polygon(48% 0,70% 0,54% 18%,76% 18%,34% 52%,54% 52%,28% 82%,46% 82%,18% 100%,0 100%,28% 74%,10% 74%,46% 44%,22% 44%,60% 14%,40% 14%);
-  transform:translateX(48px) rotate(8deg) scaleY(.9);
-}
-.lightning-overlay.is-active .bolt-main{animation:lightningStrikeMain var(--sequence-duration) linear both}
-.lightning-overlay.is-active .bolt-sub{animation:lightningStrikeSub var(--sequence-duration) linear both}
-@keyframes lightningStrikeMain{
-  0%,7%{opacity:0;transform:translateX(-50%) rotate(-6deg) scaleY(.75)}
-  10%{opacity:1;transform:translateX(-50%) rotate(-6deg) scaleY(1)}
-  13%{opacity:.12;transform:translateX(-50%) rotate(-6deg) scaleY(1)}
-  16%{opacity:.92;transform:translateX(-50%) rotate(-6deg) scaleY(1)}
-  19%{opacity:0;transform:translateX(-50%) rotate(-6deg) scaleY(1)}
-  100%{opacity:0;transform:translateX(-50%) rotate(-6deg) scaleY(1)}
-}
-@keyframes lightningStrikeSub{
-  0%,10%{opacity:0;transform:translateX(48px) rotate(8deg) scaleY(.8)}
-  14%{opacity:.84;transform:translateX(48px) rotate(8deg) scaleY(1)}
-  18%{opacity:0;transform:translateX(48px) rotate(8deg) scaleY(1)}
-  100%{opacity:0;transform:translateX(48px) rotate(8deg) scaleY(1)}
-}
-
 #board{
   display:block;
   width:1080px;

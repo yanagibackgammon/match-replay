@@ -166,6 +166,34 @@ function renderThemeColorPreview(){
   });
 }
 
+const JBS_THEME_BY_TITLE=[
+  // 「日本」は協会名等にも入り得るため、固有タイトルを優先して最後に判定する。
+  {keywords:["盤聖戦","盤聖"],color:"#6B0D2F"},
+  {keywords:["名人戦","名人"],color:"#6B670D"},
+  {keywords:["王位戦","王位"],color:"#0D6B2F"},
+  {keywords:["賽王戦","賽王"],color:"#0D236B"},
+  {keywords:["棋聖戦","棋聖"],color:"#6B230D"},
+  {keywords:["女王戦","女王"],color:"#6B0D5B"},
+  {keywords:["新鋭戦","新鋭"],color:"#0D676B"},
+  {keywords:["日本選手権","日本"],color:"#3C3C3C"}
+];
+function decodeMatchFilenameForTheme(filename){
+  return String(filename||"").replace(/#U([0-9a-fA-F]{4})/g,(_,hex)=>String.fromCharCode(parseInt(hex,16)));
+}
+function autoThemeColorForMatchFile(filename){
+  const decoded=decodeMatchFilenameForTheme(filename);
+  const rule=JBS_THEME_BY_TITLE.find(item=>item.keywords.some(keyword=>decoded.includes(keyword)));
+  return rule?.color||null;
+}
+function applyAutoThemeFromMatchFile(filename){
+  const color=autoThemeColorForMatchFile(filename);
+  if(!color||!themeColorInput)return false;
+  themeColorInput.value=color;
+  dirtyMetaFields.add("themeColor");
+  renderThemeColorPreview();
+  return true;
+}
+
 function clearMatchTextEditors(){
   const keys=["tournamentTitleLine1","tournamentTitleLine2","blackName","whiteName"];
   const editors=[tournamentLine1Input,tournamentLine2Input,blackNameInput,whiteNameInput];
@@ -778,7 +806,10 @@ themeColorPreview?.querySelectorAll(".theme-color-button").forEach(button=>{
   });
 });
 matchFileSelect.addEventListener("change",()=>{
-  if(matchFileSelect.value) return;
+  if(matchFileSelect.value){
+    applyAutoThemeFromMatchFile(matchFileSelect.value);
+    return;
+  }
   clearMatchTextEditors();
 });
 
