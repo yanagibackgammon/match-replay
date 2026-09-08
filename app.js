@@ -871,23 +871,18 @@ function collectHistoryRows(){
           ? [...rowEvents(pairedRow,"black"),...rowEvents(pairedRow,"white")].find(item=>item?.kind==="cube")
           : null;
         const responseEvent=event.cubeValue?event:{...event,cubeValue:pairedOffer?.cubeValue};
-        // パスは、対応するダブル行の相手側セルが空いていれば同じ行へ詰める。
-        // テイクは従来どおり新しい行へ表示し、テイクした側の次ロールはさらに次行へ送る。
-        if(event.move==="Pass"&&pairedRow&&!rowEvents(pairedRow,event.player).some(Boolean)){
+        // Take / Pass は、対応するダブル行の相手側セルが空いていれば同じ行へ詰める。
+        // ただし、その後のロールは別行から始める（同じ選手欄の1行に2アクションは置かない）。
+        if(pairedRow&&!rowEvents(pairedRow,event.player).some(Boolean)){
           appendHistoryEvent(pairedRow,event.player,responseEvent);
-          openMoveRow=null;
-          lastCubeActionRow=null;
+          openMoveRow=pairedRow;
+          lastCubeActionRow=pairedRow;
           continue;
         }
         const row=newHistoryActionRow(rows);
         appendHistoryEvent(row,event.player,responseEvent);
-        if(event.move==="Take"){
-          openMoveRow=row;
-          lastCubeActionRow=row;
-        }else{
-          openMoveRow=null;
-          lastCubeActionRow=null;
-        }
+        openMoveRow=row;
+        lastCubeActionRow=row;
         continue;
       }
       if(!leadPlayer)leadPlayer=event.player;
