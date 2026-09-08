@@ -1018,7 +1018,7 @@ function renderHistory(){
     }
     els.historyList.innerHTML=padded.map((row,rowIndex)=>{
       if(!row)return `<div class="history-timeline-row history-empty-row">${historyCell(null,"black")}${historyCell(null,"white")}</div>`;
-      if(row.kind==="game")return `<div class="history-timeline-row history-game-row"><div class="history-game-label">Game ${row.gameNumber}</div></div>`;
+      if(row.kind==="game")return `<div class="history-timeline-row history-game-row"><div class="history-game-label">第${row.gameNumber}ゲーム</div></div>`;
       const blackCurrent=rowIndex===currentRowIndex&&currentPlayer==="black";
       const whiteCurrent=rowIndex===currentRowIndex&&currentPlayer==="white";
       return `<div class="history-timeline-row">${historyCell(row.black,"black",blackCurrent)}${historyCell(row.white,"white",whiteCurrent)}</div>`;
@@ -1026,7 +1026,7 @@ function renderHistory(){
     return;
   }
   if(els.blackHistoryList&&els.whiteHistoryList){
-    els.blackHistoryList.innerHTML=rows.map(row=>row.kind==="game"?`<div class="history-row">Game ${row.gameNumber}</div>`:historyCell(row.black,"black")).join("");
+    els.blackHistoryList.innerHTML=rows.map(row=>row.kind==="game"?`<div class="history-row">第${row.gameNumber}ゲーム</div>`:historyCell(row.black,"black")).join("");
     els.whiteHistoryList.innerHTML=rows.map(row=>row.kind==="game"?'<div class="history-row"></div>':historyCell(row.white,"white")).join("");
   }
 }
