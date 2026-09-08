@@ -30,6 +30,8 @@ const applyMetaBtn = document.getElementById("applyMetaBtn");
 const refreshMatchesBtn = document.getElementById("refreshMatchesBtn");
 const loadedFileName = document.getElementById("loadedFileName");
 const gameMarkers = document.getElementById("gameMarkers");
+const obsBrowserSourceUrl = document.getElementById("obsBrowserSourceUrl");
+const controlPageUrl = document.getElementById("controlPageUrl");
 
 let socket = null;
 const pageChannel = (!isLocalRuntime() && "BroadcastChannel" in window) ? new BroadcastChannel("match-replay-control") : null;
@@ -128,6 +130,15 @@ function syncMetaEditorsFromState(){
 
 function isLocalRuntime(){
   return location.hostname === "localhost" || location.hostname === "127.0.0.1";
+}
+function renderRuntimeUrls(){
+  // 現在開いている場所を基準にするため、localhost / 127.0.0.1 / GitHub Pages のいずれでも自動で切り替わる。
+  const controlUrl=new URL(location.href);
+  controlUrl.search="";
+  controlUrl.hash="";
+  const displayUrl=new URL("./",controlUrl);
+  if(obsBrowserSourceUrl)obsBrowserSourceUrl.textContent=displayUrl.href;
+  if(controlPageUrl)controlPageUrl.textContent=controlUrl.href;
 }
 
 function sendCommand(command, value){
@@ -395,7 +406,7 @@ function cacheTimingStates(file, states){
 
 function normalizedPlaybackRate(value){
   const rate=Number(value);
-  return [1,2,3,6].includes(rate)?rate:1;
+  return Number.isInteger(rate)&&rate>=1&&rate<=9?rate:1;
 }
 
 function playbackRateForRemaining(){
@@ -518,7 +529,7 @@ function renderState(state){
   }else if(!manual){
     selectedPlaybackButton="pause";
   }
-  const activeButton={auto1:autoNormalModeBtn,auto2:autoDoubleModeBtn,auto3:autoTripleModeBtn,auto6:autoSixModeBtn,prev:prevBtn,next:nextBtn,pause:pauseBtn}[selectedPlaybackButton]||pauseBtn;
+  const activeButton={auto1:autoNormalModeBtn,auto2:autoDoubleModeBtn,auto3:autoTripleModeBtn,auto6:autoSixModeBtn,prev:prevBtn,next:nextBtn,pause:pauseBtn}[selectedPlaybackButton]||null;
   [autoNormalModeBtn,autoDoubleModeBtn,autoTripleModeBtn,autoSixModeBtn,prevBtn,nextBtn,pauseBtn].forEach(button=>button.classList.toggle("active",button===activeButton));
 
   syncMetaEditorsFromState();
@@ -754,7 +765,7 @@ if(pageChannel){
 
 function setPlaybackSelection(selection){
   selectedPlaybackButton=selection;
-  const activeButton={auto1:autoNormalModeBtn,auto2:autoDoubleModeBtn,auto3:autoTripleModeBtn,auto6:autoSixModeBtn,prev:prevBtn,next:nextBtn,pause:pauseBtn}[selection]||pauseBtn;
+  const activeButton={auto1:autoNormalModeBtn,auto2:autoDoubleModeBtn,auto3:autoTripleModeBtn,auto6:autoSixModeBtn,prev:prevBtn,next:nextBtn,pause:pauseBtn}[selection]||null;
   [autoNormalModeBtn,autoDoubleModeBtn,autoTripleModeBtn,autoSixModeBtn,prevBtn,nextBtn,pauseBtn].forEach(button=>button.classList.toggle("active",button===activeButton));
 }
 function startAutoPlayback(rate){
@@ -835,10 +846,7 @@ document.addEventListener("keydown",event=>{
   const target=event.target;
   if(target&&/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))return;
   const key=event.key;
-  if(key==="1"){event.preventDefault();startAutoPlayback(1);return;}
-  if(key==="2"){event.preventDefault();startAutoPlayback(2);return;}
-  if(key==="3"){event.preventDefault();startAutoPlayback(3);return;}
-  if(key==="6"){event.preventDefault();startAutoPlayback(6);return;}
+  if(/^[1-9]$/.test(key)){event.preventDefault();startAutoPlayback(Number(key));return;}
   if(key==="ArrowLeft"){event.preventDefault();manualStep("prev");return;}
   if(key==="ArrowRight"){event.preventDefault();manualStep("next");return;}
   if(key===" "||event.code==="Space"){
@@ -907,3 +915,5 @@ loadDesignPresets();
 refreshMatches();
 loadPagesInitialState();
 connect();
+
+renderRuntimeUrls();

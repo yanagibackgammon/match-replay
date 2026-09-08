@@ -72,15 +72,16 @@ button:disabled{opacity:.35;cursor:not-allowed}
 
 .meta-card .match-file-row{margin-bottom:10px;padding-bottom:0;border-bottom:0}
 .meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px}
+.runtime-url-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.runtime-url-item{min-width:0}
 .info-card p{margin:0 0 8px;font-size:13px;font-weight:900}
-.info-card p:not(:first-child){margin-top:10px}
-.info-card code{display:block;padding:8px 10px;background:#f3f3f3;border:1px solid #ccc;border-radius:0;font-size:16px}
+.info-card code{display:block;min-height:39px;padding:8px 10px;background:#f3f3f3;border:1px solid #ccc;border-radius:0;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 @media(max-width:760px){
   body{padding:14px}
   .match-file-row{grid-template-columns:1fr}
   .match-actions{grid-template-columns:1fr 1fr}
-  .status-top,.meta-grid{grid-template-columns:1fr}
+  .status-top,.meta-grid,.runtime-url-grid{grid-template-columns:1fr}
   .theme-color-input-row{grid-template-columns:minmax(0,1fr) 45px}
   .status-row-right{text-align:left}
   .mode-head{grid-template-columns:1fr}
@@ -101,7 +102,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
   height:45px;
   border:2px solid #111;
   border-radius:0;
-  background:#6B670D;
+  background:#ffffff;
 }
 
 

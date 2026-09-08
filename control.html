@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Match Replay Control</title>
-<link rel="stylesheet" href="./control.css?v=205">
+<link rel="stylesheet" href="./control.css?v=217">
 </head>
 <body>
 <main class="control-shell">
@@ -106,14 +106,18 @@
   </section>
 
   <section class="info-card">
-    <p>OBS Browser Source</p>
-    <code>http://localhost:3000/</code>
-    <p>操作画面URL</p>
-    <code>http://localhost:3000/control.html</code>
-    <p>GitHub / ローカル棋譜設置フォルダ</p>
-    <code>/matches/</code>
+    <div class="runtime-url-grid">
+      <div class="runtime-url-item">
+        <p>OBS Browser Source</p>
+        <code id="obsBrowserSourceUrl"></code>
+      </div>
+      <div class="runtime-url-item">
+        <p>操作画面URL</p>
+        <code id="controlPageUrl"></code>
+      </div>
+    </div>
   </section>
 </main>
-<script src="./control.js?v=215"></script>
+<script src="./control.js?v=217"></script>
 </body>
 </html>

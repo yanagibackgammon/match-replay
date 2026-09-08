@@ -216,7 +216,7 @@ function broadcastState(){
   const payload=JSON.stringify({type:"state",...state});
   for(const client of wss.clients) if(client.readyState===WebSocket.OPEN) client.send(payload);
 }
-function normalizedPlaybackRate(value){const rate=Number(value);return [1,2,3,6].includes(rate)?rate:1;}
+function normalizedPlaybackRate(value){const rate=Number(value);return Number.isInteger(rate)&&rate>=1&&rate<=9?rate:1;}
 function scaledDelay(ms){return Math.max(1,Math.round(ms/normalizedPlaybackRate(state.playbackRate)));}
 function currentPlaybackDelay(){
   try{

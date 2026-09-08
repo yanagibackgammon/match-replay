@@ -64,7 +64,7 @@ const isLocal=()=>location.hostname==="localhost"||location.hostname==="127.0.0.
 const pageChannel=(!isLocal()&&"BroadcastChannel" in window)?new BroadcastChannel("match-replay-control"):null;
 let pagesMetaRevision="";
 let pagesMetaPoller=null;
-function normalizedPlaybackRate(value){const rate=Number(value);return [1,2,3,6].includes(rate)?rate:1;}
+function normalizedPlaybackRate(value){const rate=Number(value);return Number.isInteger(rate)&&rate>=1&&rate<=9?rate:1;}
 function currentPlaybackRate(){return isLocal()?normalizedPlaybackRate(localPlaybackRate):normalizedPlaybackRate(pagesState.playbackRate);}
 function scaledSequenceDelay(ms){return Math.max(1,Math.round(ms/currentPlaybackRate()));}
 function checkerMoveDuration(){return BASE_CHECKER_MOVE_DURATION/currentPlaybackRate();}
@@ -1481,10 +1481,7 @@ addEventListener("keydown",event=>{
   const target=event.target;
   if(target&&/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(target.tagName))return;
   const key=event.key;
-  if(key==="1"){event.preventDefault();startDisplayAutoPlayback(1);return;}
-  if(key==="2"){event.preventDefault();startDisplayAutoPlayback(2);return;}
-  if(key==="3"){event.preventDefault();startDisplayAutoPlayback(3);return;}
-  if(key==="6"){event.preventDefault();startDisplayAutoPlayback(6);return;}
+  if(/^[1-9]$/.test(key)){event.preventDefault();startDisplayAutoPlayback(Number(key));return;}
   if(key==="ArrowLeft"){event.preventDefault();stepDisplayPlayback("prev");return;}
   if(key==="ArrowRight"){event.preventDefault();stepDisplayPlayback("next");return;}
   if(key===" "||event.code==="Space"){event.preventDefault();dispatchDisplayPlaybackCommand("pause");}
