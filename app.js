@@ -559,8 +559,9 @@ function drawGameOverlay(state){
   }
 
   if(state.phase==="gameStart"){
-    addPanel(246,232,210,82,14);
-    addCenteredTextGroup(232,82,[{text:`Game ${state.gameNumber || 1}`,size:50,weight:700}]);
+    // 「第○ゲーム」を50pxで余裕をもって収めるため、ゲーム開始パネルを横方向に拡張する。
+    addPanel(186,232,330,82,14);
+    addCenteredTextGroup(232,82,[{text:`第${state.gameNumber || 1}ゲーム`,size:50,weight:700}]);
     return;
   }
   if(state.phase!=="gameEnd" || !state.scoreDelta) return;
