@@ -519,14 +519,30 @@ function drawGameOverlay(state){
   const addText=(y,text,size,color="#fff",weight=800)=>{
     const t=document.createElementNS("http://www.w3.org/2000/svg","text");
     t.setAttribute("x","351");t.setAttribute("y",String(y));t.setAttribute("text-anchor","middle");t.setAttribute("fill",color);
+    // SVG text の既定はアルファベットのベースライン基準で、日本語フォントでは枠内で上寄りに見える。
+    // 盤面中央の一時表示は文字の中心をY座標として扱い、フォントが変わっても上下中央を維持する。
+    t.setAttribute("dominant-baseline","central");t.setAttribute("alignment-baseline","central");
     t.setAttribute("font-family",'Noto Sans JP, Noto Sans CJK JP, Yu Gothic, Meiryo, sans-serif');t.setAttribute("font-size",String(size));t.setAttribute("font-weight",String(weight));
     t.textContent=text;gameOverlayG.appendChild(t);
+  };
+  const addCenteredTextGroup=(panelY,panelH,lines,gap=12)=>{
+    const usable=lines.filter(line=>line&&line.text!==undefined&&line.text!==null);
+    if(!usable.length)return;
+    const totalHeight=usable.reduce((sum,line)=>sum+Number(line.size||0),0)+gap*Math.max(0,usable.length-1);
+    let top=panelY+(panelH-totalHeight)/2;
+    for(const line of usable){
+      const size=Number(line.size)||25;
+      addText(top+size/2,line.text,size,line.color||"#fff",line.weight??800);
+      top+=size+gap;
+    }
   };
 
   if(state.phase==="matchStart"){
     addPanel(96,188,510,170,18);
-    addText(246,"試合開始",50,"#fff",900);
-    addText(316,`${meta.blackName} vs ${meta.whiteName}`,40,"#fff",800);
+    addCenteredTextGroup(188,170,[
+      {text:"試合開始",size:50,weight:900},
+      {text:`${meta.blackName} vs ${meta.whiteName}`,size:40,weight:800}
+    ],18);
     return;
   }
 
@@ -534,15 +550,17 @@ function drawGameOverlay(state){
     const winner=state.matchWinner;
     const winnerName=winner==="black"?meta.blackName:winner==="white"?meta.whiteName:"";
     addPanel(116,150,470,246,18);
-    addText(212,"試合終了",50,"#fff",900);
-    addText(270,"勝者",30,"#fff",800);
-    addText(344,winnerName,50,"#fff",900);
+    addCenteredTextGroup(150,246,[
+      {text:"試合終了",size:50,weight:900},
+      {text:"勝者",size:30,weight:800},
+      {text:winnerName,size:50,weight:900}
+    ],15);
     return;
   }
 
   if(state.phase==="gameStart"){
     addPanel(246,232,210,82,14);
-    addText(286,`Game ${state.gameNumber || 1}`,50,"#fff",700);
+    addCenteredTextGroup(232,82,[{text:`Game ${state.gameNumber || 1}`,size:50,weight:700}]);
     return;
   }
   if(state.phase!=="gameEnd" || !state.scoreDelta) return;
@@ -556,9 +574,11 @@ function drawGameOverlay(state){
   const resultLabel=state.matchResignation?"マッチリザイン":`${winLabel}・キューブ${cubeValue}倍`;
 
   addPanel(116,165,470,216,18);
-  addText(220,winnerName,40,"#fff",800);
-  addText(300,`＋${toFullWidthScore(points)}`,70,"#18b86b",900);
-  addText(350,resultLabel,30,"#fff",800);
+  addCenteredTextGroup(165,216,[
+    {text:winnerName,size:40,weight:800},
+    {text:`＋${toFullWidthScore(points)}`,size:70,color:"#18b86b",weight:900},
+    {text:resultLabel,size:30,weight:800}
+  ],12);
 }
 trianglePoints();
 
@@ -850,13 +870,34 @@ function collectHistoryRows(){
       }
     }
 
-    // ダブル候補を表示した時点で履歴を改行する。
-    // 直前の行がすでに空ならその行を使い、相手側の着手などが入っている場合だけ新しい行を作る。
+    // Double候補は、その手が実際に入る履歴セルを候補時点から確保する。
+    // 先攻側は前の1行が埋まっていれば改行するが、後攻側は同じ行の自分側セルが空いていれば
+    // ロール／ムーブと同様にその空きを使い、不要な改行をしない。
     if(state.phase==="cubeOffer"){
-      const row=openMoveRow;
-      const hasAnyAction=row&&([...rowEvents(row,"black"),...rowEvents(row,"white")].some(Boolean));
-      if(!row||hasAnyAction)openMoveRow=newHistoryActionRow(rows);
+      const offerer=state.activePlayer===1?"black":(state.activePlayer===-1?"white":null);
+      let row=openMoveRow;
+      const ownCellEmpty=offerer&&row&&!rowEvents(row,offerer).some(Boolean);
+      const isFollower=offerer&&leadPlayer&&offerer!==leadPlayer;
+      if(!row||(isFollower?!ownCellEmpty:[...rowEvents(row,"black"),...rowEvents(row,"white")].some(Boolean))){
+        row=newHistoryActionRow(rows);
+      }
+      openMoveRow=row;
       lastCubeActionRow=null;
+    }
+
+    // Take / Pass候補も、候補時点から実際に応答が入るセルを薄金表示できるよう行を確保する。
+    // Double行の応答側が空いていれば同じ行、すでに埋まっていれば次の行を使う。
+    if(state.phase==="cubeResponse"){
+      const responder=state.activePlayer===1?"black":(state.activePlayer===-1?"white":null);
+      const pairedRow=lastCubeActionRow;
+      if(responder){
+        if(pairedRow&&!rowEvents(pairedRow,responder).some(Boolean)){
+          openMoveRow=pairedRow;
+        }else{
+          const currentCanUse=openMoveRow&&openMoveRow!==pairedRow&&!rowEvents(openMoveRow,responder).some(Boolean);
+          if(!currentCanUse)openMoveRow=newHistoryActionRow(rows);
+        }
+      }
     }
 
     // Legacy generated JSON compatibility.
@@ -905,7 +946,11 @@ function collectHistoryRows(){
           lastCubeActionRow=pairedRow;
           continue;
         }
-        const row=newHistoryActionRow(rows);
+        // cubeResponse候補時点で用意した空行があれば、そのまま確定表示に使う。
+        // これにより候補の薄金セルと、確定後のTake / Passの位置がずれない。
+        let row=openMoveRow;
+        const canUsePreparedRow=row&&row!==pairedRow&&!rowEvents(row,event.player).some(Boolean);
+        if(!canUsePreparedRow)row=newHistoryActionRow(rows);
         appendHistoryEvent(row,event.player,responseEvent);
         openMoveRow=row;
         lastCubeActionRow=row;
