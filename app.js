@@ -729,7 +729,7 @@ function ensureHistoryHeader(el){
 }
 function renderHistoryHeader(el,prValue,nameText){
   const parts=ensureHistoryHeader(el);
-  if(parts.pr)parts.pr.textContent=`PR ${Number(prValue||0).toFixed(2)}`;
+  if(parts.pr)parts.pr.textContent=Number(prValue||0).toFixed(2);
   if(parts.name)parts.name.textContent=nameText||'';
 }
 function renderMeta(state){

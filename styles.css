@@ -1163,11 +1163,11 @@ html,body{
 .point{stroke:var(--point-border);stroke-width:1;stroke-linejoin:round}
 .checker-piece-black{fill:var(--checker-player1);stroke:var(--checker-border);stroke-width:var(--checker-border-width)}
 .checker-piece-white{fill:var(--checker-player2);stroke:var(--checker-border);stroke-width:var(--checker-border-width)}
-.point-label{font-family:"Noto Sans JP","Noto Sans CJK JP","Yu Gothic",Meiryo,sans-serif;font-size: 20px;font-weight:700;fill:var(--board-info-text);text-anchor:middle;dominant-baseline:middle}
+.point-label{font-family:"Noto Sans JP","Noto Sans CJK JP","Yu Gothic",Meiryo,sans-serif;font-size: 15px;font-weight:700;fill:var(--board-info-text);text-anchor:middle;dominant-baseline:middle}
 .checker-text{font-size:20px;font-weight:900;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
 .pip-label{
   font-family:"Noto Sans JP","Noto Sans CJK JP","Yu Gothic",Meiryo,sans-serif;
-  font-size: 20px;
+  font-size: 15px;
   font-weight:900;
   fill:var(--board-info-text);
   text-anchor:middle;
@@ -1200,13 +1200,21 @@ html,body{
 .history-player-name:first-child{padding-right:14px}
 .history-player-name + .history-player-name{padding-left:14px}
 .history-pr{
-  display:block;
+  display:flex;
   width:108px;
+  justify-content:center;
+  align-items:baseline;
+  gap:4px;
   text-align:center;
   font-size:30px;
   font-weight:900;
   font-variant-numeric:tabular-nums;
   white-space:nowrap;
+}
+.history-pr::before{
+  content:"PR";
+  font-size:15px;
+  font-weight:900;
 }
 .history-name-text{
   display:block;
