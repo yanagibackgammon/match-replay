@@ -180,6 +180,36 @@ const JBS_THEME_BY_TITLE=[
 function decodeMatchFilenameForTheme(filename){
   return String(filename||"").replace(/#U([0-9a-fA-F]{4})/g,(_,hex)=>String.fromCharCode(parseInt(hex,16)));
 }
+function autoMetaFromStructuredMatchFilename(filename){
+  const decoded=decodeMatchFilenameForTheme(filename).split(/[\/]/).pop()||"";
+  const match=decoded.match(/^(\d{8})_([^_\-]+)-([^_]+)_([^_]+)\.xg$/i);
+  if(!match)return null;
+  const [,dateRaw,player1Raw,player2Raw,titleRaw]=match;
+  const yyyy=dateRaw.slice(0,4),mm=dateRaw.slice(4,6),dd=dateRaw.slice(6,8);
+  const title=String(titleRaw||"").trim();
+  return {
+    tournamentTitleLine1:title.startsWith("JBS")?title:`JBS${title}`,
+    tournamentTitleLine2:`${yyyy}-${mm}-${dd}`,
+    blackName:String(player1Raw||"").trim(),
+    whiteName:String(player2Raw||"").trim()
+  };
+}
+function applyAutoMetaFromMatchFile(filename){
+  const parsed=autoMetaFromStructuredMatchFilename(filename);
+  if(!parsed)return false;
+  const entries=[
+    [tournamentLine1Input,"tournamentTitleLine1",parsed.tournamentTitleLine1],
+    [tournamentLine2Input,"tournamentTitleLine2",parsed.tournamentTitleLine2],
+    [blackNameInput,"blackName",parsed.blackName],
+    [whiteNameInput,"whiteName",parsed.whiteName]
+  ];
+  entries.forEach(([input,key,value])=>{
+    if(input)input.value=value;
+    dirtyMetaFields.add(key);
+  });
+  lastState.meta={...lastState.meta,...parsed};
+  return true;
+}
 function autoThemeColorForMatchFile(filename){
   const decoded=decodeMatchFilenameForTheme(filename);
   const rule=JBS_THEME_BY_TITLE.find(item=>item.keywords.some(keyword=>decoded.includes(keyword)));
@@ -630,8 +660,13 @@ async function applyMeta(){
     let matchInfo=null;
     if(fileChanged && nextMeta.matchFile){
       matchInfo=isLocalRuntime()?await getLocalMatchInfo(nextMeta.matchFile):await getPagesMatchInfo(nextMeta.matchFile);
-      if(matchInfo.blackName) nextMeta.blackName=matchInfo.blackName;
-      if(matchInfo.whiteName) nextMeta.whiteName=matchInfo.whiteName;
+      const filenameMeta=autoMetaFromStructuredMatchFilename(nextMeta.matchFile);
+      // 規定ファイル名なら選択時に入力欄へ自動セット済み。ここでは手動修正を上書きしない。
+      // 規定外ファイルだけ、棋譜内部の選手名を従来どおり初期値として利用する。
+      if(!filenameMeta){
+        if(matchInfo.blackName) nextMeta.blackName=matchInfo.blackName;
+        if(matchInfo.whiteName) nextMeta.whiteName=matchInfo.whiteName;
+      }
     }
 
     if(isLocalRuntime()){
@@ -807,6 +842,7 @@ themeColorPreview?.querySelectorAll(".theme-color-button").forEach(button=>{
 });
 matchFileSelect.addEventListener("change",()=>{
   if(matchFileSelect.value){
+    applyAutoMetaFromMatchFile(matchFileSelect.value);
     applyAutoThemeFromMatchFile(matchFileSelect.value);
     return;
   }

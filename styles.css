@@ -333,7 +333,7 @@ html,body{
 }
 .score-value.score-two-digit,
 .score-number.score-two-digit{
-  letter-spacing:-.065em;
+  letter-spacing:calc(-.065em - 10px);
 }
 .score-number{
   position:absolute;
@@ -346,7 +346,7 @@ html,body{
   justify-content:center;
 }
 .score-value.is-score-transition .score-number-old{animation:scoreOldTravel var(--sequence-duration) cubic-bezier(.18,.72,.22,1) both}
-.score-value.is-score-transition .score-number-gain{animation:scoreGainTravel var(--sequence-duration) cubic-bezier(.18,.72,.22,1) both;color:#18b86b;font-size:70px;letter-spacing:-.065em}
+.score-value.is-score-transition .score-number-gain{animation:scoreGainTravel var(--sequence-duration) cubic-bezier(.18,.72,.22,1) both;color:#18b86b;font-size:70px;letter-spacing:calc(-.065em - 10px)}
 .score-value.is-score-transition .score-number-new{animation:scoreNewTravel var(--sequence-duration) cubic-bezier(.18,.72,.22,1) both}
 @keyframes scoreOldTravel{
   0%,18%{transform:translateY(0);opacity:1}
@@ -611,23 +611,42 @@ html,body{
   17%,100%{transform:translate3d(0,0,0) scale(1)}
 }
 
-/* 雷は画面中央ではなく、実際に出たサイコロへ落とす。 */
+/* 大逆転の雷：ボード上端から実際のサイコロまで走り、着弾時に盤面へ衝撃を与える。 */
 #dice .comeback-dice-lightning{opacity:0;animation:comebackDiceLightning var(--sequence-duration) linear both;pointer-events:none}
-#dice .comeback-lightning-main,#dice .comeback-lightning-branch{
-  fill:#fffdf0;
-  stroke:#ffffff;
-  stroke-width:1.2;
-  paint-order:stroke fill;
+#dice .comeback-lightning-main,
+#dice .comeback-lightning-branch{
+  fill:none;
+  stroke:#fffdf0;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  paint-order:stroke;
   filter:drop-shadow(0 0 3px rgba(255,255,255,1)) drop-shadow(0 0 8px rgba(152,211,255,.98)) drop-shadow(0 0 15px rgba(255,210,78,.92));
+  stroke-dasharray:1;
+  stroke-dashoffset:1;
 }
+#dice .comeback-lightning-main{stroke-width:6}
+#dice .comeback-lightning-branch{stroke-width:4.2}
+#dice .comeback-dice-lightning .comeback-lightning-main{animation:comebackLightningTravel var(--sequence-duration) linear both}
+#dice .comeback-dice-lightning .comeback-lightning-branch{animation:comebackLightningBranch var(--sequence-duration) linear both}
 @keyframes comebackDiceLightning{
-  0%,3%{opacity:0}
-  5%{opacity:1}
-  7%{opacity:.08}
-  9%{opacity:1}
-  12%{opacity:.2}
-  15%{opacity:.86}
-  19%,100%{opacity:0}
+  0%,2%{opacity:0}
+  4%{opacity:.45}
+  7%{opacity:1}
+  10%{opacity:.18}
+  12%{opacity:1}
+  16%{opacity:.25}
+  19%{opacity:.88}
+  23%,100%{opacity:0}
+}
+@keyframes comebackLightningTravel{
+  0%,2%{stroke-dashoffset:1}
+  8%{stroke-dashoffset:0}
+  100%{stroke-dashoffset:0}
+}
+@keyframes comebackLightningBranch{
+  0%,6%{stroke-dashoffset:1}
+  10%{stroke-dashoffset:0}
+  100%{stroke-dashoffset:0}
 }
 
 .main-area{
@@ -657,11 +676,16 @@ html,body{
   pointer-events:none;
   z-index:6;
 }
-.board-dim-overlay.is-active{animation:boardDimBeforeComeback var(--sequence-duration) ease-out both}
+.board-dim-overlay.is-active{animation:boardDimBeforeComeback var(--sequence-duration) linear both}
+.board-dim-overlay.is-release{animation:boardDimReleaseAfterComeback var(--sequence-duration) ease-out both}
 @keyframes boardDimBeforeComeback{
   0%{opacity:0}
-  14%{opacity:.78}
   100%{opacity:.78}
+}
+@keyframes boardDimReleaseAfterComeback{
+  0%{opacity:.78}
+  24%{opacity:0}
+  100%{opacity:0}
 }
 #board{
   display:block;

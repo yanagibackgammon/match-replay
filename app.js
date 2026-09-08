@@ -389,16 +389,23 @@ function drawDice(vals,activePlayer,{luckKind=null,muted=false,comeback=false}={
   diceG.appendChild(die(xs[0],254,vals[0]));diceG.appendChild(die(xs[1],254,vals[1]));
   if(comeback){
     const cx=(xs[0]+xs[1]+36)/2;
+    const leftDieCx=xs[0]+18,rightDieCx=xs[1]+18,dieCy=272;
     const lightning=document.createElementNS("http://www.w3.org/2000/svg","g");
     lightning.setAttribute("class","comeback-dice-lightning");
     lightning.setAttribute("aria-hidden","true");
     const main=document.createElementNS("http://www.w3.org/2000/svg","path");
     main.setAttribute("class","comeback-lightning-main");
-    main.setAttribute("d",`M ${cx-7} 184 L ${cx+12} 184 L ${cx+1} 219 L ${cx+18} 219 L ${cx-13} 282 L ${cx-4} 239 L ${cx-20} 239 Z`);
-    const branch=document.createElementNS("http://www.w3.org/2000/svg","path");
-    branch.setAttribute("class","comeback-lightning-branch");
-    branch.setAttribute("d",`M ${cx+7} 219 L ${cx+31} 202 L ${cx+21} 226 L ${cx+39} 225 L ${cx+13} 253 L ${cx+21} 231 Z`);
-    lightning.appendChild(main);lightning.appendChild(branch);diceG.appendChild(lightning);
+    main.setAttribute("pathLength","1");
+    main.setAttribute("d",`M ${cx-36} 28 L ${cx+14} 72 L ${cx-18} 106 L ${cx+25} 142 L ${cx-13} 178 L ${cx+17} 211 L ${cx} 246`);
+    const leftBranch=document.createElementNS("http://www.w3.org/2000/svg","path");
+    leftBranch.setAttribute("class","comeback-lightning-branch");
+    leftBranch.setAttribute("pathLength","1");
+    leftBranch.setAttribute("d",`M ${cx} 246 L ${cx-12} 256 L ${leftDieCx} ${dieCy}`);
+    const rightBranch=document.createElementNS("http://www.w3.org/2000/svg","path");
+    rightBranch.setAttribute("class","comeback-lightning-branch");
+    rightBranch.setAttribute("pathLength","1");
+    rightBranch.setAttribute("d",`M ${cx} 246 L ${cx+12} 256 L ${rightDieCx} ${dieCy}`);
+    lightning.appendChild(main);lightning.appendChild(leftBranch);lightning.appendChild(rightBranch);diceG.appendChild(lightning);
   }
 }
 function cubeOwnerTarget(cube){
@@ -1042,7 +1049,7 @@ function currentState(){return matchData.states[Math.max(0,Math.min(index,matchD
 function resetBoardDimOverlay(){
   lastBoardDimKey="";
   const el=els.boardDimOverlay;if(!el)return;
-  el.classList.remove("is-active");
+  el.classList.remove("is-active","is-release");
   el.setAttribute("aria-hidden","true");
 }
 function renderBoardDimOverlay(state){
@@ -1050,7 +1057,7 @@ function renderBoardDimOverlay(state){
   const isIntro=state?.phase==="bigComebackIntro" && Boolean(state?.bigComeback);
   const isImpact=state?.phase==="roll" && state?.rollNotice==="comeback";
 
-  // 1段目は暗転だけ。サイコロ・勝率バー・衝撃演出はまだ出さない。
+  // 1段目：6秒を丸ごと使って、盤面だけをゆっくり暗転させる。
   if(isIntro){
     els.stage?.classList.remove("is-comeback-impact");
     els.winrateBar?.classList.remove("is-comeback-impact","is-player-left","is-player-right");
@@ -1059,7 +1066,7 @@ function renderBoardDimOverlay(state){
     const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}:dim`;
     if(key!==lastBoardDimKey){
       lastBoardDimKey=key;
-      dim.classList.remove("is-active");
+      dim.classList.remove("is-active","is-release");
       void dim.offsetWidth;
       dim.setAttribute("aria-hidden","false");
       dim.classList.add("is-active");
@@ -1067,24 +1074,29 @@ function renderBoardDimOverlay(state){
     return;
   }
 
-  resetBoardDimOverlay();
-
-  // 2段目はロール確定と同時に、勝率バー・サイコロの雷・盤面衝撃を発火。
-  if(!isImpact){
-    lastComebackFxKey="";
+  // 2段目：ロール確定時は暗転を解除しながら、勝率バー・雷・盤面衝撃を同時に発火。
+  if(isImpact){
+    const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}:impact`;
+    if(key===lastComebackFxKey)return;
+    lastComebackFxKey=key;
+    if(dim){
+      dim.classList.remove("is-active");
+      dim.setAttribute("aria-hidden","false");
+      dim.classList.add("is-release");
+    }
+    const sideClass=state.activePlayer===1?"is-player-left":"is-player-right";
     els.stage?.classList.remove("is-comeback-impact");
     els.winrateBar?.classList.remove("is-comeback-impact","is-player-left","is-player-right");
+    void (els.stage?.offsetWidth||0);
+    els.stage?.classList.add("is-comeback-impact");
+    els.winrateBar?.classList.add("is-comeback-impact",sideClass);
     return;
   }
-  const key=`${index}:${state.gameNumber||0}:${state.activePlayer||0}:impact`;
-  if(key===lastComebackFxKey)return;
-  lastComebackFxKey=key;
-  const sideClass=state.activePlayer===1?"is-player-left":"is-player-right";
+
+  resetBoardDimOverlay();
+  lastComebackFxKey="";
   els.stage?.classList.remove("is-comeback-impact");
   els.winrateBar?.classList.remove("is-comeback-impact","is-player-left","is-player-right");
-  void (els.stage?.offsetWidth||0);
-  els.stage?.classList.add("is-comeback-impact");
-  els.winrateBar?.classList.add("is-comeback-impact",sideClass);
 }
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));}
 function achievementSourceForMoveState(state){
@@ -1446,5 +1458,34 @@ async function cycleAds(){
   adIndex=(adIndex+2)%adFiles.length;
 }
 function startAdRotation(){if(adTimer)clearInterval(adTimer);cycleAds();adTimer=setInterval(cycleAds,60000);}
+function dispatchDisplayPlaybackCommand(command,value){
+  if(isLocal()){
+    if(socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:"command",command,value}));
+    return;
+  }
+  handlePagesCommand(command,value);
+}
+function startDisplayAutoPlayback(rate){
+  dispatchDisplayPlaybackCommand("setMode","auto");
+  dispatchDisplayPlaybackCommand("speed",rate);
+  dispatchDisplayPlaybackCommand("play");
+}
+function stepDisplayPlayback(direction){
+  dispatchDisplayPlaybackCommand("setMode","manual");
+  dispatchDisplayPlaybackCommand(direction);
+}
+addEventListener("keydown",event=>{
+  if(event.ctrlKey||event.metaKey||event.altKey)return;
+  const target=event.target;
+  if(target&&/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(target.tagName))return;
+  const key=event.key;
+  if(key==="1"){event.preventDefault();startDisplayAutoPlayback(1);return;}
+  if(key==="2"){event.preventDefault();startDisplayAutoPlayback(2);return;}
+  if(key==="3"){event.preventDefault();startDisplayAutoPlayback(3);return;}
+  if(key==="6"){event.preventDefault();startDisplayAutoPlayback(6);return;}
+  if(key==="ArrowLeft"){event.preventDefault();stepDisplayPlayback("prev");return;}
+  if(key==="ArrowRight"){event.preventDefault();stepDisplayPlayback("next");return;}
+  if(key===" "||event.code==="Space"){event.preventDefault();dispatchDisplayPlaybackCommand("pause");}
+});
 function scaleStage(){const vw=document.documentElement.clientWidth||innerWidth||1920,s=vw/1920;els.stage.style.transform=`scale(${s})`;els.stageWrap.style.height=`${Math.ceil(1080*s)}px`;}
 addEventListener("resize",scaleStage);scaleStage();applyPlaybackTiming();render();loadDesignPresets();startAdRotation();loadInitialPagesMeta();startPagesMetaPolling();connectWebSocket();
