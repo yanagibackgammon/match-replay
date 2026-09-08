@@ -643,8 +643,10 @@ function applyDesignPreset(id,overrides=meta.designOverrides){
   root.style.setProperty("--die-player2",checkerPlayer2);
   root.style.setProperty("--die-player1-pip",contrastText(checkerPlayer1));
   root.style.setProperty("--die-player2-pip",contrastText(checkerPlayer2));
-  const winPlayer1=normalizeHex(next.winRate?.player1,"#111111");
-  const winPlayer2=normalizeHex(next.winRate?.player2,"#FFFFFF");
+  // Keep the win-rate bar colors locked to the checker colors.
+  // Any checker color override/preset change must automatically carry over here.
+  const winPlayer1=checkerPlayer1;
+  const winPlayer2=checkerPlayer2;
   root.style.setProperty("--win-player1",winPlayer1);
   root.style.setProperty("--win-player2",winPlayer2);
   root.style.setProperty("--gammon-player1",gammonTone(winPlayer1));
