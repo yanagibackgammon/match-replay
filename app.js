@@ -782,7 +782,8 @@ function historyEventSegment(event,player,{compact=false}={}){
         ? `<span class="history-cube-icon history-cube-icon-compact">${event.kind==="cubeResponse"&&event.move==="Pass"?"P":Math.max(2,Number(event.cubeValue)||2)}</span>`
         : renderHistoryCube(event.kind==="cubeResponse"&&event.move==="Pass"?"P":event.cubeValue))
     : renderPair(event.dice,player);
-  return `<div class="history-event-segment${compact?" is-compact":""} ${historyClass(event.error)}">${icon}<span class="history-move">${historyMoveLabel(event.move)}</span></div>`;
+  const moveLabel=event.kind==="noRoll"?"ロールできない":historyMoveLabel(event.move);
+  return `<div class="history-event-segment${compact?" is-compact":""} ${historyClass(event.error)}">${icon}<span class="history-move">${moveLabel}</span></div>`;
 }
 function historyCell(events,player,isCurrent=false){
   const list=Array.isArray(events)?events.filter(Boolean):(events?[events]:[]);
