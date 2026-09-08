@@ -866,15 +866,21 @@ function collectHistoryRows(){
         continue;
       }
       if(event.kind==="cubeResponse"){
-        // テイク／パスは候補選択が確定した時点で必ず改行して新しい行へ表示する。
-        // テイク後は、その行の反対側セルが空いていればダブルした側の次ロールを置ける。
-        // ただしテイクした側の次ロールは、テイクと同じセルへ併記せず必ず次行に送る。
         const pairedRow=event.pairId?cubeRows.get(event.pairId):null;
         const pairedOffer=pairedRow
           ? [...rowEvents(pairedRow,"black"),...rowEvents(pairedRow,"white")].find(item=>item?.kind==="cube")
           : null;
+        const responseEvent=event.cubeValue?event:{...event,cubeValue:pairedOffer?.cubeValue};
+        // パスは、対応するダブル行の相手側セルが空いていれば同じ行へ詰める。
+        // テイクは従来どおり新しい行へ表示し、テイクした側の次ロールはさらに次行へ送る。
+        if(event.move==="Pass"&&pairedRow&&!rowEvents(pairedRow,event.player).some(Boolean)){
+          appendHistoryEvent(pairedRow,event.player,responseEvent);
+          openMoveRow=null;
+          lastCubeActionRow=null;
+          continue;
+        }
         const row=newHistoryActionRow(rows);
-        appendHistoryEvent(row,event.player,event.cubeValue?event:{...event,cubeValue:pairedOffer?.cubeValue});
+        appendHistoryEvent(row,event.player,responseEvent);
         if(event.move==="Take"){
           openMoveRow=row;
           lastCubeActionRow=row;

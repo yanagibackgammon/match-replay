@@ -548,20 +548,20 @@ html,body{
   -webkit-text-stroke:2px #111;
   paint-order:stroke fill;
 }
-.big-comeback.is-comeback{color:#e53935}
+.big-comeback.is-comeback{color:#ffd33d}
 .big-comeback.is-nice{color:#ffd33d}
 .big-comeback.is-bad{color:#b56cff}
 .big-comeback.is-active.is-comeback{animation:bigComebackRed var(--sequence-duration) ease-in-out both}
 .big-comeback.is-active.is-nice{animation:niceRollGold var(--sequence-duration) ease-in-out both}
 .big-comeback.is-active.is-bad{animation:badRollPurple var(--sequence-duration) ease-in-out both}
 @keyframes bigComebackRed{
-  0%{opacity:0;transform:translate(-50%,48px);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(229,57,53,.30)}
-  14%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 8px rgba(229,57,53,.92),0 0 16px rgba(229,57,53,.58)}
-  30%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(229,57,53,.38),0 0 9px rgba(229,57,53,.30)}
-  46%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(229,57,53,.96),0 0 17px rgba(229,57,53,.62)}
-  62%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(229,57,53,.36),0 0 9px rgba(229,57,53,.28)}
-  78%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(229,57,53,.94),0 0 17px rgba(229,57,53,.60)}
-  100%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 7px rgba(229,57,53,.72),0 0 13px rgba(229,57,53,.42)}
+  0%{opacity:0;transform:translate(-50%,48px);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(255,211,61,.30)}
+  14%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 8px rgba(255,211,61,.92),0 0 16px rgba(255,211,61,.58)}
+  30%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(255,211,61,.38),0 0 9px rgba(255,211,61,.30)}
+  46%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(255,211,61,.96),0 0 17px rgba(255,211,61,.62)}
+  62%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(255,211,61,.36),0 0 9px rgba(255,211,61,.28)}
+  78%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 9px rgba(255,211,61,.94),0 0 17px rgba(255,211,61,.60)}
+  100%{opacity:1;transform:translate(-50%,-50%);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 7px rgba(255,211,61,.72),0 0 13px rgba(255,211,61,.42)}
 }
 @keyframes niceRollGold{
   0%{opacity:0;transform:translate(-50%,48px);text-shadow:0 3px 4px rgba(0,0,0,.42),0 0 4px rgba(255,211,61,.30)}
@@ -585,7 +585,7 @@ html,body{
 /* ロール通知は手番側から勝率バー中央へスライドイン。 */
 .big-comeback.is-active.is-player-left{animation:rollNoticeFromLeft var(--sequence-duration) ease-out both!important}
 .big-comeback.is-active.is-player-right{animation:rollNoticeFromRight var(--sequence-duration) ease-out both!important}
-.big-comeback.is-comeback{font-size:60px;text-shadow:0 3px 5px rgba(0,0,0,.5),0 0 10px rgba(229,57,53,.78),0 0 22px rgba(229,57,53,.46)}
+.big-comeback.is-comeback{font-size:60px;text-shadow:0 3px 5px rgba(0,0,0,.5),0 0 10px rgba(255,211,61,.78),0 0 22px rgba(255,211,61,.46)}
 @keyframes rollNoticeFromLeft{
   0%{opacity:0;transform:translate(calc(-50% - 420px),-50%) scale(.92)}
   14%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}

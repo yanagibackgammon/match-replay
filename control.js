@@ -828,7 +828,22 @@ document.addEventListener("pointerdown",event=>{
   closeDesignColorEditor();
 });
 document.addEventListener("keydown",event=>{
-  if(event.key==="Escape") closeDesignColorEditor();
+  if(event.key==="Escape"){closeDesignColorEditor();return;}
+  if(event.ctrlKey||event.metaKey||event.altKey)return;
+  const target=event.target;
+  if(target&&/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))return;
+  const key=event.key;
+  if(key==="1"){event.preventDefault();startAutoPlayback(1);return;}
+  if(key==="2"){event.preventDefault();startAutoPlayback(2);return;}
+  if(key==="3"){event.preventDefault();startAutoPlayback(3);return;}
+  if(key==="6"){event.preventDefault();startAutoPlayback(6);return;}
+  if(key==="ArrowLeft"){event.preventDefault();manualStep("prev");return;}
+  if(key==="ArrowRight"){event.preventDefault();manualStep("next");return;}
+  if(key===" "||event.code==="Space"){
+    event.preventDefault();
+    setPlaybackSelection("pause");
+    sendCommand("pause");
+  }
 });
 window.addEventListener("resize",closeDesignColorEditor);
 window.addEventListener("scroll",closeDesignColorEditor,true);
