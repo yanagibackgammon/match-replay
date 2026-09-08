@@ -754,81 +754,149 @@ function historyClass(error){
   return"";
 }
 function candidateErrorClass(error){const value=Number(error);if(value<=-0.080)return"error-purple";if(value<=-0.020)return"error-red";return"";}
-function historyMoveLabel(move){return move==="Dance"?"Cannot Move":(move||"");}
-function historyCell(event,player,isCurrent=false){
-  if(!event)return `<div class="history-cell${isCurrent?" is-current":""}"></div>`;
-  const icon=event.kind==="cube"
-    ? renderHistoryCube(event.cubeValue)
-    : event.kind==="cubeResponse"
-      ? renderHistoryCube(event.move==="Pass"?"P":event.cubeValue)
-      : renderPair(event.dice,player);
-  return `<div class="history-cell ${historyClass(event.error)}${isCurrent?" is-current":""}">${icon}<span class="history-move">${historyMoveLabel(event.move)}</span></div>`;
+function historyMoveLabel(move){
+  const labels={
+    "Double":"ダブル",
+    "Take":"テイク",
+    "Pass":"パス",
+    "Resign":"リザイン",
+    "Cannot Move":"ムーブできない",
+    "Dance":"ムーブできない",
+    "No Double":"ノーダブル",
+    "No Doubke":"ノーダブル"
+  };
+  return labels[move]??(move||"");
+}
+function historyEventSegment(event,player,{compact=false}={}){
+  if(!event)return "";
+  const cubeKind=event.kind==="cube"||event.kind==="cubeResponse";
+  const icon=cubeKind
+    ? (compact
+        ? `<span class="history-cube-icon history-cube-icon-compact">${event.kind==="cubeResponse"&&event.move==="Pass"?"P":Math.max(2,Number(event.cubeValue)||2)}</span>`
+        : renderHistoryCube(event.kind==="cubeResponse"&&event.move==="Pass"?"P":event.cubeValue))
+    : renderPair(event.dice,player);
+  return `<div class="history-event-segment${compact?" is-compact":""} ${historyClass(event.error)}">${icon}<span class="history-move">${historyMoveLabel(event.move)}</span></div>`;
+}
+function historyCell(events,player,isCurrent=false){
+  const list=Array.isArray(events)?events.filter(Boolean):(events?[events]:[]);
+  if(!list.length)return `<div class="history-cell${isCurrent?" is-current":""}"></div>`;
+  const packed=list.length>1;
+  const classes=[...new Set(list.map(event=>historyClass(event.error)).filter(Boolean))];
+  return `<div class="history-cell ${classes.join(" ")}${isCurrent?" is-current":""}${packed?" is-packed":""}">${list.map(event=>historyEventSegment(event,player,{compact:packed&&event.kind?.startsWith("cube")})).join("")}</div>`;
+}
+function rowEvents(row,player){
+  if(!row)return [];
+  const value=row[player];
+  if(Array.isArray(value))return value;
+  if(value){row[player]=[value];return row[player];}
+  row[player]=[];return row[player];
+}
+function rowHasCheckerEvent(row,player){
+  return rowEvents(row,player).some(event=>event&&!["cube","cubeResponse"].includes(event.kind));
+}
+function appendHistoryEvent(row,player,event,{replaceRoll=false}={}){
+  const events=rowEvents(row,player);
+  if(replaceRoll){
+    for(let i=events.length-1;i>=0;i--){
+      if(events[i]?.kind==="roll"){events[i]=event;return;}
+    }
+  }
+  events.push(event);
+}
+function newHistoryActionRow(rows){
+  const row={kind:"actions",black:[],white:[]};
+  rows.push(row);
+  return row;
 }
 function collectHistoryRows(){
   const rows=[];
   const cubeRows=new Map();
   let leadPlayer=null;
   let openMoveRow=null;
+  let lastCubeActionRow=null;
   for(let stateIndex=0;stateIndex<=index&&stateIndex<matchData.states.length;stateIndex++){
     const state=matchData.states[stateIndex];
     if(!state)continue;
     if(state.phase==="gameStart"){
       rows.push({kind:"game",gameNumber:Number(state.gameNumber)||1});
-      leadPlayer=null;openMoveRow=null;cubeRows.clear();
+      leadPlayer=null;openMoveRow=null;lastCubeActionRow=null;cubeRows.clear();
       continue;
     }
 
     // 各ゲームで最初に手番を迎えた側を先行とする。
-    // 先行のpreRoll（手番開始）が来た時点で、ムーブ表示前でも次の行を先に作る。
+    // ただしキューブ判断直後は、次のロールをキューブ行の空きへ詰めるため新規行を先に作らない。
     if(state.phase==="preRoll"){
       const turnPlayer=state.activePlayer===1?"black":(state.activePlayer===-1?"white":null);
       if(turnPlayer){
         if(!leadPlayer)leadPlayer=turnPlayer;
-        if(turnPlayer===leadPlayer){openMoveRow={kind:"actions",black:null,white:null};rows.push(openMoveRow);}
+        const canReuseCubeRow=lastCubeActionRow&&!rowHasCheckerEvent(lastCubeActionRow,turnPlayer);
+        if(canReuseCubeRow){
+          openMoveRow=lastCubeActionRow;
+        }else if(turnPlayer===leadPlayer){
+          openMoveRow=newHistoryActionRow(rows);
+        }
       }
     }
 
     // Legacy generated JSON compatibility.
     const grouped=Array.isArray(state.historyEvents)?state.historyEvents.filter(Boolean):[];
     if(grouped.length){
-      const row={kind:"actions",black:null,white:null};
-      for(const event of grouped){if(event.player==="black"||event.player==="white")row[event.player]=event;}
-      rows.push(row);openMoveRow=null;continue;
+      const row=newHistoryActionRow(rows);
+      for(const event of grouped){if(event.player==="black"||event.player==="white")appendHistoryEvent(row,event.player,event);}
+      openMoveRow=null;lastCubeActionRow=null;continue;
     }
 
     const event=state.historyEvent;
     if(event&&(event.player==="black"||event.player==="white")){
       if(event.kind==="cube"){
-        const row={kind:"actions",black:null,white:null};
-        row[event.player]=event;rows.push(row);openMoveRow=null;
+        // その側が空いている既存行ならそこへ詰め、埋まっていれば新しい行を作る。
+        let row=openMoveRow;
+        if(!row||rowHasCheckerEvent(row,event.player)||rowEvents(row,event.player).some(Boolean))row=newHistoryActionRow(rows);
+        appendHistoryEvent(row,event.player,event);
+        openMoveRow=row;
+        lastCubeActionRow=row;
         if(event.pairId)cubeRows.set(event.pairId,row);
         continue;
       }
       if(event.kind==="cubeResponse"){
         let row=event.pairId?cubeRows.get(event.pairId):null;
-        if(!row){row={kind:"actions",black:null,white:null};rows.push(row);if(event.pairId)cubeRows.set(event.pairId,row);}
-        const pairedOffer=row.black?.kind==="cube"?row.black:(row.white?.kind==="cube"?row.white:null);
-        row[event.player]=event.cubeValue?event:{...event,cubeValue:pairedOffer?.cubeValue};
-        openMoveRow=null;continue;
+        // Double と Take/Pass は同じ行に入るとは限らない。相手側セルが既に埋まっていれば次行へ送る。
+        if(!row||rowEvents(row,event.player).some(Boolean))row=newHistoryActionRow(rows);
+        const pairedRow=event.pairId?cubeRows.get(event.pairId):null;
+        const pairedOffer=pairedRow
+          ? [...rowEvents(pairedRow,"black"),...rowEvents(pairedRow,"white")].find(item=>item?.kind==="cube")
+          : null;
+        appendHistoryEvent(row,event.player,event.cubeValue?event:{...event,cubeValue:pairedOffer?.cubeValue});
+        openMoveRow=row;
+        lastCubeActionRow=row;
+        continue;
       }
       if(!leadPlayer)leadPlayer=event.player;
-      const existingEvent=openMoveRow?.[event.player]||null;
-      // 直前のrollで同じセルにダイスだけ入っている場合は、そのセルをムーブで置き換える。
-      // これにより「ロール表示」と「候補手表示」を分けても履歴行は増えない。
-      if(!openMoveRow||(existingEvent&&existingEvent.kind!=="roll")){openMoveRow={kind:"actions",black:null,white:null};rows.push(openMoveRow);}
-      openMoveRow[event.player]=event;
+      // 直前のキューブ行やロール行に詰められる場合は同じ行を維持。
+      if(!openMoveRow){openMoveRow=newHistoryActionRow(rows);}
+      const events=rowEvents(openMoveRow,event.player);
+      const hasRoll=events.some(item=>item?.kind==="roll");
+      const hasMove=events.some(item=>item&&!["cube","cubeResponse","roll"].includes(item.kind));
+      if(hasMove){openMoveRow=newHistoryActionRow(rows);}
+      appendHistoryEvent(openMoveRow,event.player,event,{replaceRoll:hasRoll});
+      lastCubeActionRow=null;
       continue;
     }
 
-    // ロールした瞬間は、現在行にダイスだけ先に表示する。
-    // 初手はpreRollを省略するため、roll自体が先行行の開始にもなる。
+    // ロールした瞬間は、キューブアクション直後の行に空きがあれば改行せず同じ行へ詰める。
+    // 着手確定時にはこの roll セグメントを同じ場所でムーブ表示へ置き換える。
     if(state.phase==="roll"&&Array.isArray(state.dice)){
       const turnPlayer=state.activePlayer===1?"black":(state.activePlayer===-1?"white":null);
       if(turnPlayer){
         if(!leadPlayer)leadPlayer=turnPlayer;
-        if(turnPlayer===leadPlayer&&(!openMoveRow||openMoveRow[turnPlayer])){openMoveRow={kind:"actions",black:null,white:null};rows.push(openMoveRow);}
-        if(!openMoveRow||openMoveRow[turnPlayer]){openMoveRow={kind:"actions",black:null,white:null};rows.push(openMoveRow);}
-        openMoveRow[turnPlayer]={player:turnPlayer,dice:state.dice,move:"",error:0,kind:"roll"};
+        let row=openMoveRow;
+        const canReuseCubeRow=lastCubeActionRow&&!rowHasCheckerEvent(lastCubeActionRow,turnPlayer);
+        if(canReuseCubeRow)row=lastCubeActionRow;
+        const events=row?rowEvents(row,turnPlayer):[];
+        const hasRollOrMove=events.some(item=>item&&!["cube","cubeResponse"].includes(item.kind));
+        if(!row||hasRollOrMove){row=newHistoryActionRow(rows);}
+        appendHistoryEvent(row,turnPlayer,{player:turnPlayer,dice:state.dice,move:"",error:0,kind:"roll"});
+        openMoveRow=row;
       }
     }
   }
