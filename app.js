@@ -859,16 +859,21 @@ function collectHistoryRows(){
         continue;
       }
       if(event.kind==="cubeResponse"){
-        // テイク／パスは候補選択が確定した時点で必ず改行して単独の新しい行へ表示する。
-        // その次のロールも同じ行へ詰めず、さらに次の行から開始する。
+        // テイク／パスは候補選択が確定した時点で必ず改行して新しい行へ表示する。
+        // テイク後は、その同じ行のダブルした側の空きセルへ次のロール／着手を詰める。
         const pairedRow=event.pairId?cubeRows.get(event.pairId):null;
         const pairedOffer=pairedRow
           ? [...rowEvents(pairedRow,"black"),...rowEvents(pairedRow,"white")].find(item=>item?.kind==="cube")
           : null;
         const row=newHistoryActionRow(rows);
         appendHistoryEvent(row,event.player,event.cubeValue?event:{...event,cubeValue:pairedOffer?.cubeValue});
-        openMoveRow=null;
-        lastCubeActionRow=null;
+        if(event.move==="Take"){
+          openMoveRow=row;
+          lastCubeActionRow=row;
+        }else{
+          openMoveRow=null;
+          lastCubeActionRow=null;
+        }
         continue;
       }
       if(!leadPlayer)leadPlayer=event.player;
@@ -892,10 +897,14 @@ function collectHistoryRows(){
         let row=openMoveRow;
         const canReuseCubeRow=lastCubeActionRow&&!rowHasCheckerEvent(lastCubeActionRow,turnPlayer);
         if(canReuseCubeRow)row=lastCubeActionRow;
-        const events=row?rowEvents(row,turnPlayer):[];
+        let events=row?rowEvents(row,turnPlayer):[];
         const hasRollOrMove=events.some(item=>item&&!["cube","cubeResponse"].includes(item.kind));
-        if(!row||hasRollOrMove){row=newHistoryActionRow(rows);}
-        appendHistoryEvent(row,turnPlayer,{player:turnPlayer,dice:state.dice,move:"",error:0,kind:"roll"});
+        if(!row||hasRollOrMove){row=newHistoryActionRow(rows);events=rowEvents(row,turnPlayer);}
+        const rollEvent={player:turnPlayer,dice:state.dice,move:"",error:0,kind:"roll"};
+        // ノーダブルは選択中だけ履歴に表示し、実際のロールが出た瞬間に同じ場所へ上書きする。
+        const noDoubleIndex=events.findIndex(item=>item?.kind==="cube"&&(item?.move==="No Double"||item?.move==="No Doubke"));
+        if(noDoubleIndex>=0)events[noDoubleIndex]=rollEvent;
+        else appendHistoryEvent(row,turnPlayer,rollEvent);
         openMoveRow=row;
       }
     }
