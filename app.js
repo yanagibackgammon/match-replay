@@ -525,8 +525,8 @@ function drawGameOverlay(state){
 
   if(state.phase==="matchStart"){
     addPanel(96,188,510,170,18);
-    addText(246,"試合開始",46,"#fff",900);
-    addText(316,`${meta.blackName} vs ${meta.whiteName}`,34,"#fff",800);
+    addText(246,"試合開始",50,"#fff",900);
+    addText(316,`${meta.blackName} vs ${meta.whiteName}`,40,"#fff",800);
     return;
   }
 
@@ -534,15 +534,15 @@ function drawGameOverlay(state){
     const winner=state.matchWinner;
     const winnerName=winner==="black"?meta.blackName:winner==="white"?meta.whiteName:"";
     addPanel(116,150,470,246,18);
-    addText(212,"試合終了",42,"#fff",900);
+    addText(212,"試合終了",50,"#fff",900);
     addText(270,"勝者",30,"#fff",800);
-    addText(344,winnerName,54,"#fff",900);
+    addText(344,winnerName,50,"#fff",900);
     return;
   }
 
   if(state.phase==="gameStart"){
     addPanel(246,232,210,82,14);
-    addText(286,`Game ${state.gameNumber || 1}`,42,"#fff",700);
+    addText(286,`Game ${state.gameNumber || 1}`,50,"#fff",700);
     return;
   }
   if(state.phase!=="gameEnd" || !state.scoreDelta) return;
@@ -556,9 +556,9 @@ function drawGameOverlay(state){
   const resultLabel=state.matchResignation?"マッチリザイン":`${winLabel}・キューブ${cubeValue}倍`;
 
   addPanel(116,165,470,216,18);
-  addText(220,winnerName,32,"#fff",800);
-  addText(300,`＋${toFullWidthScore(points)}`,72,"#18b86b",900);
-  addText(350,resultLabel,28,"#fff",800);
+  addText(220,winnerName,40,"#fff",800);
+  addText(300,`＋${toFullWidthScore(points)}`,70,"#18b86b",900);
+  addText(350,resultLabel,30,"#fff",800);
 }
 trianglePoints();
 
@@ -870,8 +870,20 @@ function collectHistoryRows(){
     const event=state.historyEvent;
     if(event&&(event.player==="black"||event.player==="white")){
       if(event.kind==="cube"){
-        // その側が空いている既存行ならそこへ詰め、埋まっていれば新しい行を作る。
+        // cubeOffer では候補表示用に新しい空行を用意するが、実際に Double を選んだ時は
+        // 直前行の自分側セルが空いていれば、その空行を捨てて上の行へ詰めて表示する。
+        // これにより候補時点の改行は維持しつつ、確定後の Double だけが不要に1行下へ残らない。
         let row=openMoveRow;
+        const rowIsEmpty=row&&![...rowEvents(row,"black"),...rowEvents(row,"white")].some(Boolean);
+        if(event.move==="Double"&&rowIsEmpty&&rows[rows.length-1]===row){
+          const previousRow=rows.length>=2?rows[rows.length-2]:null;
+          const canPackUp=previousRow?.kind==="actions"&&!rowEvents(previousRow,event.player).some(Boolean);
+          if(canPackUp){
+            rows.pop();
+            row=previousRow;
+          }
+        }
+        // その側が空いている既存行ならそこへ詰め、埋まっていれば新しい行を作る。
         if(!row||rowHasCheckerEvent(row,event.player)||rowEvents(row,event.player).some(Boolean))row=newHistoryActionRow(rows);
         appendHistoryEvent(row,event.player,event);
         openMoveRow=row;
