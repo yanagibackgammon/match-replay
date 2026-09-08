@@ -765,8 +765,10 @@ function startAutoPlayback(rate){
   sendCommand("play");
 }
 function manualStep(direction){
-  setPlaybackSelection(direction);
+  // 前へ／次へは自動再生を停止したうえで1ステップ移動する。
+  // 選択状態は押した「前へ／次へ」を黒表示のまま維持する。
   sendCommand("setMode","manual");
+  setPlaybackSelection(direction);
   sendCommand(direction);
 }
 autoNormalModeBtn.addEventListener("click", () => startAutoPlayback(1));
