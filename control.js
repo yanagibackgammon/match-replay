@@ -410,13 +410,21 @@ function normalizedPlaybackRate(value){
 }
 
 function playbackRateForRemaining(){
-  if(lastState.playing&&lastState.mode==="auto") return normalizedPlaybackRate(lastState.playbackRate);
+  // 残時間はボタンの選択状態ではなく、表示側／サーバーが実際に保持している再生倍率を基準にする。
+  // これによりボタンのない4・5・7・8・9倍速（数字キー指定）でも実再生と同じ倍率で計算できる。
+  const stateRate=Number(lastState.playbackRate);
+  if(Number.isInteger(stateRate)&&stateRate>=1&&stateRate<=9) return stateRate;
   return normalizedPlaybackRate(selectedPlaybackRate);
+}
+
+function scaledTimingDelay(ms, rate=1){
+  // app.js / server.js の setTimeout と同じ丸め規則に揃える。
+  return Math.max(1,Math.round(ms/normalizedPlaybackRate(rate)));
 }
 
 function timingDelayForState(state, rate=1){
   const safeRate=normalizedPlaybackRate(rate);
-  const sequenceMs=6000/safeRate;
+  const sequenceMs=scaledTimingDelay(6000,safeRate);
   const checkerMoveMs=500/safeRate;
   if(!state) return sequenceMs;
   if(["gameEnd","matchStart","matchEnd","bigComebackIntro","preRoll","cubeOffer","cubeOfferSelect","cubeResponse","cubeResponseSelect"].includes(state.phase)) return sequenceMs;
@@ -442,7 +450,7 @@ function calculateRemainingMs(){
     for(let i=current;i<end;i++) ms+=timingDelayForState(timingStates[i],rate);
     return ms;
   }
-  return Math.max(0,total-current)*6000/rate;
+  return Math.max(0,total-current)*scaledTimingDelay(6000,rate);
 }
 
 function formatRemainingTime(ms){
@@ -523,11 +531,10 @@ function renderState(state){
   renderGameMarkers();
 
   const manual=lastState.mode === "manual";
-  if(lastState.playing && !manual){
+  if(!manual){
+    // 停止中も実際に保持されている倍率を同期して、再開前の残時間表示にも同じ倍率を使う。
     selectedPlaybackRate=normalizedPlaybackRate(lastState.playbackRate);
-    selectedPlaybackButton=`auto${selectedPlaybackRate}`;
-  }else if(!manual){
-    selectedPlaybackButton="pause";
+    selectedPlaybackButton=lastState.playing?`auto${selectedPlaybackRate}`:"pause";
   }
   const activeButton={auto1:autoNormalModeBtn,auto2:autoDoubleModeBtn,auto3:autoTripleModeBtn,auto6:autoSixModeBtn,prev:prevBtn,next:nextBtn,pause:pauseBtn}[selectedPlaybackButton]||null;
   [autoNormalModeBtn,autoDoubleModeBtn,autoTripleModeBtn,autoSixModeBtn,prevBtn,nextBtn,pauseBtn].forEach(button=>button.classList.toggle("active",button===activeButton));
