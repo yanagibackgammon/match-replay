@@ -1092,7 +1092,7 @@ html,body{
   width:840px;
   height:60px;
   display:grid;
-  grid-template-columns:minmax(0,1fr) 94px 96px 96px;
+  grid-template-columns:minmax(0,1fr) 94px 128px 128px;
   align-items:center;
   gap:8px;
   padding:0 14px;
@@ -1112,14 +1112,22 @@ html,body{
   color:#444;
 }
 .analysis-rate{
-  align-self:end;
-  padding-bottom:8px;
-  text-align:right;
-  font-size:20px;
+  align-self:center;
+  display:grid;
+  grid-template-columns:1ch minmax(0,1fr);
+  column-gap:.65ch;
+  align-items:baseline;
+  font-size:30px;
   line-height:1;
   font-variant-numeric:tabular-nums;
   color:#444;
   white-space:nowrap;
+}
+.analysis-rate-label{
+  text-align:left;
+}
+.analysis-rate-value{
+  text-align:right;
 }
 .analysis-eq.error-red{color:#d01818}
 .analysis-eq.error-purple{color:#7a1fa2}

@@ -1151,10 +1151,15 @@ function renderAnalysis(a){
   const rateLabel=(prefix,value,bestValue,isBestRow)=>{
     const v=Number(value),best=Number(bestValue);
     if(!Number.isFinite(v))return"";
-    if(isBestRow||!Number.isFinite(best))return `${prefix}${v.toFixed(1)}%`;
-    let diff=v-best;
-    if(Math.abs(diff)<0.05)diff=0;
-    return `${prefix}${diff>0?"+":""}${diff.toFixed(1)}%`;
+    let valueText;
+    if(isBestRow||!Number.isFinite(best)){
+      valueText=`${v.toFixed(1)}%`;
+    }else{
+      let diff=v-best;
+      if(Math.abs(diff)<0.05)diff=0;
+      valueText=`${diff>0?"+":""}${diff.toFixed(1)}%`;
+    }
+    return `<span class="analysis-rate-label">${prefix}</span><span class="analysis-rate-value">${valueText}</span>`;
   };
   const rows=visible.map(({candidate:c,index:i},rowIndex)=>{
     const errorClass=candidateErrorClass(c.error);
