@@ -1115,17 +1115,19 @@ html,body{
   position:relative;
   align-self:center;
   display:grid;
-  grid-template-columns:52px 52px;
-  column-gap:8px;
+  width:128px;
+  grid-template-columns:58px 58px;
+  column-gap:12px;
   justify-content:end;
   align-items:baseline;
   font-size:25px;
-  transform:translateX(104px);
   line-height:1;
   font-variant-numeric:tabular-nums;
   color:#444;
   white-space:nowrap;
 }
+.analysis-own{transform:translateX(56px)}
+.analysis-opp{transform:translateX(88px)}
 .analysis-rate-value{
   display:block;
   min-width:0;
@@ -1134,9 +1136,11 @@ html,body{
 .analysis-own::after{
   content:"|";
   position:absolute;
-  right:-8px;
+  width:12px;
+  right:-18px;
   top:50%;
-  transform:translate(50%,-50%);
+  transform:translateY(-50%);
+  text-align:center;
   color:#777;
   font-size:25px;
   font-weight:700;
