@@ -405,7 +405,9 @@ function drawDice(vals,activePlayer,{luckKind=null,muted=false,comeback=false}={
     rightBranch.setAttribute("class","comeback-lightning-branch");
     rightBranch.setAttribute("pathLength","1");
     rightBranch.setAttribute("d",`M ${cx} 246 L ${cx+12} 256 L ${rightDieCx} ${dieCy}`);
-    lightning.appendChild(main);lightning.appendChild(leftBranch);lightning.appendChild(rightBranch);diceG.appendChild(lightning);
+    lightning.appendChild(main);lightning.appendChild(leftBranch);lightning.appendChild(rightBranch);
+    // 雷はサイコロより先に描画し、常にサイコロの背面を走らせる。
+    diceG.insertBefore(lightning,diceG.firstChild);
   }
 }
 function cubeOwnerTarget(cube){
@@ -1138,6 +1140,7 @@ function renderAnalysis(a){
     });
   }
   const bestIndex=candidateEntries[0]?.index??-1;
+  const bestCandidate=bestIndex>=0?all[bestIndex]:null;
   const showBestMarker=all.length>1;
   let visible=candidateEntries.slice(0,5);
   // 実際の選択手がエクイティ6位以下なら、選択時だけ5行目をその手に置き換える。
@@ -1145,16 +1148,28 @@ function renderAnalysis(a){
     const entry={candidate:all[selectedIndex],index:selectedIndex};
     if(visible.length<5)visible.push(entry);else visible[4]=entry;
   }
-  const rows=visible.map(({candidate:c,index:i})=>{
+  const rateLabel=(prefix,value,bestValue,isBestRow)=>{
+    const v=Number(value),best=Number(bestValue);
+    if(!Number.isFinite(v))return"";
+    if(isBestRow||!Number.isFinite(best))return `${prefix}${v.toFixed(1)}%`;
+    let diff=v-best;
+    if(Math.abs(diff)<0.05)diff=0;
+    return `${prefix}${diff>0?"+":""}${diff.toFixed(1)}%`;
+  };
+  const rows=visible.map(({candidate:c,index:i},rowIndex)=>{
     const errorClass=candidateErrorClass(c.error);
     const selected=i===selectedIndex;
     const selectedClass=selected?(errorClass==="error-purple"?" is-selected is-selected-blunder":errorClass==="error-red"?" is-selected is-selected-error":" is-selected"):"";
     // 候補が複数ある場合のみ最善手を BEST と表示する。
     // 1候補しかない強制手・ムーブ不能では、BEST / 0.000 のどちらも表示しない。
-    const equityLabel=!showBestMarker?"":(i===bestIndex?"BEST":Number(c.error??0).toFixed(3));
-    return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${equityLabel}</span></div>`;
+    const isBestRow=i===bestIndex;
+    const equityLabel=!showBestMarker?"":(isBestRow?"BEST":Number(c.error??0).toFixed(3));
+    // W / G は1行目（BEST）だけ絶対値、2行目以降はBESTとの差を表示する。
+    const winLabel=rateLabel("W",c.winRate,bestCandidate?.winRate,isBestRow||rowIndex===0);
+    const gammonLabel=rateLabel("G",c.gammonRate,bestCandidate?.gammonRate,isBestRow||rowIndex===0);
+    return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${equityLabel}</span><span class="analysis-rate analysis-win">${winLabel}</span><span class="analysis-rate analysis-gammon">${gammonLabel}</span></div>`;
   });
-  while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span></div>');
+  while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span><span class="analysis-rate analysis-win"></span><span class="analysis-rate analysis-gammon"></span></div>');
   els.analysisContent.innerHTML=`<div class="analysis-moves">${rows.slice(0,5).join("")}</div>`;
 }
 function currentState(){return matchData.states[Math.max(0,Math.min(index,matchData.states.length-1))]||emptyState;}

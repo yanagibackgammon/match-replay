@@ -623,11 +623,15 @@ html,body{
   0%,2%{opacity:0}
   4%{opacity:.45}
   7%{opacity:1}
-  10%{opacity:.18}
-  12%{opacity:1}
-  16%{opacity:.25}
-  19%{opacity:.88}
-  23%,100%{opacity:0}
+  12%{opacity:.18}
+  17%{opacity:1}
+  23%{opacity:.25}
+  29%{opacity:.92}
+  35%{opacity:.20}
+  41%{opacity:.90}
+  47%{opacity:.28}
+  52%{opacity:.82}
+  55%,100%{opacity:0}
 }
 @keyframes comebackLightningTravel{
   0%,2%{stroke-dashoffset:1}
@@ -1088,9 +1092,9 @@ html,body{
   width:840px;
   height:60px;
   display:grid;
-  grid-template-columns:1fr 110px;
+  grid-template-columns:minmax(0,1fr) 94px 96px 96px;
   align-items:center;
-  gap:12px;
+  gap:8px;
   padding:0 14px;
   font-size:30px;
   font-weight:900;
@@ -1107,6 +1111,16 @@ html,body{
   font-variant-numeric:tabular-nums;
   color:#444;
 }
+.analysis-rate{
+  align-self:end;
+  padding-bottom:8px;
+  text-align:right;
+  font-size:20px;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  color:#444;
+  white-space:nowrap;
+}
 .analysis-eq.error-red{color:#d01818}
 .analysis-eq.error-purple{color:#7a1fa2}
 
@@ -1118,7 +1132,10 @@ html,body{
 .analysis-row.is-selected-blunder{background:#7a1fa2;color:#fff}
 .analysis-row.is-selected .analysis-eq,
 .analysis-row.is-selected-error .analysis-eq,
-.analysis-row.is-selected-blunder .analysis-eq{color:#fff}
+.analysis-row.is-selected-blunder .analysis-eq,
+.analysis-row.is-selected .analysis-rate,
+.analysis-row.is-selected-error .analysis-rate,
+.analysis-row.is-selected-blunder .analysis-rate{color:#fff}
 .analysis-row-empty{background:#fff}
 
 .ad-area{
