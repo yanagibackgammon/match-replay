@@ -1148,22 +1148,14 @@ function renderAnalysis(a){
     const entry={candidate:all[selectedIndex],index:selectedIndex};
     if(visible.length<5)visible.push(entry);else visible[4]=entry;
   }
-  const rateValue=(value,bestValue,isBestRow)=>{
-    const v=Number(value),best=Number(bestValue);
-    if(!Number.isFinite(v))return {text:"",positive:false};
-    if(isBestRow||!Number.isFinite(best))return {text:v.toFixed(1),positive:false};
-    let diff=v-best;
-    if(Math.abs(diff)<0.05)diff=0;
-    return {text:`${diff>0?"+":""}${diff.toFixed(1)}`,positive:diff>0};
+  const rateValue=(value)=>{
+    const v=Number(value);
+    return Number.isFinite(v)?v.toFixed(1):"";
   };
-  const rateGroup=(winValue,gammonValue,bestWinValue,bestGammonValue,isBestRow,{highlightPositive=false}={})=>{
-    const win=rateValue(winValue,bestWinValue,isBestRow);
-    const gammon=rateValue(gammonValue,bestGammonValue,isBestRow);
-    return {
-      win:`<span class="analysis-rate-value${highlightPositive&&win.positive?" is-positive":""}">${win.text}</span>`,
-      gammon:`<span class="analysis-rate-value${highlightPositive&&gammon.positive?" is-positive":""}">${gammon.text}</span>`
-    };
-  };
+  const rateGroup=(winValue,gammonValue)=>({
+    win:`<span class="analysis-rate-value">${rateValue(winValue)}</span>`,
+    gammon:`<span class="analysis-rate-value">${rateValue(gammonValue)}</span>`
+  });
   const rows=visible.map(({candidate:c,index:i},rowIndex)=>{
     const errorClass=candidateErrorClass(c.error);
     const selected=i===selectedIndex;
@@ -1172,17 +1164,13 @@ function renderAnalysis(a){
     // 1候補しかない強制手・ムーブ不能では、BEST / 0.000 のどちらも表示しない。
     const isBestRow=i===bestIndex;
     const equityLabel=!showBestMarker?"":(isBestRow?"BEST":Number(c.error??0).toFixed(3));
-    // BEST行は双方の勝率・ギャモン率の絶対値、2行目以降はBESTとの差を表示する。
+    // 全候補で、その候補自体の勝率・ギャモン率を絶対値表示する。
     const ownWin=Number(c.winRate);
     const ownGammon=Number(c.gammonRate);
     const oppWin=Number.isFinite(ownWin)?100-ownWin:NaN;
     const oppGammon=Number(c.opponentGammonRate);
-    const bestOwnWin=Number(bestCandidate?.winRate);
-    const bestOwnGammon=Number(bestCandidate?.gammonRate);
-    const bestOppWin=Number.isFinite(bestOwnWin)?100-bestOwnWin:NaN;
-    const bestOppGammon=Number(bestCandidate?.opponentGammonRate);
-    const ownRates=rateGroup(ownWin,ownGammon,bestOwnWin,bestOwnGammon,isBestRow||rowIndex===0,{highlightPositive:true});
-    const oppRates=rateGroup(oppWin,oppGammon,bestOppWin,bestOppGammon,isBestRow||rowIndex===0);
+    const ownRates=rateGroup(ownWin,ownGammon);
+    const oppRates=rateGroup(oppWin,oppGammon);
     // 区切りは行ごとの「|」文字ではなく、候補エリア全体に固定した縦罫線で表示する。
     // レイアウト用の空セルだけ残し、Double / Take / Pass 時も罫線位置を完全固定する。
     const rateStrip=`<span class="analysis-rate-strip"><span class="analysis-rate-separator" aria-hidden="true"></span>${ownRates.win}${ownRates.gammon}<span class="analysis-rate-separator" aria-hidden="true"></span>${oppRates.win}${oppRates.gammon}</span>`;
