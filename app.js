@@ -1159,7 +1159,10 @@ function renderAnalysis(a){
   const rateGroup=(winValue,gammonValue,bestWinValue,bestGammonValue,isBestRow,{highlightPositive=false}={})=>{
     const win=rateValue(winValue,bestWinValue,isBestRow);
     const gammon=rateValue(gammonValue,bestGammonValue,isBestRow);
-    return `<span class="analysis-rate-value${highlightPositive&&win.positive?" is-positive":""}">${win.text}</span><span class="analysis-rate-value${highlightPositive&&gammon.positive?" is-positive":""}">${gammon.text}</span>`;
+    return {
+      win:`<span class="analysis-rate-value${highlightPositive&&win.positive?" is-positive":""}">${win.text}</span>`,
+      gammon:`<span class="analysis-rate-value${highlightPositive&&gammon.positive?" is-positive":""}">${gammon.text}</span>`
+    };
   };
   const rows=visible.map(({candidate:c,index:i},rowIndex)=>{
     const errorClass=candidateErrorClass(c.error);
@@ -1180,9 +1183,13 @@ function renderAnalysis(a){
     const bestOppGammon=Number(bestCandidate?.opponentGammonRate);
     const ownRates=rateGroup(ownWin,ownGammon,bestOwnWin,bestOwnGammon,isBestRow||rowIndex===0,{highlightPositive:true});
     const oppRates=rateGroup(oppWin,oppGammon,bestOppWin,bestOppGammon,isBestRow||rowIndex===0);
-    return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${equityLabel}</span><span class="analysis-rate analysis-own">${ownRates}</span><span class="analysis-rate analysis-opp">${oppRates}</span></div>`;
+    // チェッカームーブ時のみ区切り線を表示。Double / Take / Pass では線を出さない。
+    // 数値セルと区切り線は固定グリッドに載せ、全行で各右端・横位置を揃える。
+    const separator=cubeDecision?"":"|";
+    const rateStrip=`<span class="analysis-rate-strip"><span class="analysis-rate-separator">${separator}</span>${ownRates.win}${ownRates.gammon}<span class="analysis-rate-separator">${separator}</span>${oppRates.win}${oppRates.gammon}</span>`;
+    return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${equityLabel}</span>${rateStrip}</div>`;
   });
-  while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span><span class="analysis-rate analysis-own"></span><span class="analysis-rate analysis-opp"></span></div>');
+  while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span><span class="analysis-rate-strip"></span></div>');
   els.analysisContent.innerHTML=`<div class="analysis-moves">${rows.slice(0,5).join("")}</div>`;
 }
 function currentState(){return matchData.states[Math.max(0,Math.min(index,matchData.states.length-1))]||emptyState;}
