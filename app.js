@@ -1156,10 +1156,10 @@ function renderAnalysis(a){
     if(Math.abs(diff)<0.05)diff=0;
     return {text:`${diff>0?"+":""}${diff.toFixed(1)}`,positive:diff>0};
   };
-  const rateGroup=(label,winValue,gammonValue,bestWinValue,bestGammonValue,isBestRow)=>{
+  const rateGroup=(winValue,gammonValue,bestWinValue,bestGammonValue,isBestRow,{highlightPositive=false}={})=>{
     const win=rateValue(winValue,bestWinValue,isBestRow);
     const gammon=rateValue(gammonValue,bestGammonValue,isBestRow);
-    return `<span class="analysis-rate-label">${label}</span><span class="analysis-rate-value${win.positive?" is-positive":""}">${win.text}</span><span class="analysis-rate-value${gammon.positive?" is-positive":""}">${gammon.text}</span>`;
+    return `<span class="analysis-rate-value${highlightPositive&&win.positive?" is-positive":""}">${win.text}</span><span class="analysis-rate-value${highlightPositive&&gammon.positive?" is-positive":""}">${gammon.text}</span>`;
   };
   const rows=visible.map(({candidate:c,index:i},rowIndex)=>{
     const errorClass=candidateErrorClass(c.error);
@@ -1178,8 +1178,8 @@ function renderAnalysis(a){
     const bestOwnGammon=Number(bestCandidate?.gammonRate);
     const bestOppWin=Number.isFinite(bestOwnWin)?100-bestOwnWin:NaN;
     const bestOppGammon=Number(bestCandidate?.opponentGammonRate);
-    const ownRates=rateGroup("G:",ownWin,ownGammon,bestOwnWin,bestOwnGammon,isBestRow||rowIndex===0);
-    const oppRates=rateGroup("O:",oppWin,oppGammon,bestOppWin,bestOppGammon,isBestRow||rowIndex===0);
+    const ownRates=rateGroup(ownWin,ownGammon,bestOwnWin,bestOwnGammon,isBestRow||rowIndex===0,{highlightPositive:true});
+    const oppRates=rateGroup(oppWin,oppGammon,bestOppWin,bestOppGammon,isBestRow||rowIndex===0);
     return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${equityLabel}</span><span class="analysis-rate analysis-own">${ownRates}</span><span class="analysis-rate analysis-opp">${oppRates}</span></div>`;
   });
   while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span><span class="analysis-rate analysis-own"></span><span class="analysis-rate analysis-opp"></span></div>');
