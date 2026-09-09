@@ -1115,9 +1115,10 @@ html,body{
   align-self:center;
   display:grid;
   grid-template-columns:1ch minmax(0,1fr);
-  column-gap:.65ch;
+  column-gap:.20ch;
   align-items:baseline;
   font-size:25px;
+  transform:translateX(72px);
   line-height:1;
   font-variant-numeric:tabular-nums;
   color:#444;
