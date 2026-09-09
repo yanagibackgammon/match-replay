@@ -1092,7 +1092,7 @@ html,body{
   width:840px;
   height:60px;
   display:grid;
-  grid-template-columns:minmax(0,1fr) 94px 128px 128px;
+  grid-template-columns:368px 94px 128px 128px;
   align-items:center;
   gap:8px;
   padding:0 14px;
@@ -1117,7 +1117,7 @@ html,body{
   grid-template-columns:1ch minmax(0,1fr);
   column-gap:.65ch;
   align-items:baseline;
-  font-size:30px;
+  font-size:25px;
   line-height:1;
   font-variant-numeric:tabular-nums;
   color:#444;
