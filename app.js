@@ -901,6 +901,20 @@ function collectHistoryRows(){
       }
     }
 
+    // 大逆転の暗転中は、次にロール／ムーブが入る履歴セルを先に確保する。
+    // 直前の手に金塗りを残さず、次の手番の空白セルを薄金表示する。
+    // 実際のロール時もこの準備済み行をそのまま使うため、暗転解除時に余計な改行が入らない。
+    if(state.phase==="bigComebackIntro"){
+      const turnPlayer=state.activePlayer===1?"black":(state.activePlayer===-1?"white":null);
+      if(turnPlayer){
+        if(!leadPlayer)leadPlayer=turnPlayer;
+        let row=openMoveRow;
+        if(!row||rowEvents(row,turnPlayer).some(Boolean))row=newHistoryActionRow(rows);
+        openMoveRow=row;
+        lastCubeActionRow=null;
+      }
+    }
+
     // Legacy generated JSON compatibility.
     const grouped=Array.isArray(state.historyEvents)?state.historyEvents.filter(Boolean):[];
     if(grouped.length){
