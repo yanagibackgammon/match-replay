@@ -1140,7 +1140,6 @@ function renderAnalysis(a){
     });
   }
   const bestIndex=candidateEntries[0]?.index??-1;
-  const bestCandidate=bestIndex>=0?all[bestIndex]:null;
   const showBestMarker=all.length>1;
   let visible=candidateEntries.slice(0,5);
   // 実際の選択手がエクイティ6位以下なら、選択時だけ5行目をその手に置き換える。
@@ -1148,43 +1147,16 @@ function renderAnalysis(a){
     const entry={candidate:all[selectedIndex],index:selectedIndex};
     if(visible.length<5)visible.push(entry);else visible[4]=entry;
   }
-  const rateValue=(value)=>{
-    const v=Number(value);
-    return Number.isFinite(v)?v.toFixed(1):"";
-  };
-  const rateSpan=(value,isGreen=false)=>`<span class="analysis-rate-value${isGreen?" is-positive":""}">${rateValue(value)}</span>`;
-  const bestOwnWin=Number(bestCandidate?.winRate);
-  const bestOwnGammon=Number(bestCandidate?.gammonRate);
-  const bestOppGammon=Number(bestCandidate?.opponentGammonRate);
-  const rows=visible.map(({candidate:c,index:i},rowIndex)=>{
+  const rows=visible.map(({candidate:c,index:i})=>{
     const errorClass=candidateErrorClass(c.error);
     const selected=i===selectedIndex;
     const selectedClass=selected?(errorClass==="error-purple"?" is-selected is-selected-blunder":errorClass==="error-red"?" is-selected is-selected-error":" is-selected"):"";
     // 候補が複数ある場合のみ最善手を BEST と表示する。
     // 1候補しかない強制手・ムーブ不能では、BEST / 0.000 のどちらも表示しない。
-    const isBestRow=i===bestIndex;
-    const equityLabel=!showBestMarker?"":(isBestRow?"BEST":Number(c.error??0).toFixed(3));
-    // 全候補で、その候補自体の勝率・ギャモン率を絶対値表示する。
-    const ownWin=Number(c.winRate);
-    const ownGammon=Number(c.gammonRate);
-    const oppWin=Number.isFinite(ownWin)?100-ownWin:NaN;
-    const oppGammon=Number(c.opponentGammonRate);
-    // 2行目以降は、BESTより有利な率だけ得点加算と同じ緑で強調する。
-    // 自分側：勝率 / G率がBESTより高い。相手側：G率がBESTより低い。
-    const compareToBest=!isBestRow;
-    const ownWinGreen=compareToBest&&Number.isFinite(ownWin)&&Number.isFinite(bestOwnWin)&&ownWin>bestOwnWin;
-    const ownGammonGreen=compareToBest&&Number.isFinite(ownGammon)&&Number.isFinite(bestOwnGammon)&&ownGammon>bestOwnGammon;
-    const oppGammonGreen=compareToBest&&Number.isFinite(oppGammon)&&Number.isFinite(bestOppGammon)&&oppGammon<bestOppGammon;
-    const ownWinHtml=rateSpan(ownWin,ownWinGreen);
-    const ownGammonHtml=rateSpan(ownGammon,ownGammonGreen);
-    const oppWinHtml=rateSpan(oppWin,false);
-    const oppGammonHtml=rateSpan(oppGammon,oppGammonGreen);
-    // 区切りは行ごとの「|」文字ではなく、候補エリア全体に固定した縦罫線で表示する。
-    // レイアウト用の空セルだけ残し、Double / Take / Pass 時も罫線位置を完全固定する。
-    const rateStrip=`<span class="analysis-rate-strip"><span class="analysis-rate-separator" aria-hidden="true"></span>${ownWinHtml}${ownGammonHtml}<span class="analysis-rate-separator" aria-hidden="true"></span>${oppWinHtml}${oppGammonHtml}</span>`;
-    return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${equityLabel}</span>${rateStrip}</div>`;
+    const equityLabel=!showBestMarker?"":(i===bestIndex?"BEST":Number(c.error??0).toFixed(3));
+    return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${equityLabel}</span></div>`;
   });
-  while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span><span class="analysis-rate-strip"></span></div>');
+  while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span></div>');
   els.analysisContent.innerHTML=`<div class="analysis-moves">${rows.slice(0,5).join("")}</div>`;
 }
 function currentState(){return matchData.states[Math.max(0,Math.min(index,matchData.states.length-1))]||emptyState;}

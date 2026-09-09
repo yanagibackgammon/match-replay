@@ -932,7 +932,6 @@ html,body{
 .analysis-jokers .die{--die-size:72px}
 
 .analysis-area{
-  position:relative;
   width:840px;
   height:300px;
   overflow:hidden;
@@ -940,22 +939,6 @@ html,body{
   box-shadow:inset 0 -5px 0 var(--line);
   background:#fff;
 }
-/* v243: 率表示の区切りは行別の「|」ではなく、履歴中央罫線と同じ1px線を候補エリア全体に固定。
-   v242の率セル配置を維持したまま、自分側の左端と相手側の左端に通しで引く。 */
-.analysis-area::before,
-.analysis-area::after{
-  content:"";
-  position:absolute;
-  top:0;
-  bottom:0;
-  width:1px;
-  background:var(--line);
-  transform:translateX(-.5px);
-  pointer-events:none;
-  z-index:5;
-}
-.analysis-area::before{left:474px}
-.analysis-area::after{left:662px}
 
 .analysis-content{
   width:840px;
@@ -1109,11 +1092,10 @@ html,body{
   width:840px;
   height:60px;
   display:grid;
-  /* 4率表示を100.0基準の固定幅で揃えるため、BEST列をv241より26pxだけ左へ。 */
-  grid-template-columns:342px 94px 362px;
+  grid-template-columns:1fr 110px;
   align-items:center;
-  gap:8px;
-  padding:0 12px 0 14px;
+  gap:12px;
+  padding:0 14px;
   font-size:30px;
   font-weight:900;
   line-height:1;
@@ -1129,34 +1111,6 @@ html,body{
   font-variant-numeric:tabular-nums;
   color:#444;
 }
-.analysis-rate-strip{
-  width:362px;
-  display:grid;
-  /* 25px太字で100.0が収まる69pxを各数値セルに確保。
-     符号付き最大値の張り出しは14pxの列間余白で吸収する。 */
-  grid-template-columns:8px 69px 69px 8px 69px 69px;
-  column-gap:14px;
-  align-items:baseline;
-  justify-content:end;
-  font-size:25px;
-  line-height:1;
-  font-variant-numeric:tabular-nums;
-  color:#444;
-  white-space:nowrap;
-}
-.analysis-rate-separator{
-  width:8px;
-  min-width:8px;
-  height:1px;
-}
-.analysis-rate-value{
-  display:block;
-  width:69px;
-  min-width:69px;
-  text-align:right;
-  overflow:visible;
-}
-.analysis-rate-value.is-positive{color:#18b86b}
 .analysis-eq.error-red{color:#d01818}
 .analysis-eq.error-purple{color:#7a1fa2}
 
@@ -1168,10 +1122,7 @@ html,body{
 .analysis-row.is-selected-blunder{background:#7a1fa2;color:#fff}
 .analysis-row.is-selected .analysis-eq,
 .analysis-row.is-selected-error .analysis-eq,
-.analysis-row.is-selected-blunder .analysis-eq,
-.analysis-row.is-selected .analysis-rate-strip,
-.analysis-row.is-selected-error .analysis-rate-strip,
-.analysis-row.is-selected-blunder .analysis-rate-strip{color:#fff}
+.analysis-row.is-selected-blunder .analysis-eq{color:#fff}
 .analysis-row-empty{background:#fff}
 
 .ad-area{
