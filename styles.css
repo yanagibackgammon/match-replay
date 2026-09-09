@@ -1131,6 +1131,7 @@ html,body{
   flex:0 0 auto;
   text-align:right;
 }
+.analysis-rate-value.is-positive{color:#18b86b}
 .analysis-eq.error-red{color:#d01818}
 .analysis-eq.error-purple{color:#7a1fa2}
 
