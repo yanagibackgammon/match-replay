@@ -1159,7 +1159,8 @@ function renderAnalysis(a){
       if(Math.abs(diff)<0.05)diff=0;
       valueText=`${diff>0?"+":""}${diff.toFixed(1)}%`;
     }
-    return `<span class="analysis-rate-label">${prefix}</span><span class="analysis-rate-value">${valueText}</span>`;
+    const label=prefix?`<span class="analysis-rate-label">${prefix}</span>`:"";
+    return `${label}<span class="analysis-rate-value">${valueText}</span>`;
   };
   const rows=visible.map(({candidate:c,index:i},rowIndex)=>{
     const errorClass=candidateErrorClass(c.error);
@@ -1170,8 +1171,9 @@ function renderAnalysis(a){
     const isBestRow=i===bestIndex;
     const equityLabel=!showBestMarker?"":(isBestRow?"BEST":Number(c.error??0).toFixed(3));
     // W / G は1行目（BEST）だけ絶対値、2行目以降はBESTとの差を表示する。
-    const winLabel=rateLabel("W",c.winRate,bestCandidate?.winRate,isBestRow||rowIndex===0);
-    const gammonLabel=rateLabel("G",c.gammonRate,bestCandidate?.gammonRate,isBestRow||rowIndex===0);
+    const ratePrefixVisible=rowIndex===0;
+    const winLabel=rateLabel(ratePrefixVisible?"W":"",c.winRate,bestCandidate?.winRate,isBestRow||rowIndex===0);
+    const gammonLabel=rateLabel(ratePrefixVisible?"G":"",c.gammonRate,bestCandidate?.gammonRate,isBestRow||rowIndex===0);
     return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${equityLabel}</span><span class="analysis-rate analysis-win">${winLabel}</span><span class="analysis-rate analysis-gammon">${gammonLabel}</span></div>`;
   });
   while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span><span class="analysis-rate analysis-win"></span><span class="analysis-rate analysis-gammon"></span></div>');
