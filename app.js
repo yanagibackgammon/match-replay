@@ -1148,22 +1148,18 @@ function renderAnalysis(a){
     const entry={candidate:all[selectedIndex],index:selectedIndex};
     if(visible.length<5)visible.push(entry);else visible[4]=entry;
   }
-  const rateLabel=(prefix,value,bestValue,isBestRow)=>{
+  const rateValue=(value,bestValue,isBestRow)=>{
     const v=Number(value),best=Number(bestValue);
-    if(!Number.isFinite(v))return"";
-    let valueText;
-    let positiveClass="";
-    if(isBestRow||!Number.isFinite(best)){
-      valueText=`${v.toFixed(1)}%`;
-    }else{
-      let diff=v-best;
-      if(Math.abs(diff)<0.05)diff=0;
-      valueText=`${diff>0?"+":""}${diff.toFixed(1)}%`;
-      // BESTより勝率／ギャモン率が高い候補は、得点加算表示と同じ緑で強調する。
-      if(diff>0)positiveClass=" is-positive";
-    }
-    const label=prefix?`<span class="analysis-rate-label">${prefix}</span>`:"";
-    return `${label}<span class="analysis-rate-value${positiveClass}">${valueText}</span>`;
+    if(!Number.isFinite(v))return {text:"",positive:false};
+    if(isBestRow||!Number.isFinite(best))return {text:v.toFixed(1),positive:false};
+    let diff=v-best;
+    if(Math.abs(diff)<0.05)diff=0;
+    return {text:`${diff>0?"+":""}${diff.toFixed(1)}`,positive:diff>0};
+  };
+  const rateGroup=(label,winValue,gammonValue,bestWinValue,bestGammonValue,isBestRow)=>{
+    const win=rateValue(winValue,bestWinValue,isBestRow);
+    const gammon=rateValue(gammonValue,bestGammonValue,isBestRow);
+    return `<span class="analysis-rate-label">${label}</span><span class="analysis-rate-value${win.positive?" is-positive":""}">${win.text}</span><span class="analysis-rate-value${gammon.positive?" is-positive":""}">${gammon.text}</span>`;
   };
   const rows=visible.map(({candidate:c,index:i},rowIndex)=>{
     const errorClass=candidateErrorClass(c.error);
@@ -1173,13 +1169,20 @@ function renderAnalysis(a){
     // 1候補しかない強制手・ムーブ不能では、BEST / 0.000 のどちらも表示しない。
     const isBestRow=i===bestIndex;
     const equityLabel=!showBestMarker?"":(isBestRow?"BEST":Number(c.error??0).toFixed(3));
-    // W / G は1行目（BEST）だけ絶対値、2行目以降はBESTとの差を表示する。
-    const ratePrefixVisible=rowIndex===0;
-    const winLabel=rateLabel(ratePrefixVisible?"W":"",c.winRate,bestCandidate?.winRate,isBestRow||rowIndex===0);
-    const gammonLabel=rateLabel(ratePrefixVisible?"G":"",c.gammonRate,bestCandidate?.gammonRate,isBestRow||rowIndex===0);
-    return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${equityLabel}</span><span class="analysis-rate analysis-win">${winLabel}</span><span class="analysis-rate analysis-gammon">${gammonLabel}</span></div>`;
+    // BEST行は双方の勝率・ギャモン率の絶対値、2行目以降はBESTとの差を表示する。
+    const ownWin=Number(c.winRate);
+    const ownGammon=Number(c.gammonRate);
+    const oppWin=Number.isFinite(ownWin)?100-ownWin:NaN;
+    const oppGammon=Number(c.opponentGammonRate);
+    const bestOwnWin=Number(bestCandidate?.winRate);
+    const bestOwnGammon=Number(bestCandidate?.gammonRate);
+    const bestOppWin=Number.isFinite(bestOwnWin)?100-bestOwnWin:NaN;
+    const bestOppGammon=Number(bestCandidate?.opponentGammonRate);
+    const ownRates=rateGroup("G:",ownWin,ownGammon,bestOwnWin,bestOwnGammon,isBestRow||rowIndex===0);
+    const oppRates=rateGroup("O:",oppWin,oppGammon,bestOppWin,bestOppGammon,isBestRow||rowIndex===0);
+    return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${equityLabel}</span><span class="analysis-rate analysis-own">${ownRates}</span><span class="analysis-rate analysis-opp">${oppRates}</span></div>`;
   });
-  while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span><span class="analysis-rate analysis-win"></span><span class="analysis-rate analysis-gammon"></span></div>');
+  while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span><span class="analysis-rate analysis-own"></span><span class="analysis-rate analysis-opp"></span></div>');
   els.analysisContent.innerHTML=`<div class="analysis-moves">${rows.slice(0,5).join("")}</div>`;
 }
 function currentState(){return matchData.states[Math.max(0,Math.min(index,matchData.states.length-1))]||emptyState;}

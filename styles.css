@@ -1113,22 +1113,22 @@ html,body{
 }
 .analysis-rate{
   align-self:center;
-  display:flex;
-  justify-content:flex-end;
+  display:grid;
+  grid-template-columns:20px 44px 44px;
+  column-gap:2px;
+  justify-content:end;
   align-items:baseline;
-  gap:.14em;
-  font-size:25px;
+  font-size:20px;
   transform:translateX(104px);
   line-height:1;
   font-variant-numeric:tabular-nums;
   color:#444;
   white-space:nowrap;
 }
-.analysis-rate-label{
-  flex:0 0 auto;
-}
+.analysis-rate-label,
 .analysis-rate-value{
-  flex:0 0 auto;
+  display:block;
+  min-width:0;
   text-align:right;
 }
 .analysis-rate-value.is-positive{color:#18b86b}
