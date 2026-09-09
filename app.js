@@ -1183,10 +1183,9 @@ function renderAnalysis(a){
     const bestOppGammon=Number(bestCandidate?.opponentGammonRate);
     const ownRates=rateGroup(ownWin,ownGammon,bestOwnWin,bestOwnGammon,isBestRow||rowIndex===0,{highlightPositive:true});
     const oppRates=rateGroup(oppWin,oppGammon,bestOppWin,bestOppGammon,isBestRow||rowIndex===0);
-    // チェッカームーブ時のみ区切り線を表示。Double / Take / Pass では線を出さない。
-    // 数値セルと区切り線は固定グリッドに載せ、全行で各右端・横位置を揃える。
-    const separator=cubeDecision?"":"|";
-    const rateStrip=`<span class="analysis-rate-strip"><span class="analysis-rate-separator">${separator}</span>${ownRates.win}${ownRates.gammon}<span class="analysis-rate-separator">${separator}</span>${oppRates.win}${oppRates.gammon}</span>`;
+    // 区切りは行ごとの「|」文字ではなく、候補エリア全体に固定した縦罫線で表示する。
+    // レイアウト用の空セルだけ残し、Double / Take / Pass 時も罫線位置を完全固定する。
+    const rateStrip=`<span class="analysis-rate-strip"><span class="analysis-rate-separator" aria-hidden="true"></span>${ownRates.win}${ownRates.gammon}<span class="analysis-rate-separator" aria-hidden="true"></span>${oppRates.win}${oppRates.gammon}</span>`;
     return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${equityLabel}</span>${rateStrip}</div>`;
   });
   while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span><span class="analysis-rate-strip"></span></div>');
