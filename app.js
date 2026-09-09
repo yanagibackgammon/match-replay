@@ -1152,10 +1152,10 @@ function renderAnalysis(a){
     const v=Number(value);
     return Number.isFinite(v)?v.toFixed(1):"";
   };
-  const rateGroup=(winValue,gammonValue)=>({
-    win:`<span class="analysis-rate-value">${rateValue(winValue)}</span>`,
-    gammon:`<span class="analysis-rate-value">${rateValue(gammonValue)}</span>`
-  });
+  const rateSpan=(value,isGreen=false)=>`<span class="analysis-rate-value${isGreen?" is-positive":""}">${rateValue(value)}</span>`;
+  const bestOwnWin=Number(bestCandidate?.winRate);
+  const bestOwnGammon=Number(bestCandidate?.gammonRate);
+  const bestOppGammon=Number(bestCandidate?.opponentGammonRate);
   const rows=visible.map(({candidate:c,index:i},rowIndex)=>{
     const errorClass=candidateErrorClass(c.error);
     const selected=i===selectedIndex;
@@ -1169,11 +1169,19 @@ function renderAnalysis(a){
     const ownGammon=Number(c.gammonRate);
     const oppWin=Number.isFinite(ownWin)?100-ownWin:NaN;
     const oppGammon=Number(c.opponentGammonRate);
-    const ownRates=rateGroup(ownWin,ownGammon);
-    const oppRates=rateGroup(oppWin,oppGammon);
+    // 2行目以降は、BESTより有利な率だけ得点加算と同じ緑で強調する。
+    // 自分側：勝率 / G率がBESTより高い。相手側：G率がBESTより低い。
+    const compareToBest=!isBestRow;
+    const ownWinGreen=compareToBest&&Number.isFinite(ownWin)&&Number.isFinite(bestOwnWin)&&ownWin>bestOwnWin;
+    const ownGammonGreen=compareToBest&&Number.isFinite(ownGammon)&&Number.isFinite(bestOwnGammon)&&ownGammon>bestOwnGammon;
+    const oppGammonGreen=compareToBest&&Number.isFinite(oppGammon)&&Number.isFinite(bestOppGammon)&&oppGammon<bestOppGammon;
+    const ownWinHtml=rateSpan(ownWin,ownWinGreen);
+    const ownGammonHtml=rateSpan(ownGammon,ownGammonGreen);
+    const oppWinHtml=rateSpan(oppWin,false);
+    const oppGammonHtml=rateSpan(oppGammon,oppGammonGreen);
     // 区切りは行ごとの「|」文字ではなく、候補エリア全体に固定した縦罫線で表示する。
     // レイアウト用の空セルだけ残し、Double / Take / Pass 時も罫線位置を完全固定する。
-    const rateStrip=`<span class="analysis-rate-strip"><span class="analysis-rate-separator" aria-hidden="true"></span>${ownRates.win}${ownRates.gammon}<span class="analysis-rate-separator" aria-hidden="true"></span>${oppRates.win}${oppRates.gammon}</span>`;
+    const rateStrip=`<span class="analysis-rate-strip"><span class="analysis-rate-separator" aria-hidden="true"></span>${ownWinHtml}${ownGammonHtml}<span class="analysis-rate-separator" aria-hidden="true"></span>${oppWinHtml}${oppGammonHtml}</span>`;
     return `<div class="analysis-row${selectedClass}"><span class="analysis-move">${historyMoveLabel(c.move)}</span><span class="analysis-eq ${errorClass}">${equityLabel}</span>${rateStrip}</div>`;
   });
   while(rows.length<5) rows.push('<div class="analysis-row analysis-row-empty"><span class="analysis-move"></span><span class="analysis-eq"></span><span class="analysis-rate-strip"></span></div>');
